@@ -2,22 +2,20 @@ import Sequelize from "sequelize";
 
 import { DB } from "../../config";
 
-export default DB.define("assignments", {
+export default DB.define("registrations", {
   id: {
     type: Sequelize.INTEGER,
     allowNull: false,
     primaryKey: true,
     autoIncrement: true
   },
-  title: {
+  name: {
     type: Sequelize.STRING,
     allowNull: false
   },
-  description: {
-    type: Sequelize.TEXT
-  },
-  dueDate: {
-    type: Sequelize.DATE
+  type: {
+    type: Sequelize.STRING,
+    allowNull: false
   },
   class: {
     type: Sequelize.STRING,
@@ -27,5 +25,5 @@ export default DB.define("assignments", {
   timestamps: true,
   paranoid: true,
   freezeTableName: true,
-  tableName: "assignments"
+  tableName: "registrations"
 });

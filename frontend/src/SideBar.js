@@ -39,7 +39,7 @@ export default class SideBar extends React.Component {
             <ListItemIcon>
               <ClassIcon />
             </ListItemIcon>
-            <ListItemText primary="Cursos e turmas" />
+            <ListItemText primary="Cursos" />
           </ListItem>
 
           <ListItem button>
