@@ -16,7 +16,7 @@ export default class ClassPage extends React.Component {
     this.state = {
       show: "home",
       // list: [],
-      // assignment: null,
+      assignmentid: null,
       // data: this.props.data,
       loading: false
     };
@@ -26,8 +26,17 @@ export default class ClassPage extends React.Component {
     this.setState({ show: "createAssign" });
   }
 
-  showHome = () => {
+  showUpdateAssignment = () => {
+    this.setState({ show: "updateAssign" });
+  }
+
+  showHomeNoUpdate = () => {
     this.setState({ show: "home", loading: false });
+  }
+
+  showHomeUpdateAssign = () => {
+    this.setState({ show: "home", loading: false });
+    this.refAssignList.getAssignmentsList();
   }
 
   getClassData = () => {
@@ -40,6 +49,22 @@ export default class ClassPage extends React.Component {
     });
   }
 
+  getAssignmentById = assignmentid => {
+    this.setState({ loading: true });
+    Axios.get(Config.api + "/assignments/" + assignmentid).then((res) => {
+      this.setState({ assignment: res.data.data, loading: false });
+    }).catch((err) => {
+      console.log(err);
+      this.setState({ loading: false });
+    });
+  }
+
+  showEditById = assignmentid => {
+    this.setState( {assignmentid: assignmentid});
+    // this.getAssignmentById(assignmentid);
+    this.showUpdateAssignment();
+  }
+
   handleCreateAssignment = (form) => {
     this.setState({ loading: true });
     Axios.post(Config.api + "/assignments", {
@@ -48,28 +73,37 @@ export default class ClassPage extends React.Component {
       classid: this.props.classid,
       code: form.code
     }).then((res) => {
-      this.showHome();
+      this.showHomeUpdateAssign();
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });
     });
   }
 
-  // @italotabatinga It cant be edit by now
-  // handleUpdateAssignment = (form) => {
-  //   this.setState({ loading: true });
-  //   Axios.put(Config.api + "/assignments/" + this.state.assignment.id, {
-  //     title: form.title,
-  //     description: form.description,
-  //     code: form.code
-  //   }).then((res) => {
-  //     this.showList();
-  //   }).catch((err) => {
-  //     console.log(err);
-  //     this.setState({ loading: false });
-  //   });
-  //   console.log(form);
-  // }
+  handleUpdateAssignment = (form) => {
+    this.setState({ loading: true });
+    Axios.put(Config.api + "/assignments/" + this.state.assignmentid, {
+      title: form.title,
+      description: form.description,
+      classid: this.props.classid,
+      code: form.code
+    }).then((res) => {
+      this.showHomeUpdateAssign();
+    }).catch((err) => {
+      console.log(err);
+      this.setState({ loading: false });
+    });
+  }
+
+  handleDelete = (id) => {
+    this.setState({ loading: true });
+    Axios.delete(Config.api + "/assignments/" + id).then((res) => {
+      this.showHomeUpdateAssign();
+    }).catch((err) => {
+      console.log(err);
+      this.setState({ loading: false });
+    });
+  }
 
   componentWillMount() {
     this.getClassData();
@@ -102,12 +136,20 @@ export default class ClassPage extends React.Component {
               {this.state.show == "home" && 
               <AssignmentList 
                 classid = {this.props.classid}
+                onEdit = {this.showEditById}
+                onDelete = {this.handleDelete}
+                ref = {(ref) => { this.refAssignList = ref; }}
               />}
               {this.state.show == "createAssign" && 
               <AssignmentForm 
-                classid = {this.props.classid}
-                onBack={this.showHome}
+                onBack={this.showHomeNoUpdate}
                 onSubmit={this.handleCreateAssignment}
+              />}
+              {(this.state.show == "updateAssign") && 
+              <AssignmentForm 
+                onBack={this.showHomeNoUpdate}
+                assignmentid = { this.state.assignmentid }
+                onSubmit={this.handleUpdateAssignment}
               />}
               <Divider />
               <Typography

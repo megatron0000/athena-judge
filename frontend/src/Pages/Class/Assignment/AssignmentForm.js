@@ -1,5 +1,7 @@
 import React from "react";
+import Axios from "axios";
 
+import Config from "../../../Config";
 import TextField from "material-ui/TextField";
 import Button from "material-ui/Button";
 import SendIcon from "@material-ui/icons/Send";
@@ -9,10 +11,27 @@ export default class AssignmentForm extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      title: this.props.title,
-      description: this.props.description,
-      code: this.props.code
+      // title: this.props.title,
+      // description: this.props,
+      // code: this.props.code
     }
+  }
+
+  componentWillMount = () => {
+    if(this.props.assignmentid) {
+      this.getAssignmentById(this.props.assignmentid);
+    }
+  }
+
+  getAssignmentById = assignmentid => {
+    this.setState({ loading: true });
+    Axios.get(Config.api + "/assignments/" + assignmentid).then((res) => {
+      this.setState({ title: res.data.data.title, description: res.data.data.description , loading: false });
+      console.log(this.state);
+    }).catch((err) => {
+      console.log(err);
+      this.setState({ loading: false });
+    });
   }
 
   handleTitleChange = (e) => {
@@ -50,11 +69,12 @@ export default class AssignmentForm extends React.Component {
   */
 
   render() {
+    console.log("Renderizou", this.state);
     return (
       <form style={{ padding: 20 }}>
         <TextField
           label="Título"
-          defaultValue={this.props.title}
+          defaultValue={this.state.title}
           autoFocus
           style={{ width: "100%" }}
           onChange={this.handleTitleChange}
@@ -62,7 +82,7 @@ export default class AssignmentForm extends React.Component {
         <div style={{ height: 20 }}></div>
         <TextField
           label="Descrição"
-          defaultValue={this.props.description}
+          defaultValue={this.state.description}
           multiline
           rows={10}
           style={{ width: "100%" }}

@@ -50,6 +50,7 @@ router.put("/:id", async (req, res, next) => {
     let row = await AssignmentsModel.update({
       title: req.body.title,
       description: req.body.description,
+      classid: req.body.classid,
       dueDate: req.body.dueDate,
     }, { where: { id: req.params.id }});
     res.json({ data: row[0] });

@@ -61,7 +61,7 @@ export default class AssignmentList extends React.Component {
               </IconButton>
               <IconButton
                 aria-label="Delete"
-                onClick={() => { this.props.onDelete(assignment.id) }}
+                onClick={() => { this.props.onDelete(assignment.id); this.getAssignmentsList(); }}
               >
                 <DeleteIcon />
               </IconButton>
