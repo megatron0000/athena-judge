@@ -13,6 +13,9 @@ export default DB.define("classes", {
     type: Sequelize.STRING,
     allowNull: false
   },
+  description: {
+    type: Sequelize.TEXT
+  },
   professorID: {
     type: Sequelize.INTEGER,
     allowNull: false

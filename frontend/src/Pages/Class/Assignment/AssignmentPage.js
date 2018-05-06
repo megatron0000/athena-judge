@@ -6,7 +6,7 @@ import { CircularProgress } from "material-ui/Progress";
 import Button from "material-ui/Button";
 import AddIcon from "@material-ui/icons/Add";
 
-import Config from "../Config";
+import Config from "../../Config";
 
 import AssignmentForm from "./AssignmentForm";
 import AssignmentList from "./AssignmentList";
@@ -19,7 +19,7 @@ export default class AssignmentsPage extends React.Component {
       list: [],
       assignment: null,
       loading: false
-    }
+    };
   }
 
   componentDidMount() {
@@ -98,14 +98,7 @@ export default class AssignmentsPage extends React.Component {
         >
           Atividades
         </Typography>
-        <Button
-          variant="fab"
-          color="secondary"
-          style={{ position: "fixed", right: 32, bottom: 32, zIndex: 10000 }}
-          onClick={this.showCreate}
-        >
-          <AddIcon />
-        </Button>
+        
         { this.state.show == "list" &&
           <AssignmentList
             data={this.state.list}

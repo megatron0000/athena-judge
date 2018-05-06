@@ -27,7 +27,8 @@ router.post("/", async (req, res, next) => {
     let row = await ClassesModel.create({
       id: req.body.id,
       name: req.body.name,
-      professorID: req.body.professorID
+      professorID: req.body.professorID,
+      description: req.body.description
     });
     res.json({ data: row });
   } catch (err) {

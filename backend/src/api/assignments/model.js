@@ -19,7 +19,7 @@ export default DB.define("assignments", {
   dueDate: {
     type: Sequelize.DATE
   },
-  class: {
+  classid: {
     type: Sequelize.STRING,
     allowNull: true
   }

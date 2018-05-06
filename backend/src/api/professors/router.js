@@ -22,17 +22,6 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.get("/class/:classid", async (req, res, next) => {
-  try {
-    console.log("ROLA");
-    let rows = await AssignmentsModel.findAll({where: {classid: req.params.classid}});
-    console.log("PICA", rows);
-    res.json({ data: rows });
-  } catch (err) {
-    next(err);
-  }
-});
-
 router.post("/", async (req, res, next) => {
   try {
     let row = await AssignmentsModel.create({
