@@ -46,7 +46,6 @@ export default class ClassPage extends React.Component {
               >
                 { this.state.data && this.state.data.name }
               </Typography>
-              <Divider />
               <Typography
                 variant="subheading"
                 style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
@@ -54,9 +53,22 @@ export default class ClassPage extends React.Component {
                 { this.state.data && this.state.data.description }
               </Typography>
               <Divider />
+              <Typography
+                variant="title"
+                style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
+              >
+                Atividades
+              </Typography>
               <AssignmentList 
                 classid = {this.props.classid}
               />
+              <Divider />
+              <Typography
+                variant="title"
+                style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
+              >
+                Aluno
+              </Typography>
             </div>
         );
     }

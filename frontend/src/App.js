@@ -12,6 +12,7 @@ import SideBar from "./SideBar/SideBar";
 import Welcome from "./Pages/Welcome";
 import ClassPage from "./Pages/Class/ClassPage";
 import ClassForm from "./Pages/Class/ClassForm";
+import AssignStudentBox from "./DialogBox/AssignStudentBox";
 
 export default class App extends Component {
   constructor(props) {
@@ -19,6 +20,7 @@ export default class App extends Component {
     this.state = {
       show: "welcome",
       classid: null,
+      dialogopen: false,
       loading: false
     };
   }
@@ -27,12 +29,28 @@ export default class App extends Component {
     this.refSideBar.handleOpen();
   }
 
+  handleOpenDialog = () => {
+    this.setState({
+      dialogopen: true
+    });
+  }
+
+  handleCloseDialog = value => {
+    this.setState({ dialogopen: false });
+    if (value == "atividade") {
+
+    } else if (value == "aluno") {
+
+    }
+  }
+
   showCreateClass = () => {
     this.refSideBar.handleClose();
     this.setState({ show: "createClass" });
   }
 
   showClass = (id) => {
+    this.refSideBar.handleClose();
     this.setState({show: "class", classid: id});
   }
 
@@ -97,11 +115,19 @@ export default class App extends Component {
               { this.state.show == "sidebar" && 
                 this.showCreateClass()
               }
+
+              { this.state.show == "class" && 
+                this.setState({ dialogopen: true });
+              }
             }
           }
         >
           <AddIcon />
         </Button>
+        <AssignStudentBox
+          open={this.state.dialogopen}
+          onClose={this.handleCloseDialog}
+        />
         <div style={{ height: 120 }}></div>
       </div>
     );
