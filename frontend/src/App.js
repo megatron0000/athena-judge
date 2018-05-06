@@ -56,9 +56,9 @@ export default class App extends Component {
 
   cancelCreateClass = () => {
     if (this.state.classid != null)
-      this.setState(show: "class");
+      this.setState({show: "class"});
     else
-      this.setState(show: "welcome");
+      this.setState({show: "welcome"});
   }
 
   handleCreateClass = (form) => {
