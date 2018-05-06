@@ -3,6 +3,7 @@ import Axios from "axios";
 
 import Config from "../../Config";
 import AssignmentList from "./Assignment/AssignmentList";
+import AssignmentForm from "./Assignment/AssignmentForm";
 
 import Typography from "material-ui/Typography";
 import { CircularProgress } from "material-ui/Progress";
@@ -10,16 +11,24 @@ import Divider from 'material-ui/Divider';
 import Button from "material-ui/Button";
 
 export default class ClassPage extends React.Component {
-    constructor(props) {
-      super(props);
-      this.state = {
-        // show: "list",
-        // list: [],
-        // assignment: null,
-        // data: this.props.data,
-        loading: false
-      };
-    }
+  constructor(props) {
+    super(props);
+    this.state = {
+      show: "home",
+      // list: [],
+      // assignment: null,
+      // data: this.props.data,
+      loading: false
+    };
+  }
+
+  showCreateAssignment = () => {
+    this.setState({ show: "createAssign" });
+  }
+
+  showHome = () => {
+    this.setState({ show: "home", loading: false });
+  }
 
   getClassData = () => {
     this.setState({ loading: true });
@@ -30,6 +39,37 @@ export default class ClassPage extends React.Component {
       this.setState({ loading: false });
     });
   }
+
+  handleCreateAssignment = (form) => {
+    this.setState({ loading: true });
+    Axios.post(Config.api + "/assignments", {
+      title: form.title,
+      description: form.description,
+      classid: this.props.classid,
+      code: form.code
+    }).then((res) => {
+      this.showHome();
+    }).catch((err) => {
+      console.log(err);
+      this.setState({ loading: false });
+    });
+  }
+
+  // @italotabatinga It cant be edit by now
+  // handleUpdateAssignment = (form) => {
+  //   this.setState({ loading: true });
+  //   Axios.put(Config.api + "/assignments/" + this.state.assignment.id, {
+  //     title: form.title,
+  //     description: form.description,
+  //     code: form.code
+  //   }).then((res) => {
+  //     this.showList();
+  //   }).catch((err) => {
+  //     console.log(err);
+  //     this.setState({ loading: false });
+  //   });
+  //   console.log(form);
+  // }
 
   componentWillMount() {
     this.getClassData();
@@ -59,9 +99,16 @@ export default class ClassPage extends React.Component {
               >
                 Atividades
               </Typography>
+              {this.state.show == "home" && 
               <AssignmentList 
                 classid = {this.props.classid}
-              />
+              />}
+              {this.state.show == "createAssign" && 
+              <AssignmentForm 
+                classid = {this.props.classid}
+                onBack={this.showHome}
+                onSubmit={this.handleCreateAssignment}
+              />}
               <Divider />
               <Typography
                 variant="title"
@@ -69,6 +116,7 @@ export default class ClassPage extends React.Component {
               >
                 Aluno
               </Typography>
+              <Divider />
             </div>
         );
     }

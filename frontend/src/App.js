@@ -21,6 +21,7 @@ export default class App extends Component {
       show: "welcome",
       classid: null,
       dialogopen: false,
+      classState: "home",
       loading: false
     };
   }
@@ -38,7 +39,7 @@ export default class App extends Component {
   handleCloseDialog = value => {
     this.setState({ dialogopen: false });
     if (value == "atividade") {
-
+      this.refClassPage.showCreateAssignment();
     } else if (value == "aluno") {
 
     }
@@ -99,6 +100,7 @@ export default class App extends Component {
           <Welcome /> }
         { this.state.show == "class" && 
           <ClassPage 
+            ref = {(ref) => { this.refClassPage = ref; }}
             classid = {this.state.classid}
           /> }
         { this.state.show == "createClass" && 
