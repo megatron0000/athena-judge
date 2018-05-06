@@ -2,10 +2,14 @@ import React from "react";
 import Axios from "axios";
 
 import Config from "../../../Config";
+
 import TextField from "material-ui/TextField";
+import { IconButton, Icon, InputAdornment } from 'material-ui';
 import Button from "material-ui/Button";
 import SendIcon from "@material-ui/icons/Send";
 import FileUpload from '@material-ui/icons/FileUpload';
+
+import DateTimePicker from "./DateTimePicker";
 
 export default class AssignmentForm extends React.Component {
   constructor(props) {
@@ -14,6 +18,7 @@ export default class AssignmentForm extends React.Component {
       // title: this.props.title,
       // description: this.props,
       // code: this.props.code
+      dueDate: (new Date(Date.now())).toISOString()
     }
   }
 
@@ -40,6 +45,11 @@ export default class AssignmentForm extends React.Component {
 
   handleDescriptionChange = (e) => {
     this.setState({ description: e.target.value });
+  }
+
+  handleDueDateChange = (e) => {
+    console.log(e.target.value);
+    this.setState({ dueDate: e.target.value});
   }
 
   /*
@@ -89,6 +99,10 @@ export default class AssignmentForm extends React.Component {
           onChange={this.handleDescriptionChange}
         />
         <div style={{ height: 20 }}></div>
+        <DateTimePicker
+            defaultValue={this.state.dueDate}
+            onChange={this.handleDueDateChange}
+          />
         <div style={{ textAlign: "center" }}>
           <Button
             variant="raised"
@@ -97,6 +111,7 @@ export default class AssignmentForm extends React.Component {
           >
             Voltar
           </Button>
+          
           {/*
           @vb: This code should be used to handle a single submission, not creating/editing the assignment.
           

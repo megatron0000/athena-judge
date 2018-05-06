@@ -71,6 +71,7 @@ export default class ClassPage extends React.Component {
       title: form.title,
       description: form.description,
       classid: this.props.classid,
+      dueDate: form.dueDate,
       code: form.code
     }).then((res) => {
       this.showHomeUpdateAssign();
@@ -86,6 +87,7 @@ export default class ClassPage extends React.Component {
       title: form.title,
       description: form.description,
       classid: this.props.classid,
+      dueDate: form.dueDate,
       code: form.code
     }).then((res) => {
       this.showHomeUpdateAssign();
