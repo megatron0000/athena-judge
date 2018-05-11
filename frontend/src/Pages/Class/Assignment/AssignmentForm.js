@@ -14,29 +14,15 @@ import DateTimePicker from "./DateTimePicker";
 export default class AssignmentForm extends React.Component {
   constructor(props) {
     super(props);
+    console.log(props);
     this.state = {
-      // title: this.props.title,
-      // description: this.props,
+      id: this.props.assignmentid,
+      title: this.props.title,
+      description: this.props.description,
       // code: this.props.code
-      dueDate: (new Date(Date.now())).toISOString()
+      dueDate: this.props.dueDate
     }
-  }
-
-  componentWillMount = () => {
-    if(this.props.assignmentid) {
-      this.getAssignmentById(this.props.assignmentid);
-    }
-  }
-
-  getAssignmentById = assignmentid => {
-    this.setState({ loading: true });
-    Axios.get(Config.api + "/assignments/" + assignmentid).then((res) => {
-      this.setState({ title: res.data.data.title, description: res.data.data.description , loading: false });
-      console.log(this.state);
-    }).catch((err) => {
-      console.log(err);
-      this.setState({ loading: false });
-    });
+    console.log(this.state);
   }
 
   handleTitleChange = (e) => {
@@ -79,7 +65,6 @@ export default class AssignmentForm extends React.Component {
   */
 
   render() {
-    console.log("Renderizou", this.state);
     return (
       <form style={{ padding: 20 }}>
         <TextField

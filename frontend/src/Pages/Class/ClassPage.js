@@ -49,10 +49,13 @@ export default class ClassPage extends React.Component {
     });
   }
 
-  getAssignmentById = assignmentid => {
+  getAssignmentById = (assignmentid, callback) => {
     this.setState({ loading: true });
     Axios.get(Config.api + "/assignments/" + assignmentid).then((res) => {
       this.setState({ assignment: res.data.data, loading: false });
+      if(callback) {
+        callback();
+      }
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });
@@ -60,9 +63,9 @@ export default class ClassPage extends React.Component {
   }
 
   showEditById = assignmentid => {
-    this.setState( {assignmentid: assignmentid});
-    // this.getAssignmentById(assignmentid);
-    this.showUpdateAssignment();
+    this.getAssignmentById(assignmentid, this.showUpdateAssignment);
+    // @italotabatinga: A way to make change on show was sending this function below as callback of getassignmentbyID
+    // this.showUpdateAssignment();
   }
 
   handleCreateAssignment = (form) => {
@@ -83,7 +86,7 @@ export default class ClassPage extends React.Component {
 
   handleUpdateAssignment = (form) => {
     this.setState({ loading: true });
-    Axios.put(Config.api + "/assignments/" + this.state.assignmentid, {
+    Axios.put(Config.api + "/assignments/" + form.id, {
       title: form.title,
       description: form.description,
       classid: this.props.classid,
@@ -150,7 +153,10 @@ export default class ClassPage extends React.Component {
               {(this.state.show == "updateAssign") && 
               <AssignmentForm 
                 onBack={this.showHomeNoUpdate}
-                assignmentid = { this.state.assignmentid }
+                assignmentid = { this.state.assignment.id }
+                title = { this.state.assignment.title }
+                description = { this.state.assignment.description }
+                dueDate = { this.state.assignment.dueDate }
                 onSubmit={this.handleUpdateAssignment}
               />}
               <Divider />

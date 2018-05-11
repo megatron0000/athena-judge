@@ -17,11 +17,11 @@ export default DB.define("assignments", {
     type: Sequelize.TEXT
   },
   dueDate: {
-    type: Sequelize.DATE
+    type: Sequelize.STRING
   },
   classid: {
     type: Sequelize.STRING,
-    allowNull: true
+    allowNull: false
   }
 }, {
   timestamps: true,

@@ -23,7 +23,7 @@ export default class DateTimePicker extends React.Component {
           id="datetime-local"
           label="Data de Entrega"
           type="datetime-local"
-          defaultValue="2017-05-24T10:30"
+          defaultValue= { this.props.defaultValue }
           InputLabelProps={{
             shrink: true,
           }}
