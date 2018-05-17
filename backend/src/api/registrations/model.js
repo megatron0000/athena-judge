@@ -9,17 +9,18 @@ export default DB.define("registrations", {
     primaryKey: true,
     autoIncrement: true
   },
-  name: {
+  gid: {
     type: Sequelize.STRING,
-    allowNull: false
+    allowNull: false,
+    primaryKey: true
   },
   type: {
     type: Sequelize.STRING,
     allowNull: false
   },
-  class: {
-    type: Sequelize.STRING,
-    allowNull: true
+  classid: {
+    type: Sequelize.INTEGER,
+    allowNull: false
   }
 }, {
   timestamps: true,

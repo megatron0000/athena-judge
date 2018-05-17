@@ -22,19 +22,22 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
-  try {
-    let row = await ClassesModel.create({
-      id: req.body.id,
-      name: req.body.name,
-      professorID: req.body.professorID,
-      description: req.body.description
-    });
-    res.json({ data: row });
-  } catch (err) {
-    next(err);
-  }
-});
+// @italotabatinga: now this code is on the general router cause it also has a post req to
+// registrations table
+// 
+// router.post("/", async (req, res, next) => {
+//   try {
+//     let row = await ClassesModel.create({
+//       id: req.body.id,
+//       name: req.body.name,
+//       professorID: req.body.creatorGID,
+//       description: req.body.description
+//     });
+//     res.json({ data: row });
+//   } catch (err) {
+//     next(err);
+//   }
+// });
 
 router.put("/:id", async (req, res, next) => {
   try {
