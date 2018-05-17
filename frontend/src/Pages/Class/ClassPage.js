@@ -9,6 +9,7 @@ import Typography from "material-ui/Typography";
 import { CircularProgress } from "material-ui/Progress";
 import Divider from 'material-ui/Divider';
 import Button from "material-ui/Button";
+import AddIcon from "@material-ui/icons/Add";
 
 export default class ClassPage extends React.Component {
   constructor(props) {
@@ -53,7 +54,7 @@ export default class ClassPage extends React.Component {
     this.setState({ loading: true });
     Axios.get(Config.api + "/assignments/" + assignmentid).then((res) => {
       this.setState({ assignment: res.data.data, loading: false });
-      if(callback) {
+      if (callback) {
         callback();
       }
     }).catch((err) => {
@@ -81,7 +82,7 @@ export default class ClassPage extends React.Component {
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });
-    });
+    });    
   }
 
   handleUpdateAssignment = (form) => {
@@ -114,60 +115,62 @@ export default class ClassPage extends React.Component {
     this.getClassData();
   }
 
-    render() {
-        return (
-            <div>
-              { this.state.loading &&
-                <CircularProgress style={{ float: "right", marginRight: 18, marginTop: 18 }} /> }
-              <Typography
-                variant="title"
-                style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
-              >
-                { this.state.data && this.state.data.name }
+  render() {
+    return (
+      <div>
+        {this.state.loading &&
+          <CircularProgress style={{ float: "right", marginRight: 18, marginTop: 18 }} />}
+        <Typography
+          variant="title"
+          style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
+        >
+          {this.state.data && this.state.data.name}
+        </Typography>
+        <Typography
+          variant="subheading"
+          style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
+        >
+          {this.state.data && this.state.data.description}
+        </Typography>
+        <Divider />
+        <Typography
+          variant="title"
+          style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
+        >
+          Atividades
               </Typography>
-              <Typography
-                variant="subheading"
-                style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
-              >
-                { this.state.data && this.state.data.description }
+        {this.state.show == "home" &&
+          <AssignmentList
+            classid={this.props.classid}
+            onEdit={this.showEditById}
+            onDelete={this.handleDelete}
+            showCreateAssignment = {this.showCreateAssignment}
+            ref={(ref) => { this.refAssignList = ref; }}
+          />
+        }
+        {this.state.show == "createAssign" &&
+          <AssignmentForm
+            onBack={this.showHomeNoUpdate}
+            onSubmit={this.handleCreateAssignment}
+          />}
+        {(this.state.show == "updateAssign") &&
+          <AssignmentForm
+            onBack={this.showHomeNoUpdate}
+            assignmentid={this.state.assignment.id}
+            title={this.state.assignment.title}
+            description={this.state.assignment.description}
+            dueDate={this.state.assignment.dueDate}
+            onSubmit={this.handleUpdateAssignment}
+          />}
+        <Divider />
+        <Typography
+          variant="title"
+          style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
+        >
+          Aluno
               </Typography>
-              <Divider />
-              <Typography
-                variant="title"
-                style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
-              >
-                Atividades
-              </Typography>
-              {this.state.show == "home" && 
-              <AssignmentList 
-                classid = {this.props.classid}
-                onEdit = {this.showEditById}
-                onDelete = {this.handleDelete}
-                ref = {(ref) => { this.refAssignList = ref; }}
-              />}
-              {this.state.show == "createAssign" && 
-              <AssignmentForm 
-                onBack={this.showHomeNoUpdate}
-                onSubmit={this.handleCreateAssignment}
-              />}
-              {(this.state.show == "updateAssign") && 
-              <AssignmentForm 
-                onBack={this.showHomeNoUpdate}
-                assignmentid = { this.state.assignment.id }
-                title = { this.state.assignment.title }
-                description = { this.state.assignment.description }
-                dueDate = { this.state.assignment.dueDate }
-                onSubmit={this.handleUpdateAssignment}
-              />}
-              <Divider />
-              <Typography
-                variant="title"
-                style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
-              >
-                Aluno
-              </Typography>
-              <Divider />
-            </div>
-        );
-    }
+        <Divider />
+      </div>
+    );
+  }
 }

@@ -9,6 +9,7 @@ import Config from "./Config";
 
 import TopBar from "./TopBar/TopBar";
 import SideBar from "./SideBar/SideBar";
+import Main from "./Pages/Main";
 import Welcome from "./Pages/Welcome";
 import ClassPage from "./Pages/Class/ClassPage";
 import ClassForm from "./Pages/Class/ClassForm";
@@ -21,7 +22,6 @@ export default class App extends Component {
       show: "welcome",
       classid: null,
       dialogopen: false,
-      classState: "home",
       loading: false
     };
   }
@@ -48,6 +48,10 @@ export default class App extends Component {
   showCreateClass = () => {
     this.refSideBar.handleClose();
     this.setState({ show: "createClass" });
+  }
+
+  saveUser = (user) => {
+    this.setState({user: user});
   }
 
   showClass = (id) => {
@@ -78,15 +82,17 @@ export default class App extends Component {
     });
   }
 
+  showHome = () => {
+    this.main.showHome();
+  }
+
   render() {
     return (
       <div>
         <TopBar
           title="Athena Judge"
-          onMenuClick={() => {
-            this.handleOpenSidebar();
-            this.setState({show: "sidebar"});
-          } }
+          onHomeClick={this.showHome}
+          saveUser={this.saveUser}
         />
         <SideBar
           ref={(ref) => { this.refSideBar = ref; } }
@@ -96,18 +102,11 @@ export default class App extends Component {
           elevation={4}
           style={{ marginTop: 80, maxWidth: 960, marginLeft: "auto", marginRight: "auto" }}
         >
-        { this.state.show == "welcome" && 
-          <Welcome /> }
-        { this.state.show == "class" && 
-          <ClassPage 
-            ref = {(ref) => { this.refClassPage = ref; }}
-            classid = {this.state.classid}
-          /> }
-        { this.state.show == "createClass" && 
-          <ClassForm 
-            onBack = {this.cancelCreateClass}
-            onSubmit = {this.handleCreateClass}
-          /> }
+        <Main 
+          ref={(ref) => { this.main = ref; } }
+          user={this.state.user}
+        />
+        
         </Paper>
         <Button
           variant="fab"

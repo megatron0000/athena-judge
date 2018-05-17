@@ -88,7 +88,7 @@ export default class AssignmentForm extends React.Component {
             defaultValue={this.state.dueDate}
             onChange={this.handleDueDateChange}
           />
-        <div style={{ textAlign: "center" }}>
+        <div style={{ textAlign: "center", marginTop: 10 }}>
           <Button
             variant="raised"
             style={{ marginRight: 10 }}

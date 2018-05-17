@@ -12,7 +12,7 @@ import DeleteIcon from "@material-ui/icons/Delete";
 import Button from "material-ui/Button";
 import AddIcon from "@material-ui/icons/Add";
 
-export default class AssignmentList extends React.Component {
+export default class StudentsList extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -24,9 +24,9 @@ export default class AssignmentList extends React.Component {
     };
   }
 
-  getAssignmentsList = () => {
+  getStudentsList = () => {
     this.setState({ loading: true });
-    Axios.get(Config.api + "/assignments/class/" + this.props.classid).then((res) => {
+    Axios.get(Config.api + "/registrations/class/" + this.props.classid).then((res) => {
       this.setState({ data: res.data.data, loading: false });
     }).catch((err) => {
       console.log(err);

@@ -36,11 +36,13 @@ export default class AuthButton extends Component {
       let profile = guser.getBasicProfile();
       this.setState({
         user: {
+          gid: profile.getId(),
           name: profile.getName(),
           photo: profile.getImageUrl(),
           email: profile.getEmail()
         }
       });
+      this.props.saveUser(this.state.user);
     } else {
       this.setState({
         user: null
