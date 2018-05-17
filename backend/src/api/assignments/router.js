@@ -4,6 +4,8 @@ import AssignmentsModel from "./model";
 
 const router = Express.Router();
 
+router.use(Express.static('assignments'));
+
 router.get("/", async (req, res, next) => {
   try {
     let rows = await AssignmentsModel.findAll();

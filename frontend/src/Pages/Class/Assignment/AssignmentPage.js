@@ -49,7 +49,8 @@ export default class AssignmentsPage extends React.Component {
     Axios.post(Config.api + "/assignments", {
       title: form.title,
       description: form.description,
-      code: form.code
+      code: form.code,
+      files: form.files
     }).then((res) => {
       this.showList();
     }).catch((err) => {

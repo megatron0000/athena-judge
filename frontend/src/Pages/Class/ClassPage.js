@@ -167,7 +167,7 @@ export default class ClassPage extends React.Component {
           variant="title"
           style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
         >
-          Aluno
+          Alunos
               </Typography>
         <Divider />
       </div>

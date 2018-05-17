@@ -9,6 +9,7 @@ import Button from "material-ui/Button";
 import SendIcon from "@material-ui/icons/Send";
 import FileUpload from '@material-ui/icons/FileUpload';
 
+import FilesChips from "./FilesChips";
 import DateTimePicker from "./DateTimePicker";
 
 export default class AssignmentForm extends React.Component {
@@ -20,7 +21,8 @@ export default class AssignmentForm extends React.Component {
       title: this.props.title,
       description: this.props.description,
       // code: this.props.code
-      dueDate: this.props.dueDate
+      dueDate: this.props.dueDate,
+      files: this.props.files
     }
     console.log(this.state);
   }
@@ -34,8 +36,13 @@ export default class AssignmentForm extends React.Component {
   }
 
   handleDueDateChange = (e) => {
-    console.log(e.target.value);
-    this.setState({ dueDate: e.target.value});
+    this.setState({ dueDate: e.target.value });
+  }
+
+  handleInputChange = (e) => {
+    console.log(e.target.files);
+    this.filesChips.setState({files: Array.from(e.target.files)});
+    this.setState({files: e.target.files});
   }
 
   /*
@@ -85,9 +92,15 @@ export default class AssignmentForm extends React.Component {
         />
         <div style={{ height: 20 }}></div>
         <DateTimePicker
-            defaultValue={this.state.dueDate}
-            onChange={this.handleDueDateChange}
-          />
+          defaultValue={this.state.dueDate}
+          onChange={this.handleDueDateChange}
+        />
+        <div style={{ height: 20 }}></div>
+        <FilesChips 
+          files={this.state.files ? Array.from(this.state.files) : null}
+          ref={(ref) => { this.filesChips = ref; }}
+        />
+
         <div style={{ textAlign: "center", marginTop: 10 }}>
           <Button
             variant="raised"
@@ -96,7 +109,7 @@ export default class AssignmentForm extends React.Component {
           >
             Voltar
           </Button>
-          
+
           {/*
           @vb: This code should be used to handle a single submission, not creating/editing the assignment.
           
@@ -109,6 +122,25 @@ export default class AssignmentForm extends React.Component {
             <FileUpload style={{ marginRight: 16 }} />
             Upload
           </Button>*/}
+          <input
+            accept=".jpg, .jpeg"
+            style={{display: 'none'}}
+            id="input-files-activ"
+            onChange = {this.handleInputChange}
+            multiple
+            type="file"
+          />
+          <label htmlFor="input-files-activ">
+            <Button variant="raised"
+              color="default"
+              style={{ marginRight: 10 }}
+              component = "span"
+            // onClick={this.handleUpload}
+            >
+              Loucura
+          </Button>
+          </label>
+
           <Button
             variant="raised"
             color="primary"

@@ -11,8 +11,7 @@ export default DB.define("registrations", {
   },
   gid: {
     type: Sequelize.STRING,
-    allowNull: false,
-    primaryKey: true
+    allowNull: false
   },
   type: {
     type: Sequelize.STRING,
