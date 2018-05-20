@@ -7,8 +7,8 @@ import UsersModel from "./users/model";
 export default async function sync() {
   await AssignmentsModel.sync({ force: true });
   await SubmissionsModel.sync({ force: true });
-  await RegistrationsModel.sync({ force: true });
   await ClassesModel.sync({ force: true });
+  await RegistrationsModel.sync({ force: true });
   await UsersModel.sync({ force: true });
   console.log("Database schema synced");
 }
