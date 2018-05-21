@@ -2,6 +2,8 @@ import React from "react";
 import Axios from "axios";
 
 import Config from "../../Config";
+
+import AssignmentPage from "./Assignment/AssignmentPage";
 import AssignmentList from "./Assignment/AssignmentList";
 import AssignmentForm from "./Assignment/AssignmentForm";
 
@@ -23,23 +25,6 @@ export default class ClassPage extends React.Component {
     };
   }
 
-  showCreateAssignment = () => {
-    this.setState({ show: "createAssign" });
-  }
-
-  showUpdateAssignment = () => {
-    this.setState({ show: "updateAssign" });
-  }
-
-  showHomeNoUpdate = () => {
-    this.setState({ show: "home", loading: false });
-  }
-
-  showHomeUpdateAssign = () => {
-    this.setState({ show: "home", loading: false });
-    this.refAssignList.getAssignmentsList();
-  }
-
   getClassData = () => {
     this.setState({ loading: true });
     Axios.get(Config.api + "/classes/" + this.props.classid).then((res) => {
@@ -50,79 +35,7 @@ export default class ClassPage extends React.Component {
     });
   }
 
-  getAssignmentById = (assignmentid, callback) => {
-    this.setState({ loading: true });
-    Axios.get(Config.api + "/assignments/" + assignmentid).then((res) => {
-      this.setState({ assignment: res.data.data, loading: false });
-      if (callback) {
-        callback();
-      }
-    }).catch((err) => {
-      console.log(err);
-      this.setState({ loading: false });
-    });
-  }
-
-  showEditById = assignmentid => {
-    this.getAssignmentById(assignmentid, this.showUpdateAssignment);
-    // @italotabatinga: A way to make change on show was sending this function below as callback of getassignmentbyID
-    // this.showUpdateAssignment();
-  }
-
-  handleCreateAssignment = (form) => {
-    console.log("CRIANDO", form);
-    let formData = new FormData();
-    formData.append('title', form.title);
-    formData.append('description', form.description);
-    formData.append('classid', this.props.classid);
-    formData.append('dueDate', form.dueDate);
-    for (let i = 0; i < form.attachments.length; i++) {
-      formData.append('attachments', form.attachments[i]);
-    }
-    // formData.append('attachments', Array.from(form.attachments));
-    
-    for (let i = 0; i < form.tests.length; i++) {
-      formData.append('tests', form.tests[i]);
-    }
-    // formData.append('tests', form.tests);
-
-    this.setState({ loading: true });
-    Axios.post(Config.api + "/assignments/upload", formData, {
-      headers: {'Content-Type': 'multipart/form-data'} 
-    }).then((res) => {
-      console.log(res);
-      this.showHomeUpdateAssign();
-    }).catch((err) => {
-      console.log(err);
-      this.setState({ loading: false });
-    });    
-  }
-
-  handleUpdateAssignment = (form) => {
-    this.setState({ loading: true });
-    Axios.put(Config.api + "/assignments/" + form.id, {
-      title: form.title,
-      description: form.description,
-      classid: this.props.classid,
-      dueDate: form.dueDate,
-      code: form.code
-    }).then((res) => {
-      this.showHomeUpdateAssign();
-    }).catch((err) => {
-      console.log(err);
-      this.setState({ loading: false });
-    });
-  }
-
-  handleDelete = (id) => {
-    this.setState({ loading: true });
-    Axios.delete(Config.api + "/assignments/" + id).then((res) => {
-      this.showHomeUpdateAssign();
-    }).catch((err) => {
-      console.log(err);
-      this.setState({ loading: false });
-    });
-  }
+  
 
   componentWillMount() {
     this.getClassData();
@@ -146,13 +59,13 @@ export default class ClassPage extends React.Component {
           {this.state.data && this.state.data.description}
         </Typography>
         <Divider />
-        <Typography
+        {/* <Typography
           variant="title"
           style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
         >
           Atividades
-              </Typography>
-        {this.state.show == "home" &&
+              </Typography> */}
+        {/*this.state.show == "home" &&
           <AssignmentList
             classid={this.props.classid}
             onEdit={this.showEditById}
@@ -174,7 +87,12 @@ export default class ClassPage extends React.Component {
             description={this.state.assignment.description}
             dueDate={this.state.assignment.dueDate}
             onSubmit={this.handleUpdateAssignment}
-          />}
+      />*/}
+      {
+        <AssignmentPage 
+          classid={this.props.classid}
+        />
+      }
         <Divider />
         <Typography
           variant="title"

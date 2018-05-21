@@ -46,7 +46,7 @@ export default class AssignmentList extends React.Component {
             <ListItem
               key={assignment.id}
               button
-              onClick={() => { this.props.onOpen(assignment.id) }}
+              onClick={() => { this.props.onOpen(assignment.id); }}
             >
               <ListItemIcon>
                 <AssignmentIcon />
@@ -58,7 +58,7 @@ export default class AssignmentList extends React.Component {
               <ListItemSecondaryAction>
                 <IconButton
                   aria-label="Edit"
-                  onClick={() => { this.props.onEdit(assignment.id) }}
+                  onClick={() => { this.props.onEdit(assignment.id); }}
                 >
                   <EditIcon />
                 </IconButton>

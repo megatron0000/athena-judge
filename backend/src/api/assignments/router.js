@@ -22,9 +22,9 @@ router.post("/upload", upload.fields(
     });
     console.log(req.body);
     console.log('Arquivos-------',req.files);
-    FileSystem.mkdir("static/" + req.body.classid +'/' + row.id);
-    FileSystem.mkdir("static/" + req.body.classid +'/' + row.id + '/' + 'attachments');
-    FileSystem.mkdir("static/" + req.body.classid +'/' + row.id + '/' + 'tests');
+    FileSystem.mkdirSync("static/" + req.body.classid +'/' + row.id);
+    FileSystem.mkdirSync("static/" + req.body.classid +'/' + row.id + '/' + 'attachments');
+    FileSystem.mkdirSync("static/" + req.body.classid +'/' + row.id + '/' + 'tests');
 
     let attachments = req.files['attachments'];
     let tests = req.files['tests'];
