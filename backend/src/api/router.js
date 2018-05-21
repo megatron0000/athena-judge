@@ -1,4 +1,6 @@
 import Express from "express";
+import Multer from "multer"
+import FileSystem from "fs"
 
 import AssignmentsRouter from "./assignments/router";
 import ClassesRouter from "./classes/router";
@@ -9,6 +11,7 @@ import ClassesModel from "./classes/model";
 import RegistrModel from "./registrations/model";
 import UsersModel from "./users/model";
 
+const upload = Multer();
 const router = Express.Router();
 
 router.use("/assignments", AssignmentsRouter);
@@ -61,6 +64,7 @@ router.post("/classes", async (req, res, next) => {
         email: req.body.email,
         classid: row.dataValues.id
       })
+      FileSystem.mkdir('static/' + row.id);
       res.json({ data: row, dataReg: rowtemp });
     } catch (err) {
       next(err);
