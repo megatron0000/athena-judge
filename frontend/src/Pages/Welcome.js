@@ -15,6 +15,7 @@ export default class Welcome extends React.Component {
     
     this.state = {
       list: [],
+      currentClasses: [],
       loading: false
     };
   }
@@ -35,9 +36,31 @@ export default class Welcome extends React.Component {
   }
 
   getClassesList = () => {
+    // All classes
+    this.setState({ loading: true });
+    Axios.get(Config.api + "/classes").then((res) => {
+      this.setState({ list: res.data.data, loading: false });
+    }).catch((err) => {
+      console.log(err);
+      this.setState({ loading: false });
+    });
+    // My current classes
     this.setState({ loading: true });
     Axios.get(Config.api + "/classesgid/" + this.props.user.gid).then((res) => {
-      this.setState({ list: res.data.data, loading: false });
+      this.setState({ currentClasses: res.data.data, loading: false });
+    }).catch((err) => {
+      console.log(err);
+      this.setState({ loading: false });
+    });
+  }
+
+  handleRegister = (classid) => {
+    this.setState({ loading: true });
+    Axios.post(Config.api + "/registrations/",{
+        gid: this.props.user.gid,
+        classid: classid
+      }).then((res) => {
+      this.getClassesList();
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });
@@ -51,10 +74,10 @@ export default class Welcome extends React.Component {
           variant="title"
           style={{ paddingLeft: 20, paddingTop: 10, paddingRight: 20, paddingBottom: 4 }}
         >
-          Cursos
+          Meus Cursos
         </Typography>
         <List >
-          {this.state.list.map((classes) => (
+          {this.state.currentClasses.map((classes) => (
             <ListItem
               key={classes.id}
               onClick={() => { this.props.showClass(classes.id) }}
@@ -81,6 +104,44 @@ export default class Welcome extends React.Component {
             style ={{ marginLeft: 10 }}
           />
         </Button>
+
+        <Typography
+          variant="title"
+          style={{ paddingLeft: 20, paddingTop: 10, paddingRight: 20, paddingBottom: 4 }}
+        >
+          Outros Cursos
+        </Typography>
+        <List >
+          {this.state.list.filter( o => !this.state.currentClasses.map(x => x.id).includes(o.id)).map((classes) => (
+            <ListItem
+              key={classes.id}
+              button
+            >
+            
+              <ListItemIcon>
+                <ClassIcon />
+              </ListItemIcon>
+              
+              <ListItemText primary={classes.name} />
+
+              <Button
+                variant="raised"
+                color="secondary"
+                style={{ marginLeft: 20, marginBottom: 20, zIndex: 10000 }}
+                onClick={() => {
+                  this.handleRegister(classes.id);
+                }}
+              >
+              Inscrever-se
+              <AddIcon
+                style={{ marginLeft: 10 }}
+              />
+            </Button>
+
+            </ListItem>
+          ))}
+        </List>
+
       </div>
     );
   }

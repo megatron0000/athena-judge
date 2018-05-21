@@ -5,6 +5,7 @@ import FileSystem from "fs"
 import AssignmentsRouter from "./assignments/router";
 import ClassesRouter from "./classes/router";
 import UsersRouter from "./users/router";
+import RegistrRouter from "./registrations/router";
 
 import ClassesModel from "./classes/model";
 import RegistrModel from "./registrations/model";
@@ -16,6 +17,7 @@ const router = Express.Router();
 router.use("/assignments", AssignmentsRouter);
 router.use("/classes", ClassesRouter);
 router.use("/users", UsersRouter);
+router.use("/registrations", RegistrRouter);
 // router.use("/assignments", AssignmentsRouter);
 // router.use("/assignments", AssignmentsRouter);
 // router.use("/assignments", AssignmentsRouter);
