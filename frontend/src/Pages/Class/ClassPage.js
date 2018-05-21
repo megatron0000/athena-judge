@@ -10,6 +10,7 @@ import { CircularProgress } from "material-ui/Progress";
 import Divider from 'material-ui/Divider';
 import Button from "material-ui/Button";
 import AddIcon from "@material-ui/icons/Add";
+import List, { ListItem, ListItemText, ListItemIcon, ListItemSecondaryAction } from "material-ui/List";
 
 export default class ClassPage extends React.Component {
   constructor(props) {
@@ -141,8 +142,6 @@ export default class ClassPage extends React.Component {
   }
 
   render() {
-    console.log("debug");
-    console.log(this.state.students);
     return (
       <div>
         {this.state.loading &&
@@ -195,8 +194,18 @@ export default class ClassPage extends React.Component {
           style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
         >
           Alunos
-              </Typography>
+        </Typography>
+
+        <List >
+          {this.state.students.map((student) => (
+            <ListItem key={student}>
+              {student}
+            </ListItem>
+          ))}
+        </List>
+
         <Divider />
+
       </div>
     );
   }
