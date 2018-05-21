@@ -22,12 +22,13 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
+//@dicksiano hard coded!
 router.post("/", async (req, res, next) => {
   try {
     let row = await RegistrationsModel.create({
-      // gid: req.body.gid,
-      // type: req.body.type,
-      // classid: req.body.classid,
+        gid: req.body.gid,
+        type: "Student",
+        classid: req.body.classid
     });
     res.json({ data: row });
   } catch (err) {
