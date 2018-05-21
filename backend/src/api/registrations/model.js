@@ -9,6 +9,10 @@ export default DB.define("registrations", {
     primaryKey: true,
     autoIncrement: true
   },
+  email: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
   gid: {
     type: Sequelize.STRING,
     allowNull: false

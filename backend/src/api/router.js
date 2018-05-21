@@ -58,12 +58,30 @@ router.post("/classes", async (req, res, next) => {
       let rowtemp = await RegistrModel.create({
         gid: req.body.creatorGID,
         type: req.body.type,
+        email: req.body.email,
         classid: row.dataValues.id
       })
       res.json({ data: row, dataReg: rowtemp });
     } catch (err) {
       next(err);
     }
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/registrationsclass/:classid", async (req, res, next) => {
+  console.log("cheguei aq", req.params.classid);
+  try {
+    let row = await UsersModel.findAll({
+      include: [{
+        model: RegistrModel,
+        where: {
+          classid: '1'
+        }
+      }]
+    });
+    res.json({ data: row });
   } catch (err) {
     next(err);
   }

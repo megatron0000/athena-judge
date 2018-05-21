@@ -19,6 +19,7 @@ export default class ClassPage extends React.Component {
       // list: [],
       assignmentid: null,
       // data: this.props.data,
+      students: [],
       loading: false
     };
   }
@@ -47,6 +48,16 @@ export default class ClassPage extends React.Component {
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });
+    });
+  }
+
+  getStudents = () => {
+    this.setState({loading: true});
+    Axios.get(Config.api + "/registrations/registrationsstudents/" + this.props.classid).then((res) => {
+      this.setState({students: res.data.data.map( o => o.email), loading: false});
+    }).catch((err) => {
+      console.log(err);
+      this.setState({loading: false});
     });
   }
 
@@ -113,9 +124,12 @@ export default class ClassPage extends React.Component {
 
   componentWillMount() {
     this.getClassData();
+    this.getStudents();
   }
 
   render() {
+    console.log("debug");
+    console.log(this.state.students);
     return (
       <div>
         {this.state.loading &&
