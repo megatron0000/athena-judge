@@ -15,6 +15,7 @@ export default class Welcome extends React.Component {
     
     this.state = {
       list: [],
+      currentClasses: [],
       loading: false
     };
   }
@@ -35,9 +36,18 @@ export default class Welcome extends React.Component {
   }
 
   getClassesList = () => {
+    // All classes
     this.setState({ loading: true });
     Axios.get(Config.api + "/classes").then((res) => {
       this.setState({ list: res.data.data, loading: false });
+    }).catch((err) => {
+      console.log(err);
+      this.setState({ loading: false });
+    });
+    // My current classes
+    this.setState({ loading: true });
+    Axios.get(Config.api + "/classesgid/" + this.props.user.gid).then((res) => {
+      this.setState({ currentClasses: res.data.data, loading: false });
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });
@@ -54,7 +64,7 @@ export default class Welcome extends React.Component {
           Meus Cursos
         </Typography>
         <List >
-          {this.state.list.filter( o => o.creatorGID == this.props.user.gid).map((classes) => (
+          {this.state.currentClasses.map((classes) => (
             <ListItem
               key={classes.id}
               onClick={() => { this.props.showClass(classes.id) }}
@@ -89,7 +99,7 @@ export default class Welcome extends React.Component {
           Outros Cursos
         </Typography>
         <List >
-          {this.state.list.filter( o => o.creatorGID != this.props.user.gid).map((classes) => (
+          {this.state.list.filter( o => !this.state.currentClasses.map(x => x.id).includes(o.id)).map((classes) => (
             <ListItem
               key={classes.id}
               onClick={() => { this.props.showClass(classes.id) }}
