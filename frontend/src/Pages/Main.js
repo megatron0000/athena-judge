@@ -45,6 +45,7 @@ export default class Main extends React.Component {
       name: form.name,
       description: form.description,
       creatorGID: this.props.user.gid,
+      email: this.props.user.email,
       type: "Creator"
     }).then((res) => {
       var resData = res;

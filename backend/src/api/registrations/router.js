@@ -22,12 +22,24 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
+router.get("/registrationsstudents/:classid", async(req, res, next) => {
+  console.log("roter /registrationsstudents " + req.params.classid+ "   *** \n\n\n\n\n\n\n\n");
+  try {
+    let row = await RegistrationsModel.findAll({
+      where:{ classid: req.params.classid }});
+      res.json({ data: row });
+  } catch (err) {
+    next(err);
+  }
+});
+
 //@dicksiano hard coded!
 router.post("/", async (req, res, next) => {
   try {
     let row = await RegistrationsModel.create({
         gid: req.body.gid,
         type: "Student",
+        email: req.body.email,
         classid: req.body.classid
     });
     res.json({ data: row });
