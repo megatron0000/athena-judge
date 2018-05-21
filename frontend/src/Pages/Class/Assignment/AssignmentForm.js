@@ -15,16 +15,15 @@ import DateTimePicker from "./DateTimePicker";
 export default class AssignmentForm extends React.Component {
   constructor(props) {
     super(props);
-    console.log(props);
     this.state = {
       id: this.props.assignmentid,
       title: this.props.title,
       description: this.props.description,
       // code: this.props.code
       dueDate: this.props.dueDate,
-      files: this.props.files
+      attachments: this.props.attachments,
+      tests: this.props.tests
     }
-    console.log(this.state);
   }
 
   handleTitleChange = (e) => {
@@ -39,10 +38,14 @@ export default class AssignmentForm extends React.Component {
     this.setState({ dueDate: e.target.value });
   }
 
-  handleInputChange = (e) => {
-    console.log(e.target.files);
-    this.filesChips.setState({files: Array.from(e.target.files)});
-    this.setState({files: e.target.files});
+  handleAttachInputChange = (e) => {
+    this.attachChips.setState({files: Array.from(e.target.files)});
+    this.setState({attachments: e.target.files});
+  }
+
+  handleTestsInputChange = (e) => {
+    this.testsChips.setState({files: Array.from(e.target.files)});
+    this.setState({tests: e.target.files});
   }
 
   /*
@@ -97,8 +100,14 @@ export default class AssignmentForm extends React.Component {
         />
         <div style={{ height: 20 }}></div>
         <FilesChips 
-          files={this.state.files ? Array.from(this.state.files) : null}
-          ref={(ref) => { this.filesChips = ref; }}
+          files={this.state.attachments ? Array.from(this.state.attachments) : null}
+          ref={(ref) => { this.attachChips = ref; }}
+        />
+
+        <div style={{ height: 20 }}></div>
+        <FilesChips 
+          files={this.state.tests ? Array.from(this.state.tests) : null}
+          ref={(ref) => { this.testsChips = ref; }}
         />
 
         <div style={{ textAlign: "center", marginTop: 10 }}>
@@ -123,21 +132,40 @@ export default class AssignmentForm extends React.Component {
             Upload
           </Button>*/}
           <input
-            accept=".jpg, .jpeg"
+            accept=".pdf, .docx, .doc, .odt, .odf"
             style={{display: 'none'}}
-            id="input-files-activ"
-            onChange = {this.handleInputChange}
+            id="input-attach-activ"
+            onChange = {this.handleAttachInputChange}
             multiple
             type="file"
           />
-          <label htmlFor="input-files-activ">
+          <label htmlFor="input-attach-activ">
             <Button variant="raised"
               color="default"
               style={{ marginRight: 10 }}
               component = "span"
             // onClick={this.handleUpload}
             >
-              Loucura
+              Upload Anexo
+          </Button>
+          </label>
+          
+          <input
+            accept=".txt,"
+            style={{display: 'none'}}
+            id="input-tests-activ"
+            onChange = {this.handleTestsInputChange}
+            multiple
+            type="file"
+          />
+          <label htmlFor="input-tests-activ">
+            <Button variant="raised"
+              color="default"
+              style={{ marginRight: 10 }}
+              component = "span"
+            // onClick={this.handleUpload}
+            >
+              Upload Testes
           </Button>
           </label>
 

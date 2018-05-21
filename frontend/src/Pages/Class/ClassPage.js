@@ -70,14 +70,27 @@ export default class ClassPage extends React.Component {
   }
 
   handleCreateAssignment = (form) => {
+    console.log("CRIANDO", form);
+    let formData = new FormData();
+    formData.append('title', form.title);
+    formData.append('description', form.description);
+    formData.append('classid', this.props.classid);
+    formData.append('dueDate', form.dueDate);
+    for (let i = 0; i < form.attachments.length; i++) {
+      formData.append('attachments', form.attachments[i]);
+    }
+    // formData.append('attachments', Array.from(form.attachments));
+    
+    for (let i = 0; i < form.tests.length; i++) {
+      formData.append('tests', form.tests[i]);
+    }
+    // formData.append('tests', form.tests);
+
     this.setState({ loading: true });
-    Axios.post(Config.api + "/assignments", {
-      title: form.title,
-      description: form.description,
-      classid: this.props.classid,
-      dueDate: form.dueDate,
-      code: form.code
+    Axios.post(Config.api + "/assignments/upload", formData, {
+      headers: {'Content-Type': 'multipart/form-data'} 
     }).then((res) => {
+      console.log(res);
       this.showHomeUpdateAssign();
     }).catch((err) => {
       console.log(err);

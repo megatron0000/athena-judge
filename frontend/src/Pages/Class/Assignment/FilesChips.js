@@ -11,7 +11,6 @@ export default class FilesChips extends React.Component {
 
 
   render() {
-    console.log("Chips", this.state.files);
     return (
       <div>
         {this.state.files && this.state.files.map((file) => {
