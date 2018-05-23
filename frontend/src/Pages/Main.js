@@ -72,6 +72,7 @@ export default class Main extends React.Component {
           <ClassPage
             ref={(ref) => { this.actualPage = ref; }}
             classid={this.state.classid}
+            user = {this.props.user}
           />}
         {this.state.show == "createClass" &&
           <ClassForm

@@ -24,6 +24,7 @@ export default class ClassPage extends React.Component {
       assignmentid: null,
       // data: this.props.data,
       students: [],
+      selfType: '',
       loading: false
     };
   }
@@ -41,8 +42,10 @@ export default class ClassPage extends React.Component {
   getStudents = () => {
     this.setState({loading: true});
     Axios.get(Config.api + "/registrations/registrationsstudents/" + this.props.classid).then((res) => {
-      console.log("Res", res);
-      this.setState({students: res.data.data, loading: false});
+      this.setState({
+                      students: res.data.data, 
+                      selfType: res.data.data.find(o => o.gid == this.props.user.gid).type,
+                      loading: false});
     }).catch((err) => {
       console.log(err);
       this.setState({loading: false});
@@ -178,6 +181,7 @@ export default class ClassPage extends React.Component {
       {
         <AssignmentPage 
           classid={this.props.classid}
+          selfType={this.state.selfType}
         />
       }
         <Divider />

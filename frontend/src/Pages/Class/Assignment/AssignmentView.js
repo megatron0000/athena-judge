@@ -70,14 +70,15 @@ export default class AssignmentsView extends React.Component {
             {this.state.code ? "Troque Código" : "Escolha Código"}
             </Button>
           </label>
-          <Button
-            variant="raised"
-            color="primary"
-            onClick={() => { this.handleSubmission(this.state) }}
-          >
-            <SendIcon style={{ marginRight: 16 }} />
-            Enviar
-          </Button>
+          { this.props.selfType != "Creator" &&
+            <Button
+              variant="raised"
+              color="primary"
+              onClick={() => { this.handleSubmission(this.state) }}
+            >
+              <SendIcon style={{ marginRight: 16 }} />
+              Enviar
+            </Button>}
           </div>
       </div>
     );

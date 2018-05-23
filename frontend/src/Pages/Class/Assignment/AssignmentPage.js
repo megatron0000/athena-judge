@@ -137,6 +137,7 @@ export default class AssignmentPage extends React.Component {
   }
 
   render() {
+  console.log(this.props.user)  
     return (
       <div>
         { this.state.loading &&
@@ -176,6 +177,7 @@ export default class AssignmentPage extends React.Component {
             onBack={this.showListNoUpdate}
             classid={this.props.classid}
             assignid={this.state.assignment.id}
+            selfType={this.props.selfType}
           /> }
       </div>
     );
