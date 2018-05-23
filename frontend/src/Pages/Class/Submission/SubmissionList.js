@@ -22,13 +22,13 @@ export default class SubmissionList extends React.Component {
   }
 
   getSubmissionsList = () => {
-    /*this.setState({ loading: true });
-    Axios.get(Config.api + "/assignments/class/" + this.props.classid).then((res) => {
+    this.setState({ loading: true });
+    Axios.get(Config.api + "/assignments/class/" + this.props.assignmentid).then((res) => {
       this.setState({ data: res.data.data, loading: false });
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });
-    });*/
+    });
   }
 
   componentWillMount() {

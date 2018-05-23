@@ -21,10 +21,14 @@ export default class AssignmentsView extends React.Component {
   }
 
   handleSubmission = (form) => {
+    console.log("handleSubmission", this.props.user);
     let formData = new FormData();
-    formData.append('assignid', this.props.assignid);
+    formData.append('assignid', this.props.assignmentid);
     formData.append('classid', this.props.classid);
     formData.append('submission', form.code);
+    formData.append('username', this.props.user.name);
+    formData.append('usergid', this.props.user.gid);
+    formData.append('email', this.props.user.email);
 
     this.setState({ loading: true });
     Axios.post(Config.api + "/submissions", formData, {

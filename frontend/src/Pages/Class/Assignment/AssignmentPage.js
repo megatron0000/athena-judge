@@ -178,15 +178,16 @@ export default class AssignmentPage extends React.Component {
           <AssignmentView
             onBack={this.showListNoUpdate}
             classid={this.props.classid}
-            assignid={this.state.assignment.id}
+            assignmentid={this.state.assignment.id}
             selfType={this.props.selfType}
+            user={this.props.user}
           /> }
 
         { (this.state.show == "view" && this.props.selfType == "Creator") &&
           <SubmissionList
             onBack={this.showListNoUpdate}
             classid={this.props.classid}
-            assignid={this.state.assignment.id}
+            assignmentid={this.state.assignment.id}
             selfType={this.props.selfType}
           /> }  
       </div>

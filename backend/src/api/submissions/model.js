@@ -9,11 +9,23 @@ export default DB.define("submissions", {
     primaryKey: true,
     autoIncrement: true
   },
-  studentID: {
-    type: Sequelize.INTEGER,
+  studentGID: {
+    type: Sequelize.STRING,
     allowNull: false
   },
   assignmentID: {
+    type: Sequelize.INTEGER,
+    allowNull: false
+  },
+  studentEmail: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  studentName: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  classID: {
     type: Sequelize.INTEGER,
     allowNull: false
   }

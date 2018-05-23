@@ -182,6 +182,7 @@ export default class ClassPage extends React.Component {
         <AssignmentPage 
           classid={this.props.classid}
           selfType={this.state.selfType}
+          user={this.props.user}
         />
       }
         <Divider />

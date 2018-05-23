@@ -5,6 +5,7 @@ import ChildProcess from "child_process";
 import Path from "path"
 
 import AssignmentsModel from "./model";
+import SubmissionsModel from "../submissions/model";
 
 const router = Express.Router();
 const upload = Multer()
@@ -29,7 +30,7 @@ router.get("/:id", async (req, res, next) => {
 
 router.post("/", upload.single('submission'), async(req, res, next) => {
   try {
-    console.log("aqui", req.body);
+    console.log("aqui \n\n\n\n\n DICKCKCKCKC   ", req.body);
     let dirpath = Path.join("static", req.body.classid, req.body.assignid, "tests")
     let filenames = FileSystem.readdirSync(dirpath);
     let inputnames=[]
@@ -55,6 +56,18 @@ router.post("/", upload.single('submission'), async(req, res, next) => {
           }
           result[inputnames[i]] = output;
       }
+    try {
+      console.log("SUBMETENDO \n\n\n\n\n\n\n\n\n\n\n\n\n\n", req.body);
+      let rowtemp = await SubmissionsModel.create({
+        studentGID: req.body.usergid,
+        studentEmail: req.body.email,
+        assignmentID: req.body.assignid,
+        studentName: req.body.username,
+        classID: req.body.classid
+      })
+    } catch(err) {
+      next(err);
+    }
     // g++ "+req.file.originalname+" -o program
     res.send(result);
   } catch (err) {
