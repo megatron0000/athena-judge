@@ -12,6 +12,8 @@ import AssignmentForm from "./AssignmentForm";
 import AssignmentList from "./AssignmentList";
 import AssignmentView from "./AssignmentView";
 
+import SubmissionList from "../Submission/SubmissionList";
+
 export default class AssignmentPage extends React.Component {
   constructor(props) {
     super(props);
@@ -179,6 +181,14 @@ export default class AssignmentPage extends React.Component {
             assignid={this.state.assignment.id}
             selfType={this.props.selfType}
           /> }
+
+        { (this.state.show == "view" && this.props.selfType == "Creator") &&
+          <SubmissionList
+            onBack={this.showListNoUpdate}
+            classid={this.props.classid}
+            assignid={this.state.assignment.id}
+            selfType={this.props.selfType}
+          /> }  
       </div>
     );
   }
