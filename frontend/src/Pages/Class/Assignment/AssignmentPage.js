@@ -137,7 +137,7 @@ export default class AssignmentPage extends React.Component {
   }
 
   render() {
-  console.log(this.props.user)  
+  console.log("eae",this.props.selfType)  
     return (
       <div>
         { this.state.loading &&
@@ -172,7 +172,7 @@ export default class AssignmentPage extends React.Component {
             dueDate={this.state.assignment.dueDate}
             onSubmit={this.handleUpdateAssignment}
           /> }
-        { this.state.show == "view" &&
+        { (this.state.show == "view" && this.props.selfType != "Creator") &&
           <AssignmentView
             onBack={this.showListNoUpdate}
             classid={this.props.classid}
