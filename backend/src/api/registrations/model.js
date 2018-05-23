@@ -24,6 +24,14 @@ export default DB.define("registrations", {
   classid: {
     type: Sequelize.INTEGER,
     allowNull: false
+  },
+  photo: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  username: {
+    type: Sequelize.STRING,
+    allowNull: false
   }
 }, {
   timestamps: true,

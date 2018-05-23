@@ -59,6 +59,8 @@ export default class Welcome extends React.Component {
     Axios.post(Config.api + "/registrations/",{
         gid: this.props.user.gid,
         email: this.props.user.email,
+        photo: this.props.user.photo,
+        username: this.props.user.name,
         classid: classid
       }).then((res) => {
       this.getClassesList();

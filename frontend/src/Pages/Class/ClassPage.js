@@ -13,6 +13,7 @@ import Divider from 'material-ui/Divider';
 import Button from "material-ui/Button";
 import AddIcon from "@material-ui/icons/Add";
 import List, { ListItem, ListItemText, ListItemIcon, ListItemSecondaryAction } from "material-ui/List";
+import Avatar from "material-ui/Avatar";
 
 export default class ClassPage extends React.Component {
   constructor(props) {
@@ -40,7 +41,8 @@ export default class ClassPage extends React.Component {
   getStudents = () => {
     this.setState({loading: true});
     Axios.get(Config.api + "/registrations/registrationsstudents/" + this.props.classid).then((res) => {
-      this.setState({students: res.data.data.map( o => o.email), loading: false});
+      console.log("Res", res);
+      this.setState({students: res.data.data, loading: false});
     }).catch((err) => {
       console.log(err);
       this.setState({loading: false});
@@ -188,8 +190,15 @@ export default class ClassPage extends React.Component {
 
         <List >
           {this.state.students.map((student) => (
-            <ListItem key={student}>
-              {student}
+            <ListItem key={student.email}>              
+
+              <Avatar
+                style={{marginLeft: 5, marginRight: 20}}
+                alt={student.email}
+                src={student.photo}
+              />
+
+              {student.username}
             </ListItem>
           ))}
         </List>

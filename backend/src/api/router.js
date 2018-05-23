@@ -64,6 +64,8 @@ router.post("/classes", async (req, res, next) => {
         gid: req.body.creatorGID,
         type: req.body.type,
         email: req.body.email,
+        photo: req.body.photo,
+        username: req.body.username,
         classid: row.dataValues.id
       })
       FileSystem.mkdir('static/' + row.id);

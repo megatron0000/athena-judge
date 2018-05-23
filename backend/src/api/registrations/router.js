@@ -23,7 +23,6 @@ router.get("/:id", async (req, res, next) => {
 });
 
 router.get("/registrationsstudents/:classid", async(req, res, next) => {
-  console.log("roter /registrationsstudents " + req.params.classid+ "   *** \n\n\n\n\n\n\n\n");
   try {
     let row = await RegistrationsModel.findAll({
       where:{ classid: req.params.classid }});
@@ -40,6 +39,8 @@ router.post("/", async (req, res, next) => {
         gid: req.body.gid,
         type: "Student",
         email: req.body.email,
+        photo: req.body.photo,
+        username: req.body.username,
         classid: req.body.classid
     });
     res.json({ data: row });

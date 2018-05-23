@@ -44,7 +44,9 @@ export default class Main extends React.Component {
     Axios.post(Config.api + "/classes", {
       name: form.name,
       description: form.description,
+      username: this.props.user.name,
       creatorGID: this.props.user.gid,
+      photo: this.props.user.photo,
       email: this.props.user.email,
       type: "Creator"
     }).then((res) => {
