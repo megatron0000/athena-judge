@@ -21,8 +21,8 @@ export default class AssignmentForm extends React.Component {
       description: this.props.description,
       // code: this.props.code
       dueDate: this.props.dueDate,
-      attachments: this.props.attachments,
-      tests: this.props.tests
+      attachments: this.props.attachments | [],
+      tests: this.props.tests | []
     }
   }
 

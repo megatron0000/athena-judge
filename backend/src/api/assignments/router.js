@@ -26,8 +26,8 @@ router.post("/upload", upload.fields(
     FileSystem.mkdirSync("static/" + req.body.classid +'/' + row.id + '/' + 'attachments');
     FileSystem.mkdirSync("static/" + req.body.classid +'/' + row.id + '/' + 'tests');
 
-    let attachments = req.files['attachments'];
-    let tests = req.files['tests'];
+    let attachments = req.files['attachments'] | [];
+    let tests = req.files['tests'] | [];
     
     for(let i = 0; i < attachments.length; i++) {
       FileSystem.writeFile("static/" + req.body.classid +'/' + row.id + '/'+ 'attachments/' + attachments[i].originalname, attachments[i].buffer,attachments[i].enconding, (err) => {
