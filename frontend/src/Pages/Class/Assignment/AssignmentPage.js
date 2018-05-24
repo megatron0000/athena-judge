@@ -158,7 +158,8 @@ export default class AssignmentPage extends React.Component {
             onDelete={this.handleDelete}
             onOpen={this.showView}
             showCreateAssignment = {this.showCreateAssignment}
-            ref={(ref) => { this.refAssignList = ref; }}
+            ref={(ref) => { this.refAssignList = ref; }}            
+            selfType={this.props.selfType}
           /> }
         { this.state.show == "create" &&
           <AssignmentForm

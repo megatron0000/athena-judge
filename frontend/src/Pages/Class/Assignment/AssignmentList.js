@@ -72,19 +72,21 @@ export default class AssignmentList extends React.Component {
             </ListItem>
           ))}
         </List>
-        <Button
-          variant="raised"
-          color="secondary"
-          style={{ marginLeft: 20, marginBottom: 20, zIndex: 10000 }}
-          onClick={() => {
-            this.props.showCreateAssignment();
-          }}
-        >
-          Adicionar
-          <AddIcon
-            style={{ marginLeft: 10 }}
-          />
-        </Button>
+        {this.props.selfType == "Creator" &&
+          <Button
+            variant="raised"
+            color="secondary"
+            style={{ marginLeft: 20, marginBottom: 20, zIndex: 10000 }}
+            onClick={() => {
+              this.props.showCreateAssignment();
+            }}
+          >
+            Adicionar
+            <AddIcon
+              style={{ marginLeft: 10 }}
+            />
+          </Button>
+        }
       </div>
     );
   }
