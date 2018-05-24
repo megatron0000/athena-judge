@@ -23,7 +23,7 @@ export default class SubmissionList extends React.Component {
 
   getSubmissionsList = () => {
     this.setState({ loading: true });
-    Axios.get(Config.api + "/assignments/class/" + this.props.assignmentid).then((res) => {
+    Axios.get(Config.api + "/submissions/submissionsassig/" + this.props.assignmentid).then((res) => {
       this.setState({ data: res.data.data, loading: false });
     }).catch((err) => {
       console.log(err);
@@ -37,7 +37,15 @@ export default class SubmissionList extends React.Component {
 
   render() {
     return (
-      <div> Lista de Sub </div>
+      <div>
+        <List >
+          {this.state.data && this.state.data.map((submission) => (
+            <ListItem key={submission.id}>              
+              {submission.studentName}
+            </ListItem>
+          ))}
+        </List>
+      </div>
     );
   }
 }
