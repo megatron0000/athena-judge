@@ -4,7 +4,8 @@
   "description": "",
   "main": "src/server.js",
   "scripts": {
-    "dev": "nodemon --ignore static/ src/server.js --exec babel-node --plugins transform-es2015-modules-commonjs",
+    "predev": "rm -r static/*",
+    "dev": "nodemon src/server.js --exec babel-node --plugins transform-es2015-modules-commonjs",
     "prod": "babel src -d dist --plugins transform-es2015-modules-commonjs && node dist/server.js"
   },
   "author": "",
