@@ -204,6 +204,24 @@ export default class ClassPage extends React.Component {
               />
 
               {student.username}
+
+              {(this.state.selfType == "Creator" && student.type != "Creator") && 
+                <Button
+                  variant="raised"
+                  color="secondary"
+                  style={{ marginLeft: 20, marginBottom: 20, zIndex: 10000 }}
+                  onClick={() => {
+                      this.props.handlePromote();
+                    }
+                  }
+                >
+                  Promover
+                  <AddIcon 
+                    style ={{ marginLeft: 10 }}
+                  />
+                </Button>
+              }
+
             </ListItem>
           ))}
         </List>
