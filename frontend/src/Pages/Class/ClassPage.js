@@ -126,6 +126,17 @@ export default class ClassPage extends React.Component {
     });
   }
 
+  handlePromote = (classid, gid) => {
+    this.setState({ loading: true });
+    Axios.put(Config.api + "/registrations/regpromote/" + classid + "/"+ gid).then((res) => {
+      console.log(res);
+      this.getStudents();
+    }).catch((err) => {
+      console.log(err);
+      this.setState({ loading: false });
+    });
+  }
+
   componentWillMount() {
     this.getClassData();
     this.getStudents();
@@ -211,8 +222,8 @@ export default class ClassPage extends React.Component {
                   color="secondary"
                   style={{ marginLeft: 20, marginBottom: 20, zIndex: 10000 }}
                   onClick={() => {
-                      this.props.handlePromote();
-                    }
+                      this.handlePromote(this.props.classid, student.gid);
+                    } 
                   }
                 >
                   Promover

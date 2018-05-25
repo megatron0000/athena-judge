@@ -62,6 +62,18 @@ router.put("/:id", async (req, res, next) => {
   }
 });
 
+router.put("/regpromote/:classid/:gid", async (req, res, next) => {
+  try {
+    let row = await RegistrationsModel.update({
+      type: "Creator"
+    }, { where: { gid: req.params.gid, classid: req.params.classid }
+    });
+    res.json({ data: row[0] });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.delete("/:id", async (req, res, next) => {
   try {
     let row = await RegistrationsModel.destroy({ where: { id: req.params.id }});
