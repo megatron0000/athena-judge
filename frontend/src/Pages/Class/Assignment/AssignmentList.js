@@ -55,20 +55,22 @@ export default class AssignmentList extends React.Component {
                 primary={assignment.title}
                 secondary={assignment.description}
               />
-              <ListItemSecondaryAction>
-                <IconButton
-                  aria-label="Edit"
-                  onClick={() => { this.props.onEdit(assignment.id); }}
-                >
-                  <EditIcon />
-                </IconButton>
-                <IconButton
-                  aria-label="Delete"
-                  onClick={() => { this.props.onDelete(assignment.id); this.getAssignmentsList(); }}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </ListItemSecondaryAction>
+              {this.props.selfType == "Creator" &&
+                <ListItemSecondaryAction>
+                  <IconButton
+                    aria-label="Edit"
+                    onClick={() => { this.props.onEdit(assignment.id); }}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                   aria-label="Delete"
+                    onClick={() => { this.props.onDelete(assignment.id); this.getAssignmentsList(); }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </ListItemSecondaryAction>
+              }
             </ListItem>
           ))}
         </List>
