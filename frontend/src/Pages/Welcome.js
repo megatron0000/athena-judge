@@ -110,7 +110,7 @@ export default class Welcome extends React.Component {
         <Button
           variant="raised"
           color="secondary"
-          style={{ marginLeft: 20, marginBottom: 20, zIndex: 10000 }}
+          style={{ marginLeft: 20, marginBottom: 20 }}
           onClick={() => { this.props.showCreateClass(); } }
         >
           Adicionar
@@ -147,35 +147,37 @@ export default class Welcome extends React.Component {
                 Inscrever-se
               </Button>
 
+              <Dialog
+                open={this.state.dialogOpen}
+                onClose={this.handleCloseDialog}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+              >
+                <DialogTitle id="alert-dialog-title">{classes.name}</DialogTitle>
+                
+                <DialogContent>
+                  <DialogContentText id="alert-dialog-description">
+                    Tem certeza que deseja se cadastrar na disciplina?
+                  </DialogContentText>
+                </DialogContent>
+                
+                <DialogActions>
+                  <Button onClick={this.handleCloseDialog} color="primary">
+                    Não
+                  </Button>
+                  
+                  <Button 
+                    onClick={ () => { this.handleRegister(classes.id) }} 
+                    color="primary" autoFocus>
+                    Sim
+                  </Button>
+                </DialogActions>
+              
+               </Dialog>
+
             </ListItem>
           ))}
         </List>
-
-        <Dialog
-          open={this.state.dialogOpen}
-          onClose={this.handleCloseDialog}
-          aria-labelledby="alert-dialog-title"
-          aria-describedby="alert-dialog-description"
-        >
-          <DialogTitle id="alert-dialog-title">{"Use Google's location service?"}</DialogTitle>
-                
-          <DialogContent>
-            <DialogContentText id="alert-dialog-description">
-               Tem certeza que deseja se cadastrar na disciplina?
-            </DialogContentText>
-          </DialogContent>
-                
-          <DialogActions>
-            <Button onClick={this.handleCloseDialog} color="primary">
-              Não
-            </Button>
-                  
-            <Button onClick={this.handleCloseDialog} color="primary" autoFocus>
-              Sim
-            </Button>
-          </DialogActions>
-              
-        </Dialog>
 
       </div>
     );
