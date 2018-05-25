@@ -56,8 +56,8 @@ export default class AssignmentPage extends React.Component {
     this.refAssignList.getAssignmentsList();
   }
 
-  showView = (id) => {
-    this.setState((prev) => ({ show: "view", assignment: prev.list.find((e) => e.id == id)}));
+  showView = (assignment) => {
+    this.setState({ show: "view", assignment: assignment });
   }
 
   showUpdate = (id) => {

@@ -46,7 +46,7 @@ export default class AssignmentList extends React.Component {
             <ListItem
               key={assignment.id}
               button
-              onClick={() => { this.props.onOpen(assignment.id); }}
+              onClick={() => { this.props.onOpen(assignment); }}
             >
               <ListItemIcon>
                 <AssignmentIcon />
