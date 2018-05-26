@@ -4,6 +4,11 @@ import Typography from "material-ui/Typography";
 import TextField from "material-ui/TextField";
 import Button from "material-ui/Button";
 import SendIcon from "@material-ui/icons/Send";
+import Dialog from 'material-ui/Dialog/Dialog';
+import DialogActions from 'material-ui/Dialog/DialogActions';
+import DialogContent from 'material-ui/Dialog/DialogContent';
+import DialogContentText from 'material-ui/Dialog/DialogContentText';
+import DialogTitle from 'material-ui/Dialog/DialogTitle';
 
 export default class ClassForm extends React.Component {
   constructor(props) {
@@ -11,7 +16,8 @@ export default class ClassForm extends React.Component {
     this.state = {
       name: this.props.name,
       description: this.props.description,
-      professorid: this.props.professorid
+      professorid: this.props.professorid,
+      dialogCreateOpen: false
     }
   }
 
@@ -22,6 +28,14 @@ export default class ClassForm extends React.Component {
   handleDescriptionChange = (e) => {
     this.setState({ description: e.target.value });
   }
+
+  handleOpenDialogCreate = () => {
+    this.setState({ dialogCreateOpen: true });
+  };
+
+  handleCloseDialogCreate = () => {
+    this.setState({ dialogCreateOpen: false });
+  };
 
     render() {
         return  (
@@ -41,44 +55,64 @@ export default class ClassForm extends React.Component {
                 style={{ width: "100%" }}
                 onChange={this.handleNameChange}
                 />
+
                 <div style={{ height: 20 }}></div>
+                
                 <TextField
-                label="Descrição"
-                defaultValue={this.props.description}
-                multiline
-                rows={10}
-                style={{ width: "100%" }}
-                onChange={this.handleDescriptionChange}
+                    label="Descrição"
+                    defaultValue={this.props.description}
+                    multiline
+                    rows={10}
+                    style={{ width: "100%" }}
+                    onChange={this.handleDescriptionChange}
                 />
+                
                 <div style={{ height: 20 }}></div>
                 <div style={{ textAlign: "center" }}>
-                <Button
-                    variant="raised"
-                    style={{ marginRight: 10 }}
-                    onClick={this.props.onBack}
-                >
-                    Voltar
-                </Button>
-                {/*
-                @vb: This code should be used to handle a single submission, not creating/editing the assignment.
                 
-                <Button
-                    variant="raised"
-                    color="default"
-                    style={{ marginRight: 10 }}
-                    onClick={this.handleUpload}
-                >
-                    <FileUpload style={{ marginRight: 16 }} />
-                    Upload
-                </Button>*/}
-                <Button
-                    variant="raised"
-                    color="primary"
-                    onClick={() => { this.props.onSubmit(this.state) }}
-                >
-                    <SendIcon style={{ marginRight: 16 }} />
-                    Enviar
-                </Button>
+                    <Button
+                        variant="raised"
+                        style={{ marginRight: 10 }}
+                        onClick={this.props.onBack}
+                    >
+                     Voltar
+                    </Button>
+
+                    <Button
+                        variant="raised"
+                        color="primary"
+                        onClick={this.handleOpenDialogCreate}
+                    >
+                        <SendIcon style={{ marginRight: 16 }} />
+                        Enviar
+                    </Button>
+
+                    <Dialog
+                        open={this.state.dialogCreateOpen}
+                        onClose={this.handleCloseDialogCreate}
+                        aria-labelledby="alert-dialog-title"
+                        aria-describedby="alert-dialog-description"
+                    >
+                        <DialogContent>
+                          <DialogContentText id="alert-dialog-description">
+                            Tem certeza que deseja criar essa disciplina?
+                          </DialogContentText>
+                        </DialogContent>
+                
+                        <DialogActions>
+                          <Button onClick={this.handleCloseDialogCreate} color="primary">
+                            Não
+                          </Button>
+                  
+                         <Button 
+                           onClick={ () => { this.props.onSubmit(this.state), this.handleCloseDialogCreate() }} 
+                            color="primary" autoFocus>
+                            Sim
+                          </Button>
+                        </DialogActions>
+              
+                    </Dialog>
+
                 </div>
             </form>
             </div>

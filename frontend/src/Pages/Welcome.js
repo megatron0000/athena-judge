@@ -22,7 +22,7 @@ export default class Welcome extends React.Component {
       list: [],
       currentClasses: [],
       loading: false,
-      dialogOpen: false
+      dialogRegisterOpen: false
     };
   }
 
@@ -76,13 +76,12 @@ export default class Welcome extends React.Component {
     });
   }
 
-  handleOpenDialog = () => {
-    //console.log("aew open bar", classid);
-    this.setState({ dialogOpen: true });
+  handleOpenDialogRegister = () => {
+    this.setState({ dialogRegisterOpen: true });
   };
 
-  handleCloseDialog = () => {
-    this.setState({ dialogOpen: false });
+  handleCloseDialogRegister = () => {
+    this.setState({ dialogRegisterOpen: false });
   };
 
   render() {
@@ -142,14 +141,14 @@ export default class Welcome extends React.Component {
                 variant="raised"
                 color="secondary"
                 style={{ marginLeft: 20, marginBottom: 20 }}
-                onClick={this.handleOpenDialog}
+                onClick={this.handleOpenDialogRegister}
               >
                 Inscrever-se
               </Button>
 
               <Dialog
-                open={this.state.dialogOpen}
-                onClose={this.handleCloseDialog}
+                open={this.state.dialogRegisterOpen}
+                onClose={this.handleCloseDialogRegister}
                 aria-labelledby="alert-dialog-title"
                 aria-describedby="alert-dialog-description"
               >
@@ -162,7 +161,7 @@ export default class Welcome extends React.Component {
                 </DialogContent>
                 
                 <DialogActions>
-                  <Button onClick={this.handleCloseDialog} color="primary">
+                  <Button onClick={this.handleCloseDialogRegister} color="primary">
                     Não
                   </Button>
                   
