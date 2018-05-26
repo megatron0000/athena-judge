@@ -7,6 +7,9 @@ import TextField from "material-ui/TextField";
 import { IconButton, Icon, InputAdornment } from 'material-ui';
 import Button from "material-ui/Button";
 import SendIcon from "@material-ui/icons/Send";
+import Undo from "@material-ui/icons/Undo";
+import AttachFile from "@material-ui/icons/AttachFile";
+import InsertDriveFile from "@material-ui/icons/InsertDriveFile";
 import FileUpload from '@material-ui/icons/FileUpload';
 
 import FilesChips from "./FilesChips";
@@ -108,6 +111,7 @@ export default class AssignmentForm extends React.Component {
         <FilesChips 
           files={this.state.tests ? Array.from(this.state.tests) : null}
           ref={(ref) => { this.testsChips = ref; }}
+          isTest = {true}
         />
 
         <div style={{ textAlign: "center", marginTop: 10 }}>
@@ -116,6 +120,7 @@ export default class AssignmentForm extends React.Component {
             style={{ marginRight: 10 }}
             onClick={this.props.onBack}
           >
+          <Undo style={{ marginRight: 14 }} />
             Voltar
           </Button>
 
@@ -146,12 +151,13 @@ export default class AssignmentForm extends React.Component {
               component = "span"
             // onClick={this.handleUpload}
             >
-              Upload Anexo
+            <AttachFile style={{ marginRight: 14 }} />
+              Anexo
           </Button>
           </label>
           
           <input
-            accept=".txt,"
+            accept=".txt, none"
             style={{display: 'none'}}
             id="input-tests-activ"
             onChange = {this.handleTestsInputChange}
@@ -165,7 +171,8 @@ export default class AssignmentForm extends React.Component {
               component = "span"
             // onClick={this.handleUpload}
             >
-              Upload Testes
+            <InsertDriveFile style={{ marginRight: 14 }} />
+              Testes
           </Button>
           </label>
 
@@ -174,7 +181,7 @@ export default class AssignmentForm extends React.Component {
             color="primary"
             onClick={() => { this.props.onSubmit(this.state) }}
           >
-            <SendIcon style={{ marginRight: 16 }} />
+            <SendIcon style={{ marginRight: 14 }} />
             Enviar
           </Button>
         </div>
