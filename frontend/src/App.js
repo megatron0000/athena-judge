@@ -3,7 +3,6 @@ import Axios from "axios";
 
 import Paper from "material-ui/Paper";
 import Button from "material-ui/Button";
-import AddIcon from "@material-ui/icons/Add";
 
 import Config from "./Config";
 
@@ -108,23 +107,6 @@ export default class App extends Component {
         />
         
         </Paper>
-        <Button
-          variant="fab"
-          color="secondary"
-          style={{ position: "fixed", right: 32, bottom: 32, zIndex: 10000 }}
-          onClick={() => {
-              { this.state.show == "sidebar" && 
-                this.showCreateClass()
-              }
-
-              { this.state.show == "class" && 
-                this.setState({ dialogopen: true });
-              }
-            }
-          }
-        >
-          <AddIcon />
-        </Button>
         <AssignStudentBox
           open={this.state.dialogopen}
           onClose={this.handleCloseDialog}
