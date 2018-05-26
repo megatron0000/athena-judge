@@ -99,30 +99,30 @@ export default class AssignmentsView extends React.Component {
           </Button>
 
           <Dialog
-                  open={this.state.dialogOpenAddSubmission}
-                  onClose={this.handleCloseDialogAddSubmission}
-                  aria-labelledby="alert-dialog-title"
-                  aria-describedby="alert-dialog-description"
-                >
-                  <DialogContent>
-                    <DialogContentText id="alert-dialog-description">
-                      Tem certeza que deseja submeter esta solução?
-                    </DialogContentText>
-                  </DialogContent>
+            open={this.state.dialogOpenAddSubmission}
+            onClose={this.handleCloseDialogAddSubmission}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+          >
+            <DialogContent>
+              <DialogContentText id="alert-dialog-description">
+                Tem certeza que deseja submeter esta solução?
+              </DialogContentText>
+            </DialogContent>
                 
-                  <DialogActions>
-                    <Button onClick={this.handleCloseDialogAddSubmission} color="primary">
-                      Não
-                    </Button>
+            <DialogActions>
+              <Button onClick={this.handleCloseDialogAddSubmission} color="primary">
+                 Não
+              </Button>
                   
-                    <Button 
-                      onClick={() => { this.handleSubmission(this.state), this.handleCloseDialogAddSubmission() }}
-                      color="primary" autoFocus>
-                      Sim
-                    </Button>
-                  </DialogActions>
+              <Button 
+                onClick={() => { this.handleSubmission(this.state), this.handleCloseDialogAddSubmission() }}
+                color="primary" autoFocus>
+                Sim
+              </Button>
+            </DialogActions>
               
-                </Dialog>
+          </Dialog>
 
           </div>
       </div>

@@ -11,16 +11,19 @@ import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
 import Button from "material-ui/Button";
 import AddIcon from "@material-ui/icons/Add";
+import Dialog from 'material-ui/Dialog/Dialog';
+import DialogActions from 'material-ui/Dialog/DialogActions';
+import DialogContent from 'material-ui/Dialog/DialogContent';
+import DialogContentText from 'material-ui/Dialog/DialogContentText';
+import DialogTitle from 'material-ui/Dialog/DialogTitle';
 
 export default class AssignmentList extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      // show: "list",
-      // list: [],
-      // assignment: null,
       data: null,
-      loading: false
+      loading: false,
+      dialogOpenDeleteAssign: false
     };
   }
 
@@ -37,6 +40,16 @@ export default class AssignmentList extends React.Component {
   componentWillMount() {
     this.getAssignmentsList();
   }
+
+  handleOpenDialogDeleteAssign = () => {
+    this.setState({ dialogOpenDeleteAssign: true });
+  };
+
+  handleCloseDialogDeleteAssign = () => {
+    this.getAssignmentsList();
+    console.log(this.state.data);
+    this.setState({ dialogOpenDeleteAssign: false });
+  };
 
   render() {
     return (
@@ -65,10 +78,37 @@ export default class AssignmentList extends React.Component {
                   </IconButton>
                   <IconButton
                    aria-label="Delete"
-                    onClick={() => { this.props.onDelete(assignment.id); this.getAssignmentsList(); }}
+                    onClick={() => { this.handleOpenDialogDeleteAssign() }}
                   >
                     <DeleteIcon />
                   </IconButton>
+
+                  <Dialog
+            open={this.state.dialogOpenDeleteAssign}
+            onClose={this.handleCloseDialogDeleteAssign}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+          >
+            <DialogContent>
+              <DialogContentText id="alert-dialog-description">
+                Tem certeza que deseja apagar esta atividade?
+              </DialogContentText>
+            </DialogContent>
+                
+            <DialogActions>
+              <Button onClick={this.handleCloseDialogDeleteAssign} color="primary">
+                 Não
+              </Button>
+                  
+              <Button 
+                onClick={() => { this.props.onDelete(assignment.id), this.handleCloseDialogDeleteAssign() }}
+                color="primary" autoFocus>
+                Sim
+              </Button>
+            </DialogActions>
+              
+          </Dialog>
+
                 </ListItemSecondaryAction>
               }
             </ListItem>
