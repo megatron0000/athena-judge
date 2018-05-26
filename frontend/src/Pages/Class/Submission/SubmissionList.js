@@ -11,6 +11,7 @@ import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
 import Button from "material-ui/Button";
 import AddIcon from "@material-ui/icons/Add";
+import Typography from "material-ui/Typography";
 
 export default class SubmissionList extends React.Component {
   constructor(props) {
@@ -36,8 +37,16 @@ export default class SubmissionList extends React.Component {
   }
 
   render() {
+    console.log("coe rapaziada", this.state.data);
     return (
       <div>
+      <Typography
+          variant="title"
+          style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
+        >
+          Submissões
+        </Typography>
+
         <List >
           {this.state.data && this.state.data.map((submission) => (
             <ListItem key={submission.id}>              

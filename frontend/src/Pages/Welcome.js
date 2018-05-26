@@ -8,6 +8,11 @@ import Typography from "material-ui/Typography";
 import ClassIcon from "@material-ui/icons/Class";
 import AddIcon from "@material-ui/icons/Add";
 import Button from "material-ui/Button";
+import Dialog from 'material-ui/Dialog/Dialog';
+import DialogActions from 'material-ui/Dialog/DialogActions';
+import DialogContent from 'material-ui/Dialog/DialogContent';
+import DialogContentText from 'material-ui/Dialog/DialogContentText';
+import DialogTitle from 'material-ui/Dialog/DialogTitle';
 
 export default class Welcome extends React.Component {
   constructor(props) {
@@ -16,7 +21,8 @@ export default class Welcome extends React.Component {
     this.state = {
       list: [],
       currentClasses: [],
-      loading: false
+      loading: false,
+      dialogOpen: false
     };
   }
 
@@ -70,15 +76,22 @@ export default class Welcome extends React.Component {
     });
   }
 
+  handleOpenDialog = () => {
+    //console.log("aew open bar", classid);
+    this.setState({ dialogOpen: true });
+  };
+
+  handleCloseDialog = () => {
+    this.setState({ dialogOpen: false });
+  };
+
   render() {
     return (
       <div>
-        <Typography
-          variant="title"
-          style={{ paddingLeft: 20, paddingTop: 10, paddingRight: 20, paddingBottom: 4 }}
-        >
+        <Typography variant="title" style={{ paddingLeft: 20, paddingTop: 10, paddingRight: 20, paddingBottom: 4 }} >
           Meus Cursos
         </Typography>
+
         <List >
           {this.state.currentClasses.map((classes) => (
             <ListItem
@@ -93,14 +106,12 @@ export default class Welcome extends React.Component {
             </ListItem>
           ))}
         </List>
+
         <Button
           variant="raised"
           color="secondary"
-          style={{ marginLeft: 20, marginBottom: 20, zIndex: 10000 }}
-          onClick={() => {
-              this.props.showCreateClass();
-            }
-          }
+          style={{ marginLeft: 20, marginBottom: 20 }}
+          onClick={() => { this.props.showCreateClass(); } }
         >
           Adicionar
           <AddIcon 
@@ -130,16 +141,39 @@ export default class Welcome extends React.Component {
               <Button
                 variant="raised"
                 color="secondary"
-                style={{ marginLeft: 20, marginBottom: 20, zIndex: 10000 }}
-                onClick={() => {
-                  this.handleRegister(classes.id);
-                }}
+                style={{ marginLeft: 20, marginBottom: 20 }}
+                onClick={this.handleOpenDialog}
               >
-              Inscrever-se
-              <AddIcon
-                style={{ marginLeft: 10 }}
-              />
-            </Button>
+                Inscrever-se
+              </Button>
+
+              <Dialog
+                open={this.state.dialogOpen}
+                onClose={this.handleCloseDialog}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+              >
+                <DialogTitle id="alert-dialog-title">{classes.name}</DialogTitle>
+                
+                <DialogContent>
+                  <DialogContentText id="alert-dialog-description">
+                    Tem certeza que deseja se cadastrar na disciplina?
+                  </DialogContentText>
+                </DialogContent>
+                
+                <DialogActions>
+                  <Button onClick={this.handleCloseDialog} color="primary">
+                    Não
+                  </Button>
+                  
+                  <Button 
+                    onClick={ () => { this.handleRegister(classes.id) }} 
+                    color="primary" autoFocus>
+                    Sim
+                  </Button>
+                </DialogActions>
+              
+               </Dialog>
 
             </ListItem>
           ))}
