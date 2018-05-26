@@ -23,7 +23,8 @@ export default class AssignmentList extends React.Component {
     this.state = {
       data: null,
       loading: false,
-      dialogOpenDeleteAssign: false
+      dialogOpenDeleteAssign: false,
+      candidateToDelete: null
     };
   }
 
@@ -37,17 +38,24 @@ export default class AssignmentList extends React.Component {
     });
   }
 
+  handleDelete = () => {
+    Axios.delete(Config.api + "/assignments/" + this.state.candidateToDelete).then((res) => {  
+      this.setState({ data: this.state.data.filter(o => o.id !== this.state.candidateToDelete), loading: true });
+    }).catch((err) => {
+      console.log(err);
+      this.setState({ loading: false });
+    });
+  }
+
   componentWillMount() {
     this.getAssignmentsList();
   }
 
-  handleOpenDialogDeleteAssign = () => {
-    this.setState({ dialogOpenDeleteAssign: true });
+  handleOpenDialogDeleteAssign = (id) => {
+    this.setState({ dialogOpenDeleteAssign: true,  candidateToDelete: id});
   };
 
   handleCloseDialogDeleteAssign = () => {
-    this.getAssignmentsList();
-    console.log(this.state.data);
     this.setState({ dialogOpenDeleteAssign: false });
   };
 
@@ -76,38 +84,42 @@ export default class AssignmentList extends React.Component {
                   >
                     <EditIcon />
                   </IconButton>
+
+                  <Dialog
+                    open={this.state.dialogOpenDeleteAssign}
+                    onClose={this.handleCloseDialogDeleteAssign}
+                    aria-labelledby="alert-dialog-title"
+                    aria-describedby="alert-dialog-description"
+                  >
+                    <DialogContent>
+                      <DialogContentText id="alert-dialog-description">
+                        Tem certeza que deseja apagar esta atividade?
+                      </DialogContentText>
+                    </DialogContent>
+                
+                    <DialogActions>
+                      <Button onClick={this.handleCloseDialogDeleteAssign} color="primary">
+                         Não
+                      </Button>
+                  
+                      <Button 
+                        onClick={() => { this.handleDelete(); this.handleCloseDialogDeleteAssign() }}
+                        color="primary" autoFocus>
+                        Sim
+                      </Button>
+                    </DialogActions>
+              
+                  </Dialog>
+
+
                   <IconButton
                    aria-label="Delete"
-                    onClick={() => { this.handleOpenDialogDeleteAssign() }}
+                    onClick={() => {this.handleOpenDialogDeleteAssign(assignment.id)}}
                   >
                     <DeleteIcon />
                   </IconButton>
 
-                  <Dialog
-            open={this.state.dialogOpenDeleteAssign}
-            onClose={this.handleCloseDialogDeleteAssign}
-            aria-labelledby="alert-dialog-title"
-            aria-describedby="alert-dialog-description"
-          >
-            <DialogContent>
-              <DialogContentText id="alert-dialog-description">
-                Tem certeza que deseja apagar esta atividade?
-              </DialogContentText>
-            </DialogContent>
-                
-            <DialogActions>
-              <Button onClick={this.handleCloseDialogDeleteAssign} color="primary">
-                 Não
-              </Button>
                   
-              <Button 
-                onClick={() => { this.props.onDelete(assignment.id), this.handleCloseDialogDeleteAssign() }}
-                color="primary" autoFocus>
-                Sim
-              </Button>
-            </DialogActions>
-              
-          </Dialog>
 
                 </ListItemSecondaryAction>
               }

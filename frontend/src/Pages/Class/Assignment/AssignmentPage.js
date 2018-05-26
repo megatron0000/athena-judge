@@ -84,7 +84,6 @@ export default class AssignmentPage extends React.Component {
   }
 
   handleCreateAssignment = (form) => {
-    console.log("CRIANDO", form);
     let formData = new FormData();
     formData.append('title', form.title);
     formData.append('description', form.description);
@@ -128,18 +127,7 @@ export default class AssignmentPage extends React.Component {
     });
   }
 
-  handleDelete = (id) => {
-    this.setState({ loading: true });
-    Axios.delete(Config.api + "/assignments/" + id).then((res) => {
-      this.showHomeUpdateAssign();
-    }).catch((err) => {
-      console.log(err);
-      this.setState({ loading: false });
-    });
-  }
-
-  render() {
-  console.log("eae",this.props.selfType)  
+  render() {  
     return (
       <div>
         { this.state.loading &&
@@ -155,7 +143,6 @@ export default class AssignmentPage extends React.Component {
           <AssignmentList
             classid={this.props.classid}
             onEdit={this.showEditById}
-            onDelete={this.handleDelete}
             onOpen={this.showView}
             showCreateAssignment = {this.showCreateAssignment}
             ref={(ref) => { this.refAssignList = ref; }}            
