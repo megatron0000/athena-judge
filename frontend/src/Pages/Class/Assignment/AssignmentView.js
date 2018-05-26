@@ -5,6 +5,11 @@ import Typography from "material-ui/Typography";
 import { CircularProgress } from "material-ui/Progress";
 import Button from "material-ui/Button";
 import SendIcon from "@material-ui/icons/Send";
+import Dialog from 'material-ui/Dialog/Dialog';
+import DialogActions from 'material-ui/Dialog/DialogActions';
+import DialogContent from 'material-ui/Dialog/DialogContent';
+import DialogContentText from 'material-ui/Dialog/DialogContentText';
+import DialogTitle from 'material-ui/Dialog/DialogTitle';
 
 import Config from "../../../Config";
 
@@ -12,7 +17,8 @@ export default class AssignmentsView extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      loading: false
+      loading: false,
+      dialogOpenAddSubmission: false
     };
   }
 
@@ -41,6 +47,14 @@ export default class AssignmentsView extends React.Component {
       this.setState({ loading: false });
     }); 
   }
+
+  handleOpenDialogAddSubmission = () => {
+    this.setState({ dialogOpenAddSubmission: true });
+  };
+
+  handleCloseDialogAddSubmission = () => {
+    this.setState({ dialogOpenAddSubmission: false });
+  };
 
   render() {
     return (
@@ -78,11 +92,37 @@ export default class AssignmentsView extends React.Component {
           <Button
             variant="raised"
             color="primary"
-            onClick={() => { this.handleSubmission(this.state) }}
+            onClick={() => { this.handleOpenDialogAddSubmission() }}
           >
             <SendIcon style={{ marginRight: 16 }} />
             Enviar
           </Button>
+
+          <Dialog
+                  open={this.state.dialogOpenAddSubmission}
+                  onClose={this.handleCloseDialogAddSubmission}
+                  aria-labelledby="alert-dialog-title"
+                  aria-describedby="alert-dialog-description"
+                >
+                  <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                      Tem certeza que deseja submeter esta solução?
+                    </DialogContentText>
+                  </DialogContent>
+                
+                  <DialogActions>
+                    <Button onClick={this.handleCloseDialogAddSubmission} color="primary">
+                      Não
+                    </Button>
+                  
+                    <Button 
+                      onClick={() => { this.handleSubmission(this.state), this.handleCloseDialogAddSubmission() }}
+                      color="primary" autoFocus>
+                      Sim
+                    </Button>
+                  </DialogActions>
+              
+                </Dialog>
 
           </div>
       </div>
