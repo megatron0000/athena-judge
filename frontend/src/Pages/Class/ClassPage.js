@@ -14,18 +14,22 @@ import Button from "material-ui/Button";
 import AddIcon from "@material-ui/icons/Add";
 import List, { ListItem, ListItemText, ListItemIcon, ListItemSecondaryAction } from "material-ui/List";
 import Avatar from "material-ui/Avatar";
+import Dialog from 'material-ui/Dialog/Dialog';
+import DialogActions from 'material-ui/Dialog/DialogActions';
+import DialogContent from 'material-ui/Dialog/DialogContent';
+import DialogContentText from 'material-ui/Dialog/DialogContentText';
+import DialogTitle from 'material-ui/Dialog/DialogTitle';
 
 export default class ClassPage extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       show: "home",
-      // list: [],
       assignmentid: null,
-      // data: this.props.data,
       students: [],
       selfType: '',
-      loading: false
+      loading: false,
+      dialogOpenPromote: false
     };
   }
 
@@ -81,12 +85,10 @@ export default class ClassPage extends React.Component {
     for (let i = 0; i < form.attachments.length; i++) {
       formData.append('attachments', form.attachments[i]);
     }
-    // formData.append('attachments', Array.from(form.attachments));
     
     for (let i = 0; i < form.tests.length; i++) {
       formData.append('tests', form.tests[i]);
     }
-    // formData.append('tests', form.tests);
 
     this.setState({ loading: true });
     Axios.post(Config.api + "/assignments/upload", formData, {
@@ -142,6 +144,14 @@ export default class ClassPage extends React.Component {
     this.getStudents();
   }
 
+  handleOpenDialogPromote = () => {
+    this.setState({ dialogOpenPromote: true });
+  };
+
+  handleCloseDialogPromote = () => {
+    this.setState({ dialogOpenPromote: false });
+  };
+
   render() {
     return (
       <div>
@@ -153,42 +163,16 @@ export default class ClassPage extends React.Component {
         >
           {this.state.data && this.state.data.name}
         </Typography>
+
         <Typography
           variant="subheading"
           style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
         >
           {this.state.data && this.state.data.description}
         </Typography>
+
         <Divider />
-        {/* <Typography
-          variant="title"
-          style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
-        >
-          Atividades
-              </Typography> */}
-        {/*this.state.show == "home" &&
-          <AssignmentList
-            classid={this.props.classid}
-            onEdit={this.showEditById}
-            onDelete={this.handleDelete}
-            showCreateAssignment = {this.showCreateAssignment}
-            ref={(ref) => { this.refAssignList = ref; }}
-          />
-        }
-        {this.state.show == "createAssign" &&
-          <AssignmentForm
-            onBack={this.showHomeNoUpdate}
-            onSubmit={this.handleCreateAssignment}
-          />}
-        {(this.state.show == "updateAssign") &&
-          <AssignmentForm
-            onBack={this.showHomeNoUpdate}
-            assignmentid={this.state.assignment.id}
-            title={this.state.assignment.title}
-            description={this.state.assignment.description}
-            dueDate={this.state.assignment.dueDate}
-            onSubmit={this.handleUpdateAssignment}
-      />*/}
+        
       {
         <AssignmentPage 
           classid={this.props.classid}
@@ -220,18 +204,39 @@ export default class ClassPage extends React.Component {
                 <Button
                   variant="raised"
                   color="secondary"
-                  style={{ marginLeft: 20, marginBottom: 20, zIndex: 10000 }}
-                  onClick={() => {
-                      this.handlePromote(this.props.classid, student.gid);
-                    } 
-                  }
+                  style={{ marginLeft: 20, marginBottom: 20 }}
+                  onClick={this.handleOpenDialogPromote} 
                 >
                   Promover
-                  <AddIcon 
-                    style ={{ marginLeft: 10 }}
-                  />
+                  <AddIcon style ={{ marginLeft: 10 }} />
                 </Button>
               }
+
+              <Dialog
+                  open={this.state.dialogOpenPromote}
+                  onClose={this.handleCloseDialogPromote}
+                  aria-labelledby="alert-dialog-title"
+                  aria-describedby="alert-dialog-description"
+                >
+                  <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                      Tem certeza que deseja promover esse aluno à condição de Professor?
+                    </DialogContentText>
+                  </DialogContent>
+                
+                  <DialogActions>
+                    <Button onClick={this.handleCloseDialogPromote} color="primary">
+                      Não
+                    </Button>
+                  
+                    <Button 
+                      onClick={() => { this.handlePromote(this.props.classid, student.gid), this.handleCloseDialogPromote() }}
+                      color="primary" autoFocus>
+                      Sim
+                    </Button>
+                  </DialogActions>
+              
+                </Dialog>
 
             </ListItem>
           ))}
