@@ -8,6 +8,11 @@ import { IconButton, Icon, InputAdornment } from 'material-ui';
 import Button from "material-ui/Button";
 import SendIcon from "@material-ui/icons/Send";
 import FileUpload from '@material-ui/icons/FileUpload';
+import Dialog from 'material-ui/Dialog/Dialog';
+import DialogActions from 'material-ui/Dialog/DialogActions';
+import DialogContent from 'material-ui/Dialog/DialogContent';
+import DialogContentText from 'material-ui/Dialog/DialogContentText';
+import DialogTitle from 'material-ui/Dialog/DialogTitle';
 
 import FilesChips from "./FilesChips";
 import DateTimePicker from "./DateTimePicker";
@@ -19,10 +24,10 @@ export default class AssignmentForm extends React.Component {
       id: this.props.assignmentid,
       title: this.props.title,
       description: this.props.description,
-      // code: this.props.code
       dueDate: this.props.dueDate,
       attachments: this.props.attachments | [],
-      tests: this.props.tests | []
+      tests: this.props.tests | [],
+      dialogOpenCreateAssign: false
     }
   }
 
@@ -47,6 +52,14 @@ export default class AssignmentForm extends React.Component {
     this.testsChips.setState({files: Array.from(e.target.files)});
     this.setState({tests: e.target.files});
   }
+
+  handleOpenDialogCreateAssign = () => {
+    this.setState({ dialogOpenCreateAssign: true });
+  };
+
+  handleCloseDialogCreateAssign = () => {
+    this.setState({ dialogOpenCreateAssign: false });
+  };
 
   render() {
     return (
@@ -93,18 +106,6 @@ export default class AssignmentForm extends React.Component {
             Voltar
           </Button>
 
-          {/*
-          @vb: This code should be used to handle a single submission, not creating/editing the assignment.
-          
-          <Button
-            variant="raised"
-            color="default"
-            style={{ marginRight: 10 }}
-            onClick={this.handleUpload}
-          >
-            <FileUpload style={{ marginRight: 16 }} />
-            Upload
-          </Button>*/}
           <input
             accept=".pdf, .docx, .doc, .odt, .odf"
             style={{display: 'none'}}
@@ -146,12 +147,40 @@ export default class AssignmentForm extends React.Component {
           <Button
             variant="raised"
             color="primary"
-            onClick={() => { this.props.onSubmit(this.state) }}
+            onClick={() => { this.handleOpenDialogCreateAssign() }}
           >
             <SendIcon style={{ marginRight: 16 }} />
             Enviar
           </Button>
+
+          <Dialog
+            open={this.state.dialogOpenCreateAssign}
+            onClose={this.handleCloseDialogCreateAssign}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+          >
+            <DialogContent>
+              <DialogContentText id="alert-dialog-description">
+                Tem certeza que deseja adicionar esta atividade?
+              </DialogContentText>
+            </DialogContent>
+                
+            <DialogActions>
+              <Button onClick={this.handleCloseDialogCreateAssign} color="primary">
+                Não
+              </Button>
+            
+               <Button 
+                onClick={() => { this.props.onSubmit(this.state), this.handleCloseDialogCreateAssign() }}
+                color="primary" autoFocus>
+                Sim
+              </Button>
+            </DialogActions>
+              
+          </Dialog>
+
         </div>
+
       </form>
     );
   }
