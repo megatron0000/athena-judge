@@ -51,32 +51,6 @@ export default class AssignmentForm extends React.Component {
     this.setState({tests: e.target.files});
   }
 
-  /*
-  @vb: This code should be used to handle a single submission, not creating/editing the assignment.
-
-  readTextFile(file) {
-    return new Promise((resolve, reject) => {
-      let reader = new FileReader();
-      reader.onloadend = () => {
-        resolve(reader.result.replace("\r", ""));
-      }
-      reader.readAsText(file);
-    })
-  }
-
-  handleUpload = (e) => {
-    let fileUpload = document.createElement("input");
-    fileUpload.type = "file";
-    fileUpload.accept = ".cpp, .c";
-    fileUpload.onchange = () => {
-      this.readTextFile(fileUpload.files[0]).then((text) => {
-        this.setState({ code: text });
-      });
-    };
-    fileUpload.click();
-  }
-  */
-
   render() {
     return (
       <form style={{ padding: 20 }}>
