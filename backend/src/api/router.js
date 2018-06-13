@@ -1,6 +1,7 @@
 import Express from "express";
-import Multer from "multer"
-import FileSystem from "fs"
+import Multer from "multer";
+import FileSystem from "fs";
+import Path from "path";
 
 import AssignmentsRouter from "./assignments/router";
 import ClassesRouter from "./classes/router";
@@ -11,6 +12,8 @@ import SubmissionsRouter from "./submissions/router";
 import ClassesModel from "./classes/model";
 import RegistrModel from "./registrations/model";
 import UsersModel from "./users/model";
+
+import { UPLOADS_DIR } from "../config";
 
 const upload = Multer();
 const router = Express.Router();
@@ -57,22 +60,16 @@ router.post("/classes", async (req, res, next) => {
       creatorGID: req.body.creatorGID,
       description: req.body.description
     });
-    try {
-      //@italotabatinga: dont know if this is the right way but
-      // it works
-      let rowtemp = await RegistrModel.create({
-        gid: req.body.creatorGID,
-        type: req.body.type,
-        email: req.body.email,
-        photo: req.body.photo,
-        username: req.body.username,
-        classid: row.dataValues.id
-      })
-      FileSystem.mkdir('static/' + row.id);
-      res.json({ data: row, dataReg: rowtemp });
-    } catch (err) {
-      next(err);
-    }
+    let rowtemp = await RegistrModel.create({
+      gid: req.body.creatorGID,
+      type: req.body.type,
+      email: req.body.email,
+      photo: req.body.photo,
+      username: req.body.username,
+      classid: row.dataValues.id
+    });
+    FileSystem.mkdirSync(Path.resolve(UPLOADS_DIR, String(row.id)));
+    res.json({ data: row, dataReg: rowtemp });
   } catch (err) {
     next(err);
   }
