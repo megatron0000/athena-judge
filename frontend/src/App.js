@@ -49,39 +49,6 @@ export default class App extends Component {
     }
   }
 
-  showCreateClass = () => {
-    this.refSideBar.handleClose();
-    this.setState({ show: "createClass" });
-  }
-
-  showClass = (id) => {
-    this.refSideBar.handleClose();
-    this.setState({show: "class", classid: id});
-  }
-
-  cancelCreateClass = () => {
-    if (this.state.classid != null)
-      this.setState({show: "class"});
-    else
-      this.setState({show: "welcome"});
-  }
-
-  handleCreateClass = (form) => {
-    this.setState({ loading: true });
-    Axios.post(Config.api + "/classes", {
-      name: form.name,
-      description: form.description,
-      // HARD CODED @italotabatinga
-      professorID: "1234"
-    }).then((res) => {
-      this.setState({show: "welcome"});
-      this.refSideBar.showList();
-    }).catch((err) => {
-      console.log(err);
-      this.setState({ loading: false });
-    });
-  }
-
   handleHomeClick = () => {
     this.main.showHome();
   }
@@ -98,7 +65,6 @@ export default class App extends Component {
         <SideBar
           ref={(ref) => { this.refSideBar = ref; } }
           onHomeClick={this.handleHomeClick}
-          showClass={this.showClass}
         />
         <Paper
           elevation={4}

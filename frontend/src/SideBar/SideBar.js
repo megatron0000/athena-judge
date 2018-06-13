@@ -91,7 +91,6 @@ export default class SideBar extends React.Component {
         </List>
         <ClassesList
           data={this.state.list}
-          showClass={this.props.showClass}
         />
       </Drawer>
     );

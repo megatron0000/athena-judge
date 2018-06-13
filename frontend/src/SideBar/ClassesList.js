@@ -12,7 +12,6 @@ export default class ClassesList extends React.Component {
         {this.props.data.map((classes) => (
           <ListItem 
             key={classes.id}
-            onClick = { () => {this.props.showClass(classes.id)} }
             button
           >
             <ListItemIcon>
