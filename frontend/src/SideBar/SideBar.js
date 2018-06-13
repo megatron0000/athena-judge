@@ -7,6 +7,7 @@ import Divider from 'material-ui/Divider';
 
 import Config from "../Config";
 
+import HomeIcon from "@material-ui/icons/Home";
 import AssignmentIcon from "@material-ui/icons/Assignment";
 import ClassIcon from "@material-ui/icons/Class";
 import PeopleIcon from "@material-ui/icons/People";
@@ -34,6 +35,10 @@ export default class SideBar extends React.Component {
   handleClose = () => {
     this.setState({ open: false });
   }
+
+  handleItemClick = (handler) => {
+    return () => this.setState({ open: false }, handler);
+  }
   
   showList = () => {
     this.setState({loading: true });
@@ -50,6 +55,15 @@ export default class SideBar extends React.Component {
     return (
       <Drawer open={this.state.open} onClose={this.handleClose}>
         <List style={{ width: 250 }}>
+
+          <ListItem button onClick={this.handleItemClick(this.props.onHomeClick)}>
+            <ListItemIcon>
+              <HomeIcon />
+            </ListItemIcon>
+            <ListItemText primary="Home" />
+          </ListItem>
+
+          <Divider />
 
           <ListItem button>
             <ListItemIcon>
@@ -77,7 +91,7 @@ export default class SideBar extends React.Component {
         </List>
         <ClassesList
           data={this.state.list}
-          showClass = {this.props.showClass}
+          showClass={this.props.showClass}
         />
       </Drawer>
     );

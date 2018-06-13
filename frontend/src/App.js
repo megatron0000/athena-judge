@@ -82,7 +82,7 @@ export default class App extends Component {
     });
   }
 
-  showHome = () => {
+  handleHomeClick = () => {
     this.main.showHome();
   }
 
@@ -91,13 +91,14 @@ export default class App extends Component {
       <div>
         <TopBar
           title="Athena Judge"
-          onHomeClick={this.showHome}
+          onMenuClick={this.handleOpenSidebar}
           user={this.state.user}
           onUserUpdate={this.handleUserUpdate}
         />
         <SideBar
           ref={(ref) => { this.refSideBar = ref; } }
-          showClass = {this.showClass}
+          onHomeClick={this.handleHomeClick}
+          showClass={this.showClass}
         />
         <Paper
           elevation={4}
