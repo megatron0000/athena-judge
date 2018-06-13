@@ -21,8 +21,13 @@ export default class App extends Component {
       show: "welcome",
       classid: null,
       dialogopen: false,
-      loading: false
+      loading: false,
+      user: null,
     };
+  }
+
+  handleUserUpdate = (user) => {
+    this.setState({ user: user });
   }
 
   handleOpenSidebar = () => {
@@ -47,10 +52,6 @@ export default class App extends Component {
   showCreateClass = () => {
     this.refSideBar.handleClose();
     this.setState({ show: "createClass" });
-  }
-
-  saveUser = (user) => {
-    this.setState({user: user});
   }
 
   showClass = (id) => {
@@ -91,7 +92,8 @@ export default class App extends Component {
         <TopBar
           title="Athena Judge"
           onHomeClick={this.showHome}
-          saveUser={this.saveUser}
+          user={this.state.user}
+          onUserUpdate={this.handleUserUpdate}
         />
         <SideBar
           ref={(ref) => { this.refSideBar = ref; } }

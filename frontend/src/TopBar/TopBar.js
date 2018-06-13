@@ -18,7 +18,10 @@ export default function TopBar(props) {
         <Typography variant="title" color="inherit" noWrap style={{ flex: 1 }}>
           {props.title}
         </Typography>
-        <AuthButton saveUser={props.saveUser}/>
+        <AuthButton
+          user={props.user}
+          onUserUpdate={props.onUserUpdate}
+        />
       </Toolbar>
     </AppBar>
   );

@@ -34,19 +34,14 @@ export default class AuthButton extends Component {
   handleUserUpdate = (guser) => {
     if (guser && guser.isSignedIn()) {
       let profile = guser.getBasicProfile();
-      this.setState({
-        user: {
-          gid: profile.getId(),
-          name: profile.getName(),
-          photo: profile.getImageUrl(),
-          email: profile.getEmail()
-        }
+      this.props.onUserUpdate({
+        gid: profile.getId(),
+        name: profile.getName(),
+        photo: profile.getImageUrl(),
+        email: profile.getEmail()
       });
-      this.props.saveUser(this.state.user);
     } else {
-      this.setState({
-        user: null
-      });
+      this.props.onUserUpdate(null);
     }
   }
 
@@ -60,25 +55,24 @@ export default class AuthButton extends Component {
   handleLogout = () => {
     if (this.state.gauth) {
       this.state.gauth.signOut()
-        .then(() => this.handleUserUpdate(null));
+        .then(this.handleUserUpdate);
     }
   }
 
   render() {
-    if (this.state.user == null) {
-      return (
-        <LoginButton
+    return (
+      <div>
+      { this.props.user == null
+        ? <LoginButton
           enabled={this.state.gauth != null}
           onClick={this.handleLogin}
         />
-      );
-    } else {
-      return (
-        <UserMenu
-          user={this.state.user}
+        : <UserMenu
+          user={this.props.user}
           onLogout={this.handleLogout}
         />
-      );
-    }
+      }
+      </div>
+    );
   }
 }
