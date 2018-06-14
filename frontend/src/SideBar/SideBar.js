@@ -25,7 +25,7 @@ export default class SideBar extends React.Component {
     };
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.showList();
   }
 

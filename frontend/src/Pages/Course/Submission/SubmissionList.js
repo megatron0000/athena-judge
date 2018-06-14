@@ -33,7 +33,7 @@ export default class SubmissionList extends React.Component {
     });
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.getSubmissionsList();
   }
 

@@ -49,7 +49,7 @@ export default class AssignmentList extends React.Component {
     });
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.getAssignmentsList();
   }
 

@@ -33,7 +33,7 @@ export default class StudentsList extends React.Component {
     });
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.getAssignmentsList();
   }
 

@@ -175,7 +175,7 @@ export default class CoursePage extends React.Component {
     });
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.getCourseData();
     this.getStudents();
     this.getProfessors();
