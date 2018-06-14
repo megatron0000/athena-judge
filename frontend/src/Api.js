@@ -39,6 +39,7 @@ if (Config.enableApiLogs) {
         resolve(res);
       }).catch((err) => {
         console.log("ERROR: API PUT", route, params, err);
+        reject(err);
       });
     });
   }
@@ -47,6 +48,7 @@ if (Config.enableApiLogs) {
     return new Promise((resolve, reject) => {
       Axios.delete(Config.api + route, params).then((res) => {
         console.log("API DELETE", route, params, res.data);
+        resolve(res);
       }).catch((err) => {
         console.log("ERROR: API DELETE", route, params, err);
         reject(err);
