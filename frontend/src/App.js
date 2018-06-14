@@ -39,7 +39,7 @@ export default class App extends React.Component {
       <div>
         <TopBar
           title="Athena Judge"
-          onMenuClick={this.handleOpenSidebar}
+          onHomeClick={this.handleHomeClick}
           user={this.state.user}
           onUserUpdate={this.handleUserUpdate}
         />
