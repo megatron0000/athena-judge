@@ -56,7 +56,7 @@ router.post("/:id/enroll", async (req, res, next) => {
   */
   try {
     let row = await CoursesAssocModel.findOne({ where:
-      { courseId: req.params.id, userGid: req.body.gid }
+      { courseId: req.params.id, userGid: req.body.gid, role: "student" }
     });
     if (row == null) {
       await CoursesAssocModel.create({

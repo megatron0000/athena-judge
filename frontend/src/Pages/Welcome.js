@@ -23,6 +23,7 @@ export default class Welcome extends React.Component {
     
     this.state = {
       courses: [],
+      availableCourses: [],
       teachingCourses: [],
       enrolledCourses: [],
       loading: false,
@@ -46,18 +47,38 @@ export default class Welcome extends React.Component {
   }
 
   getCoursesList = () => {
+    this.setState({ loading: true });
+    let doneCount = 0;
     // All courses    
     Api.get("/courses").then((res) => {
-      this.setState({ courses: res.data.data });
+      this.setState({ courses: res.data.data }, done);
     });
     // My enrolled courses
     Api.get(`/courses/enrolled/${this.props.user.gid}`).then((res) => {
-      this.setState({ enrolledCourses: res.data.data });
+      this.setState({ enrolledCourses: res.data.data }, done);
     });
     // My teaching courses
     Api.get(`/courses/teaching/${this.props.user.gid}`).then((res) => {
-      this.setState({ teachingCourses: res.data.data });
+      this.setState({ teachingCourses: res.data.data }, done);
     });
+    function done() {
+      doneCount++;
+      if (doneCount == 3) { // all done
+        // compute the list of available courses (all courses removing already enrolled courses)
+        let mapCourse = {};
+        for (let course of this.state.courses) {
+          mapCourse[course.id] = course;
+        }
+        for (let course of this.state.enrolledCourses) {
+          delete mapCourse[course.id];
+        }
+        let available = [];
+        for (let course in mapCourse) {
+          available.push(mapCourse[course]);
+        }
+        this.setState({ availableCourses: available })
+      }
+    }
   }
 
   handleEnroll = (courseId) => {
@@ -110,7 +131,7 @@ export default class Welcome extends React.Component {
           Cursos disponíveis para inscrição
         </Typography>
         <List >
-          {this.state.courses.map((course) => (
+          {this.state.availableCourses.map((course) => (
             <ListItem
               key={course.id}
             >

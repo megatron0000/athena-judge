@@ -187,7 +187,7 @@ export default class CoursePage extends React.Component {
           variant="title"
           style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
         >
-          Alunos
+          Alunos Inscritos
         </Typography>
 
         <List >
@@ -200,7 +200,7 @@ export default class CoursePage extends React.Component {
                 src={student.photo}
               />
 
-              <ListItemText primary={student.username} />
+              <ListItemText primary={student.name} />
 
               {(this.state.selfType == "Creator" && student.type != "Creator") && 
                 <Button
