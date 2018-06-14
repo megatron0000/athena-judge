@@ -1,4 +1,5 @@
 import React from "react";
+import Api from "./Api";
 
 import Paper from "@material-ui/core/Paper";
 
@@ -10,12 +11,19 @@ export default class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      user: null,
+      user: null, // { gid, name, photo, email }
     };
   }
 
   handleUserUpdate = (user) => {
     this.setState({ user });
+    if (user != null) {
+      Api.put(`/users/${user.gid}`, {
+        name: user.name,
+        photo: user.photo,
+        email: user.email,
+      });
+    }
   }
 
   handleOpenSidebar = () => {
