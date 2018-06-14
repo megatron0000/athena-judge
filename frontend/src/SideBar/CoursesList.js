@@ -5,19 +5,19 @@ import IconButton from "material-ui/IconButton";
 
 import ClassIcon from "@material-ui/icons/Class";
 
-export default class ClassesList extends React.Component {
+export default class CoursesList extends React.Component {
   render() {
     return (
       <List style={{ width: 250 }}>
-        {this.props.data.map((classes) => (
+        {this.props.data.map((course) => (
           <ListItem 
-            key={classes.id}
+            key={course.id}
             button
           >
             <ListItemIcon>
               <ClassIcon />
             </ListItemIcon>
-            <ListItemText primary={classes.name} />
+            <ListItemText primary={course.name} />
           </ListItem>  
         ))}
       </List>

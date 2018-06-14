@@ -25,7 +25,7 @@ export default DB.define("submissions", {
     type: Sequelize.STRING,
     allowNull: false
   },
-  classId: {
+  courseId: {
     type: Sequelize.INTEGER,
     allowNull: false
   }

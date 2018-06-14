@@ -1,7 +1,5 @@
 import React from "react";
-import Axios from "axios";
-
-import Config from "../../../Config";
+import Api from "../../../Api";
 
 import List, { ListItem, ListItemText, ListItemIcon, ListItemSecondaryAction } from "material-ui/List";
 import IconButton from "material-ui/IconButton";
@@ -24,7 +22,7 @@ export default class SubmissionList extends React.Component {
 
   getSubmissionsList = () => {
     this.setState({ loading: true });
-    Axios.get(Config.api + "/submissions/submissionsassig/" + this.props.assignmentid).then((res) => {
+    Api.get("/submissions/submissionsassig/" + this.props.assignmentid).then((res) => {
       this.setState({ data: res.data.data, loading: false });
     }).catch((err) => {
       console.log(err);

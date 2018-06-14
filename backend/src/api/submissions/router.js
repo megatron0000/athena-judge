@@ -38,8 +38,8 @@ router.get("/submissionsassig/:assignid", async (req, res, next) => {
 
 router.post("/", upload.single('submission'), async(req, res, next) => {
   try {
-    let dirpath = Path.join("static", req.body.classId, req.body.assignid, "tests")
-    let filenames = FileSystem.readdirSync(dirpath);
+    let dirpath = Path.join("static", req.body.courseId, req.body.assignid, "tests")
+    let filenames = []; //FileSystem.readdirSync(dirpath);
     let inputnames=[]
     let outputnames=[]
     let result={}
@@ -51,7 +51,7 @@ router.post("/", upload.single('submission'), async(req, res, next) => {
         outputnames.push(filenames[i]);
     }
 
-    FileSystem.writeFileSync(dirpath +'/'+ req.file.originalname, req.file.buffer,req.file.enconding);
+    //FileSystem.writeFileSync(dirpath +'/'+ req.file.originalname, req.file.buffer,req.file.enconding);
       ChildProcess.execSync("g++ "+dirpath+'/'+req.file.originalname+" -o "+dirpath+"/program");
       let output = ''
       for(let i = 0; i < inputnames.length; i++) {
@@ -69,7 +69,7 @@ router.post("/", upload.single('submission'), async(req, res, next) => {
         studentEmail: req.body.email,
         assignmentID: req.body.assignid,
         studentName: req.body.username,
-        classId: req.body.classId
+        courseId: req.body.courseId
       })
     } catch(err) {
       next(err);

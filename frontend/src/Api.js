@@ -20,7 +20,7 @@ Api.get = (route) => {
 
 Api.post = (route, params) => {
   return new Promise((resolve, reject) => {
-    Axios.post(Config.api + route).then((res) => {
+    Axios.post(Config.api + route, params).then((res) => {
       console.log("API POST", route, params, res.data);
       resolve(res);
     }).catch((err) => {
@@ -32,7 +32,7 @@ Api.post = (route, params) => {
 
 Api.put = (route, params) => {
   return new Promise((resolve, reject) => {
-    Axios.put(Config.api + route).then((res) => {
+    Axios.put(Config.api + route, params).then((res) => {
       console.log("API PUT", route, params, res.data);
       resolve(res);
     }).catch((err) => {
@@ -43,7 +43,7 @@ Api.put = (route, params) => {
 
 Api.delete = (route, params) => {
   return new Promise((resolve, reject) => {
-    Axios.delete(Config.api + route).then((res) => {
+    Axios.delete(Config.api + route, params).then((res) => {
       console.log("API DELETE", route, params, res.data);
     }).catch((err) => {
       console.log("ERROR: API DELETE", route, params, err);

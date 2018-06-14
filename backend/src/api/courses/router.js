@@ -1,12 +1,12 @@
 import Express from "express";
 
-import ClassesModel from "./model";
+import CoursesModel from "./model";
 
 const router = Express.Router();
 
 router.get("/", async (req, res, next) => {
   try {
-    let rows = await ClassesModel.findAll();
+    let rows = await CoursesModel.findAll();
     res.json({ data: rows });
   } catch (err) {
     next(err);
@@ -15,7 +15,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    let row = await ClassesModel.findById(req.params.id);
+    let row = await CoursesModel.findById(req.params.id);
     res.json({ data: row });
   } catch (err) {
     next(err);
@@ -27,7 +27,7 @@ router.get("/:id", async (req, res, next) => {
 // 
 // router.post("/", async (req, res, next) => {
 //   try {
-//     let row = await ClassesModel.create({
+//     let row = await CoursesModel.create({
 //       id: req.body.id,
 //       name: req.body.name,
 //       professorID: req.body.creatorGID,
@@ -41,7 +41,7 @@ router.get("/:id", async (req, res, next) => {
 
 router.put("/:id", async (req, res, next) => {
   try {
-    let row = await ClassesModel.update({
+    let row = await CoursesModel.update({
       id: req.body.id,
       name: req.body.name,
       professorID: req.body.professorID
@@ -54,7 +54,7 @@ router.put("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    let row = await ClassesModel.destroy({ where: { id: req.params.id }});
+    let row = await CoursesModel.destroy({ where: { id: req.params.id }});
     res.json({ data: row });
   } catch (err) {
     next(err);

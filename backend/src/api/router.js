@@ -4,12 +4,12 @@ import FileSystem from "fs";
 import Path from "path";
 
 import AssignmentsRouter from "./assignments/router";
-import ClassesRouter from "./classes/router";
+import CoursesRouter from "./courses/router";
 import UsersRouter from "./users/router";
 import RegistrRouter from "./registrations/router";
 import SubmissionsRouter from "./submissions/router";
 
-import ClassesModel from "./classes/model";
+import CoursesModel from "./courses/model";
 import RegistrModel from "./registrations/model";
 import UsersModel from "./users/model";
 
@@ -19,7 +19,7 @@ const upload = Multer();
 const router = Express.Router();
 
 router.use("/assignments", AssignmentsRouter);
-router.use("/classes", ClassesRouter);
+router.use("/courses", CoursesRouter);
 router.use("/users", UsersRouter);
 router.use("/registrations", RegistrRouter);
 router.use("/submissions", SubmissionsRouter);
@@ -27,9 +27,9 @@ router.use("/submissions", SubmissionsRouter);
 // router.use("/assignments", AssignmentsRouter);
 // router.use("/assignments", AssignmentsRouter);
 
-ClassesModel.hasMany(RegistrModel, {
-  foreignKey: 'classId', // Key in RegistrModel
-  sourceKey: 'id' // Key in ClassesModel
+CoursesModel.hasMany(RegistrModel, {
+  foreignKey: 'courseId', // Key in RegistrModel
+  sourceKey: 'id' // Key in CoursesModel
 });
 
 UsersModel.hasMany(RegistrModel, {
@@ -37,9 +37,9 @@ UsersModel.hasMany(RegistrModel, {
   sourceKey: 'gid' // Key in UsersModel
 });
 
-router.get("/classesgid/:id", async (req, res, next) => {
+router.get("/coursesgid/:id", async (req, res, next) => {
   try {
-    let row = await ClassesModel.findAll({
+    let row = await CoursesModel.findAll({
       include: [{
         model: RegistrModel,
         where: {
@@ -53,9 +53,9 @@ router.get("/classesgid/:id", async (req, res, next) => {
   }
 });
 
-router.post("/classes", async (req, res, next) => {
+router.post("/courses", async (req, res, next) => {
   try {
-    let row = await ClassesModel.create({
+    let row = await CoursesModel.create({
       name: req.body.name,
       creatorGID: req.body.creatorGID,
       description: req.body.description
@@ -66,7 +66,7 @@ router.post("/classes", async (req, res, next) => {
       email: req.body.email,
       photo: req.body.photo,
       username: req.body.username,
-      classId: row.dataValues.id
+      courseId: row.dataValues.id
     });
     res.json({ data: row, dataReg: rowtemp });
   } catch (err) {
@@ -74,14 +74,14 @@ router.post("/classes", async (req, res, next) => {
   }
 });
 
-router.get("/registrationsclass/:classId", async (req, res, next) => {
-  console.log("cheguei aq", req.params.classId);
+router.get("/registrationscourse/:courseId", async (req, res, next) => {
+  console.log("cheguei aq", req.params.courseId);
   try {
     let row = await UsersModel.findAll({
       include: [{
         model: RegistrModel,
         where: {
-          classId: '1'
+          courseId: '1'
         }
       }]
     });

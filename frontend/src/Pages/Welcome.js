@@ -1,6 +1,5 @@
 import React from "react";
-import Axios from "axios";
-import Config from "../Config";
+import Api from "../Api";
 
 import List, { ListItem, ListItemText, ListItemIcon, ListItemSecondaryAction } from "material-ui/List";
 import IconButton from "material-ui/IconButton";
@@ -20,7 +19,7 @@ export default class Welcome extends React.Component {
     
     this.state = {
       list: [],
-      currentClasses: [],
+      currentCourses: [],
       loading: false,
       dialogRegisterOpen: false
     };
@@ -28,48 +27,48 @@ export default class Welcome extends React.Component {
 
   // @italotabatinga: Dont know if this is the best way is with
   // componentDidMount and componentDidUpdate, but it works
-  // when you give Welcome Class the responsability to GET its 
+  // when you give Welcome Course the responsability to GET its 
   // own lists
   componentDidMount = () => {
     if(this.props.user)
-      this.getClassesList();
+      this.getCoursesList();
   }
 
   componentDidUpdate = (prevProps, prevState, snapshot) => {
     if(this.props.user && prevProps != this.props) {
-      this.getClassesList();
+      this.getCoursesList();
     }
   }
 
-  getClassesList = () => {
-    // All classes
+  getCoursesList = () => {
+    // All courses
     this.setState({ loading: true });
-    Axios.get(Config.api + "/classes").then((res) => {
+    Api.get("/courses").then((res) => {
       this.setState({ list: res.data.data, loading: false });
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });
     });
-    // My current classes
+    // My current courses
     this.setState({ loading: true });
-    Axios.get(Config.api + "/classesgid/" + this.props.user.gid).then((res) => {
-      this.setState({ currentClasses: res.data.data, loading: false });
+    Api.get("/coursesgid/" + this.props.user.gid).then((res) => {
+      this.setState({ currentCourses: res.data.data, loading: false });
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });
     });
   }
 
-  handleRegister = (classId) => {
+  handleRegister = (courseId) => {
     this.setState({ loading: true });
-    Axios.post(Config.api + "/registrations/",{
+    Api.post("/registrations/",{
         gid: this.props.user.gid,
         email: this.props.user.email,
         photo: this.props.user.photo,
         username: this.props.user.name,
-        classId: classId
+        courseId: courseId
       }).then((res) => {
-      this.getClassesList();
+      this.getCoursesList();
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });
@@ -92,16 +91,16 @@ export default class Welcome extends React.Component {
         </Typography>
 
         <List >
-          {this.state.currentClasses.map((theClass) => (
+          {this.state.currentCourses.map((course) => (
             <ListItem
-              key={theClass.id}
-              onClick={() => { this.props.onClassClick(theClass.id) }}
+              key={course.id}
+              onClick={() => { this.props.onCourseClick(course.id) }}
               button
             >
               <ListItemIcon>
                 <ClassIcon />
               </ListItemIcon>
-              <ListItemText primary={theClass.name} />
+              <ListItemText primary={course.name} />
             </ListItem>
           ))}
         </List>
@@ -125,9 +124,9 @@ export default class Welcome extends React.Component {
           Outros Cursos
         </Typography>
         <List >
-          {this.state.list.filter( o => !this.state.currentClasses.map(x => x.id).includes(o.id)).map((classes) => (
+          {this.state.list.filter( o => !this.state.currentCourses.map(x => x.id).includes(o.id)).map((course) => (
             <ListItem
-              key={classes.id}
+              key={course.id}
               button
             >
             
@@ -135,7 +134,7 @@ export default class Welcome extends React.Component {
                 <ClassIcon />
               </ListItemIcon>
               
-              <ListItemText primary={classes.name} />
+              <ListItemText primary={course.name} />
 
               <Button
                 variant="raised"
@@ -152,7 +151,7 @@ export default class Welcome extends React.Component {
                 aria-labelledby="alert-dialog-title"
                 aria-describedby="alert-dialog-description"
               >
-                <DialogTitle id="alert-dialog-title">{classes.name}</DialogTitle>
+                <DialogTitle id="alert-dialog-title">{course.name}</DialogTitle>
                 
                 <DialogContent>
                   <DialogContentText id="alert-dialog-description">
@@ -166,7 +165,7 @@ export default class Welcome extends React.Component {
                   </Button>
                   
                   <Button 
-                    onClick={ () => { this.handleRegister(classes.id) }} 
+                    onClick={ () => { this.handleRegister(course.id) }} 
                     color="primary" autoFocus>
                     Sim
                   </Button>

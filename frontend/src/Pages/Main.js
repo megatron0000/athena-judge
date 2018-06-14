@@ -1,14 +1,12 @@
 import React from "react";
-import Axios from "axios";
-import Config from "../Config";
+import Api from "../Api";
 
 import List, { ListItem, ListItemText, ListItemIcon, ListItemSecondaryAction } from "material-ui/List";
 import IconButton from "material-ui/IconButton";
-import ClassIcon from "@material-ui/icons/Class";
 
 import Welcome from "./Welcome";
-import ClassPage from "./Class/ClassPage";
-import ClassForm from "./Class/ClassForm";
+import CoursePage from "./Course/CoursePage";
+import CourseForm from "./Course/CourseForm";
 
 export default class Main extends React.Component {
   constructor(props) {
@@ -16,32 +14,32 @@ export default class Main extends React.Component {
     this.state = {
       show: "Home",
       loading: false,
-      classId: null
+      courseId: null
     };
   }
 
-  showClass = (id) => {
-    this.setState({ show: "ClassView", classId: id });
+  showCourse = (id) => {
+    this.setState({ show: "CourseView", courseId: id });
   }
 
-  showCreateClass = () => {
-    this.setState({ show: "ClassCreate" });
+  showCreateCourse = () => {
+    this.setState({ show: "CourseCreate" });
   }
 
   showHome = () => {
-    this.setState({ show: "Home", classId: null });
+    this.setState({ show: "Home", courseId: null });
   }
 
-  cancelCreateClass = () => {
-    if (this.state.classId != null)
-      this.showClass(this.state.classId);
+  cancelCreateCourse = () => {
+    if (this.state.courseId != null)
+      this.showCourse(this.state.courseId);
     else
       this.showHome();
   }
 
-  handleCreateClass = (form) => {
+  handleCreateCourse = (form) => {
     this.setState({ loading: true });
-    Axios.post(Config.api + "/classes", {
+    Api.post("/courses", {
       name: form.name,
       description: form.description,
       username: this.props.user.name,
@@ -63,19 +61,19 @@ export default class Main extends React.Component {
       <div>
         {this.state.show == "Home" &&
           <Welcome 
-            onClassClick={this.showClass}
-            onCreateClick={this.showCreateClass}
+            onCourseClick={this.showCourse}
+            onCreateClick={this.showCreateCourse}
             user={this.props.user}
           />}
-        {this.state.show == "ClassView" &&
-          <ClassPage
-            classId={this.state.classId}
+        {this.state.show == "CourseView" &&
+          <CoursePage
+            courseId={this.state.courseId}
             user={this.props.user}
           />}
-        {this.state.show == "ClassCreate" &&
-          <ClassForm
-            onBack={this.cancelCreateClass}
-            onSubmit={this.handleCreateClass}
+        {this.state.show == "CourseCreate" &&
+          <CourseForm
+            onBack={this.cancelCreateCourse}
+            onSubmit={this.handleCreateCourse}
           />}
       </div>
     );

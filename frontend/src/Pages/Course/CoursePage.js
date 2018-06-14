@@ -19,7 +19,7 @@ import DialogContent from 'material-ui/Dialog/DialogContent';
 import DialogContentText from 'material-ui/Dialog/DialogContentText';
 import DialogTitle from 'material-ui/Dialog/DialogTitle';
 
-export default class ClassPage extends React.Component {
+export default class CoursePage extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -32,9 +32,9 @@ export default class ClassPage extends React.Component {
     };
   }
 
-  getClassData = () => {
+  getCourseData = () => {
     this.setState({ loading: true });
-    Api.get("/classes/" + this.props.classId).then((res) => {
+    Api.get("/courses/" + this.props.courseId).then((res) => {
       this.setState({ data: res.data.data, loading: false });
     }).catch((err) => {
       console.log(err);
@@ -44,7 +44,7 @@ export default class ClassPage extends React.Component {
 
   getStudents = () => {
     this.setState({loading: true});
-    Api.get("/registrations/registrationsstudents/" + this.props.classId).then((res) => {
+    Api.get("/registrations/registrationsstudents/" + this.props.courseId).then((res) => {
       this.setState({
                       students: res.data.data, 
                       selfType: res.data.data.find(o => o.gid == this.props.user.gid).type,
@@ -79,7 +79,7 @@ export default class ClassPage extends React.Component {
     let formData = new FormData();
     formData.append('title', form.title);
     formData.append('description', form.description);
-    formData.append('classId', this.props.classId);
+    formData.append('courseId', this.props.courseId);
     formData.append('dueDate', form.dueDate);
     for (let i = 0; i < form.attachments.length; i++) {
       formData.append('attachments', form.attachments[i]);
@@ -106,7 +106,7 @@ export default class ClassPage extends React.Component {
     Api.put("/assignments/" + form.id, {
       title: form.title,
       description: form.description,
-      classId: this.props.classId,
+      courseId: this.props.courseId,
       dueDate: form.dueDate,
       code: form.code
     }).then((res) => {
@@ -127,9 +127,9 @@ export default class ClassPage extends React.Component {
     });
   }
 
-  handlePromote = (classId, gid) => {
+  handlePromote = (courseId, gid) => {
     this.setState({ loading: true });
-    Api.put("/registrations/regpromote/" + classId + "/"+ gid).then((res) => {
+    Api.put("/registrations/regpromote/" + courseId + "/"+ gid).then((res) => {
       console.log(res);
       this.getStudents();
     }).catch((err) => {
@@ -139,7 +139,7 @@ export default class ClassPage extends React.Component {
   }
 
   componentWillMount() {
-    this.getClassData();
+    this.getCourseData();
     this.getStudents();
   }
 
@@ -174,7 +174,7 @@ export default class ClassPage extends React.Component {
         
       {
         <AssignmentPage 
-          classId={this.props.classId}
+          courseId={this.props.courseId}
           selfType={this.state.selfType}
           user={this.props.user}
         />
@@ -229,7 +229,7 @@ export default class ClassPage extends React.Component {
                     </Button>
                   
                     <Button 
-                      onClick={() => { this.handlePromote(this.props.classId, student.gid), this.handleCloseDialogPromote() }}
+                      onClick={() => { this.handlePromote(this.props.courseId, student.gid), this.handleCloseDialogPromote() }}
                       color="primary" autoFocus>
                       Sim
                     </Button>

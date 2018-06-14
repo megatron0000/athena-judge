@@ -10,7 +10,7 @@ import DialogContent from 'material-ui/Dialog/DialogContent';
 import DialogContentText from 'material-ui/Dialog/DialogContentText';
 import DialogTitle from 'material-ui/Dialog/DialogTitle';
 
-export default class ClassForm extends React.Component {
+export default class CourseForm extends React.Component {
   constructor(props) {
     super(props);
     this.state = {

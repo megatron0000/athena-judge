@@ -118,7 +118,7 @@ export default class AssignmentPage extends React.Component {
       dueDate: form.dueDate,
       code: form.code
     }).then((res) => {
-      this.showHomeUpdateAssign();
+      this.showListUpdateAssign();
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });

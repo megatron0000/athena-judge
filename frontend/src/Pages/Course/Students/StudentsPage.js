@@ -1,12 +1,10 @@
 import React from "react";
-import Axios from "axios";
+import Api from "../../Api";
 
 import Typography from "material-ui/Typography";
 import { CircularProgress } from "material-ui/Progress";
 import Button from "material-ui/Button";
 import AddIcon from "@material-ui/icons/Add";
-
-import Config from "../../Config";
 
 import AssignmentForm from "./AssignmentForm";
 import AssignmentList from "./AssignmentList";
@@ -28,7 +26,7 @@ export default class AssignmentsPage extends React.Component {
 
   showList = () => {
     this.setState({ show: "list", loading: true });
-    Axios.get(Config.api + "/assignments").then((res) => {
+    Api.get("/assignments").then((res) => {
       this.setState({ list: res.data.data, loading: false });
     }).catch((err) => {
       console.log(err);
@@ -46,7 +44,7 @@ export default class AssignmentsPage extends React.Component {
 
   handleCreate = (form) => {
     this.setState({ loading: true });
-    Axios.post(Config.api + "/assignments", {
+    Api.post("/assignments", {
       title: form.title,
       description: form.description,
       code: form.code
@@ -64,7 +62,7 @@ export default class AssignmentsPage extends React.Component {
 
   handleUpdate = (form) => {
     this.setState({ loading: true });
-    Axios.put(Config.api + "/assignments/" + this.state.assignment.id, {
+    Api.put("/assignments/" + this.state.assignment.id, {
       title: form.title,
       description: form.description,
       code: form.code
@@ -79,7 +77,7 @@ export default class AssignmentsPage extends React.Component {
 
   handleDelete = (id) => {
     this.setState({ loading: true });
-    Axios.delete(Config.api + "/assignments/" + id).then((res) => {
+    Api.delete("/assignments/" + id).then((res) => {
       this.showList();
     }).catch((err) => {
       console.log(err);

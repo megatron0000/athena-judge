@@ -1,7 +1,5 @@
 import React from "react";
-import Axios from "axios";
-
-import Config from "../../../Config";
+import Api from "../../../Api";
 
 import List, { ListItem, ListItemText, ListItemIcon, ListItemSecondaryAction } from "material-ui/List";
 import IconButton from "material-ui/IconButton";
@@ -26,7 +24,7 @@ export default class StudentsList extends React.Component {
 
   getStudentsList = () => {
     this.setState({ loading: true });
-    Axios.get(Config.api + "/registrations/class/" + this.props.classId).then((res) => {
+    Api.get("/registrations/course/" + this.props.courseId).then((res) => {
       this.setState({ data: res.data.data, loading: false });
     }).catch((err) => {
       console.log(err);

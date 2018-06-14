@@ -2,7 +2,7 @@ import Sequelize from "sequelize";
 
 import { DB } from "../../config";
 
-export default DB.define("classes", {
+export default DB.define("courses", {
   id: {
     type: Sequelize.INTEGER,
     allowNull: false,
@@ -24,5 +24,5 @@ export default DB.define("classes", {
   timestamps: true,
   paranoid: true,
   freezeTableName: true,
-  tableName: "classes"
+  tableName: "courses"
 });

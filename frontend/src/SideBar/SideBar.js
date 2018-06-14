@@ -1,18 +1,16 @@
 import React from "react";
-import Axios from "axios";
+import Api from "../Api";
 
 import Drawer from "material-ui/Drawer";
 import List, { ListItem, ListItemIcon, ListItemText } from "material-ui/List";
 import Divider from 'material-ui/Divider';
-
-import Config from "../Config";
 
 import HomeIcon from "@material-ui/icons/Home";
 import AssignmentIcon from "@material-ui/icons/Assignment";
 import ClassIcon from "@material-ui/icons/Class";
 import PeopleIcon from "@material-ui/icons/People";
 
-import ClassesList from "./ClassesList"
+import CoursesList from "./CoursesList"
 
 export default class SideBar extends React.Component {
   constructor(props) {
@@ -43,7 +41,7 @@ export default class SideBar extends React.Component {
   showList = () => {
     this.setState({loading: true });
     
-    Axios.get(Config.api + "/classes").then((res) => {
+    Api.get("/courses").then((res) => {
       this.setState({ list: res.data.data, loading: false });
     }).catch((err) => {
       console.log(err);
@@ -89,7 +87,7 @@ export default class SideBar extends React.Component {
           </ListItem>
 
         </List>
-        <ClassesList
+        <CoursesList
           data={this.state.list}
         />
       </Drawer>

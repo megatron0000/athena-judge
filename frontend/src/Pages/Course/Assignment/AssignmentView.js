@@ -35,7 +35,7 @@ export default class AssignmentsView extends React.Component {
     formData.append('email', this.props.user.email);
 
     this.setState({ loading: true });
-    Api.post(Config.api + "/submissions", formData, {
+    Api.post("/submissions", formData, {
       headers: {'Content-Type': 'multipart/form-data'} 
     }).then((res) => {
       console.log("Submissao Sucedida", res);

@@ -1,7 +1,5 @@
 import React from "react";
-import Axios from "axios";
-
-import Config from "../../../Config";
+import Api from "../../../Api";
 
 import List, { ListItem, ListItemText, ListItemIcon, ListItemSecondaryAction } from "material-ui/List";
 import IconButton from "material-ui/IconButton";
@@ -30,7 +28,7 @@ export default class AssignmentList extends React.Component {
 
   getAssignmentsList = () => {
     this.setState({ loading: true });
-    Axios.get(Config.api + "/assignments/class/" + this.props.classId).then((res) => {
+    Api.get("/assignments/course/" + this.props.courseId).then((res) => {
       this.setState({ data: res.data.data, loading: false });
     }).catch((err) => {
       console.log(err);
@@ -39,7 +37,7 @@ export default class AssignmentList extends React.Component {
   }
 
   handleDelete = () => {
-    Axios.delete(Config.api + "/assignments/" + this.state.candidateToDelete).then((res) => {  
+    Api.delete("/assignments/" + this.state.candidateToDelete).then((res) => {  
       this.setState({ data: this.state.data.filter(o => o.id !== this.state.candidateToDelete), loading: true });
     }).catch((err) => {
       console.log(err);
