@@ -12,7 +12,7 @@ export default DB.define("courses", {
   creatorUserGid: {
     type: Sequelize.STRING,
     allowNull: false,
-  }
+  },
   name: {
     type: Sequelize.STRING,
     allowNull: false,
