@@ -50,7 +50,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/:id/enroll", async (req, res, next) => {
+router.post("/:id/students", async (req, res, next) => {
   /*
   @vb: Race condition may allow double enrollment, but should hardly ever occur.
   */

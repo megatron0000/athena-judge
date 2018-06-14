@@ -1,6 +1,5 @@
 import Express from "express";
 import Cors from "cors";
-import BodyParser from "body-parser"
 
 import ApiSchema from "./api/schema";
 import ApiRouter from "./api/router";

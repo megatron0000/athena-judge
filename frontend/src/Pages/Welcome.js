@@ -83,7 +83,7 @@ export default class Welcome extends React.Component {
 
   handleEnroll = (courseId) => {
     this.setState({ loading: true });
-    Api.post(`/courses/${courseId}/enroll`, {
+    Api.post(`/courses/${courseId}/students`, {
       gid: this.props.user.gid,
     }).then((res) => {
       this.getCoursesList();
