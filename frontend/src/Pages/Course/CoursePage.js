@@ -29,16 +29,23 @@ export default class CoursePage extends React.Component {
       show: "home",
       assignmentid: null,
       students: [],
-      selfType: '',
+      professors: [],
+      isCreator: false,
+      isProfessor: false,
       loading: false,
-      dialogOpenPromote: false
+      dialogOpenPromote: false,
+      dialogOpenDemote: false,
     };
   }
 
   getCourseData = () => {
     this.setState({ loading: true });
     Api.get("/courses/" + this.props.courseId).then((res) => {
-      this.setState({ data: res.data.data, loading: false });
+      this.setState({
+        isCreator: res.data.data.creatorUserGid === this.props.user.gid,
+        data: res.data.data,
+        loading: false
+      });
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });
@@ -50,6 +57,20 @@ export default class CoursePage extends React.Component {
     Api.get(`/courses/${this.props.courseId}/students`).then((res) => {
       this.setState({
         students: res.data.data, 
+        loading: false
+      });
+    }).catch((err) => {
+      console.log(err);
+      this.setState({loading: false});
+    });
+  }
+
+  getProfessors = () => {
+    this.setState({loading: true});
+    Api.get(`/courses/${this.props.courseId}/professors`).then((res) => {
+      this.setState({
+        isProfessor: res.data.data.find((e) => e.gid === this.props.user.gid) != null,
+        professors: res.data.data, 
         loading: false
       });
     }).catch((err) => {
@@ -132,9 +153,22 @@ export default class CoursePage extends React.Component {
 
   handlePromote = (courseId, gid) => {
     this.setState({ loading: true });
-    Api.put("/registrations/regpromote/" + courseId + "/"+ gid).then((res) => {
-      console.log(res);
+    Api.post(`/courses/${courseId}/professors`, { userGid: gid }).then((res) => {
       this.getStudents();
+      this.getProfessors();
+      this.setState({ loading: false });
+    }).catch((err) => {
+      console.log(err);
+      this.setState({ loading: false });
+    });
+  }
+
+  handleDemote = (courseId, gid) => {
+    this.setState({ loading: true });
+    Api.delete(`/courses/${courseId}/professors/${gid}`).then((res) => {
+      this.getStudents();
+      this.getProfessors();
+      this.setState({ loading: false });
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });
@@ -144,6 +178,7 @@ export default class CoursePage extends React.Component {
   componentWillMount() {
     this.getCourseData();
     this.getStudents();
+    this.getProfessors();
   }
 
   handleOpenDialogPromote = () => {
@@ -152,6 +187,14 @@ export default class CoursePage extends React.Component {
 
   handleCloseDialogPromote = () => {
     this.setState({ dialogOpenPromote: false });
+  };
+
+  handleOpenDialogDemote = () => {
+    this.setState({ dialogOpenDemote: true });
+  };
+
+  handleCloseDialogDemote = () => {
+    this.setState({ dialogOpenDemote: false });
   };
 
   render() {
@@ -178,10 +221,73 @@ export default class CoursePage extends React.Component {
       {
         <AssignmentPage 
           courseId={this.props.courseId}
-          selfType={this.state.selfType}
+          isProfessor={this.state.isProfessor}
           user={this.props.user}
         />
       }
+
+      <Divider />
+        <Typography
+          variant="title"
+          style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
+        >
+          Professores
+        </Typography>
+
+        <List >
+          {this.state.professors.map((professor) => (
+            <ListItem key={professor.gid}>
+
+              <Avatar
+                style={{marginLeft: 5, marginRight: 20}}
+                alt={professor.email}
+                src={professor.photo}
+              />
+
+              <ListItemText primary={professor.name} />
+
+              {this.state.isCreator && professor.gid !== this.props.user.gid && 
+                <Button
+                  variant="raised"
+                  color="secondary"
+                  style={{ marginLeft: 20, marginBottom: 20 }}
+                  onClick={this.handleOpenDialogDemote} 
+                >
+                  Remover
+                  <AddIcon style ={{ marginLeft: 10 }} />
+                </Button>
+              }
+
+              <Dialog
+                  open={this.state.dialogOpenDemote}
+                  onClose={this.handleCloseDialogDemote}
+                  aria-labelledby="alert-dialog-title"
+                  aria-describedby="alert-dialog-description"
+                >
+                  <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                      Tem certeza que deseja remover este professor?
+                    </DialogContentText>
+                  </DialogContent>
+                
+                  <DialogActions>
+                    <Button onClick={this.handleCloseDialogDemote} color="primary">
+                      Não
+                    </Button>
+                  
+                    <Button 
+                      onClick={() => { this.handleDemote(this.props.courseId, professor.gid), this.handleCloseDialogDemote() }}
+                      color="primary" autoFocus>
+                      Sim
+                    </Button>
+                  </DialogActions>
+              
+                </Dialog>
+
+            </ListItem>
+          ))}
+        </List>
+
         <Divider />
         <Typography
           variant="title"
@@ -202,7 +308,7 @@ export default class CoursePage extends React.Component {
 
               <ListItemText primary={student.name} />
 
-              {(this.state.selfType == "Creator" && student.type != "Creator") && 
+              { this.state.isCreator && this.state.professors.find((e) => e.gid == student.gid) == null && 
                 <Button
                   variant="raised"
                   color="secondary"

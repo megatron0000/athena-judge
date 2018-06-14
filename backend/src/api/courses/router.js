@@ -87,6 +87,20 @@ router.get("/:id/students", async (req, res, next) => {
   }
 });
 
+router.get("/:id/professors", async (req, res, next) => {
+  try {
+    let users = await UsersModel.findAll({
+      include: [{
+        model: CoursesAssocModel,
+        where: { courseId: req.params.id, role: "professor" },
+      }],
+    });
+    res.json({ data: users });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post("/", async (req, res, next) => {
   try {
     let row = await CoursesModel.create({
@@ -122,6 +136,31 @@ router.delete("/:id", async (req, res, next) => {
   try {
     let row = await CoursesModel.destroy({ where: { id: req.params.id }});
     res.json({ data: row });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/:id/professors", async (req, res, next) => {
+  try {
+    let userGid = req.body.userGid;
+    let row = await CoursesAssocModel.create({
+      courseId: req.params.id,
+      userGid: userGid,
+      role: "professor",
+    });
+    res.json({ data: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/:id/professors/:userGid", async (req, res, next) => {
+  try {
+    let row = await CoursesAssocModel.destroy({
+      where: { userGid: req.params.userGid, role: "professor" }
+    });
+    res.json({ data: null });
   } catch (err) {
     next(err);
   }

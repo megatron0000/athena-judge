@@ -78,7 +78,7 @@ export default class AssignmentList extends React.Component {
                 primary={assignment.title}
                 secondary={assignment.description}
               />
-              {this.props.selfType == "Creator" &&
+              {this.props.isProfessor &&
                 <ListItemSecondaryAction>
                   <IconButton
                     aria-label="Edit"
@@ -128,7 +128,7 @@ export default class AssignmentList extends React.Component {
             </ListItem>
           ))}
         </List>
-        {this.props.selfType == "Creator" &&
+        {this.props.isProfessor &&
           <Button
             variant="raised"
             color="secondary"

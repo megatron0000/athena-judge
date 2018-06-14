@@ -144,7 +144,7 @@ export default class AssignmentPage extends React.Component {
             onOpen={this.showView}
             showCreateAssignment = {this.showCreateAssignment}
             ref={(ref) => { this.refAssignList = ref; }}            
-            selfType={this.props.selfType}
+            isProfessor={this.props.isProfessor}
           /> }
         { this.state.show == "create" &&
           <AssignmentForm
@@ -160,21 +160,21 @@ export default class AssignmentPage extends React.Component {
             dueDate={this.state.assignment.dueDate}
             onSubmit={this.handleUpdateAssignment}
           /> }
-        { (this.state.show == "view" && this.props.selfType != "Creator") &&
+        { (this.state.show == "view" && !this.props.isProfessor) &&
           <AssignmentView
             onBack={this.showListNoUpdate}
             courseId={this.props.courseId}
             assignmentid={this.state.assignment.id}
-            selfType={this.props.selfType}
+            isProfessor={this.props.isProfessor}
             user={this.props.user}
           /> }
 
-        { (this.state.show == "view" && this.props.selfType == "Creator") &&
+        { (this.state.show == "view" && this.props.isProfessor) &&
           <SubmissionList
             onBack={this.showListNoUpdate}
             courseId={this.props.courseId}
             assignmentid={this.state.assignment.id}
-            selfType={this.props.selfType}
+            isProfessor={this.props.isProfessor}
           /> }  
       </div>
     );

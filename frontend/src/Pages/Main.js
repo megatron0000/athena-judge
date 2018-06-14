@@ -45,11 +45,7 @@ export default class Main extends React.Component {
     Api.post("/courses", {
       name: form.name,
       description: form.description,
-      username: this.props.user.name,
       creatorUserGid: this.props.user.gid,
-      photo: this.props.user.photo,
-      email: this.props.user.email,
-      type: "Creator"
     }).then((res) => {
       var resData = res;
       this.setState({ show: "Home", loading: false });
