@@ -7,32 +7,32 @@ export default DB.define("submissions", {
     type: Sequelize.INTEGER,
     allowNull: false,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
   },
   studentGID: {
     type: Sequelize.STRING,
-    allowNull: false
+    allowNull: false,
   },
   assignmentID: {
     type: Sequelize.INTEGER,
-    allowNull: false
+    allowNull: false,
   },
   studentEmail: {
     type: Sequelize.STRING,
-    allowNull: false
+    allowNull: false,
   },
   studentName: {
     type: Sequelize.STRING,
-    allowNull: false
+    allowNull: false,
   },
   courseId: {
     type: Sequelize.INTEGER,
-    allowNull: false
+    allowNull: false,
   },
   code: {
     type: Sequelize.TEXT,
-    allowNull: false
-  }
+    allowNull: false,
+  },
 }, {
   timestamps: true,
   paranoid: true,

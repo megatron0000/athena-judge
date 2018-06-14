@@ -7,25 +7,25 @@ export default DB.define("users", {
     type: Sequelize.INTEGER,
     allowNull: false,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
   },
   gid: {
     type: Sequelize.STRING,
     allowNull: false,
-    primaryKey: true
+    primaryKey: true,
   },
   name: {
     type: Sequelize.STRING,
-    allowNull: false
+    allowNull: false,
   },
   photo: {
     type: Sequelize.STRING,
-    allowNull: false
+    allowNull: false,
   },
   email: {
     type: Sequelize.STRING,
-    allowNull: false
-  }
+    allowNull: false,
+  },
 }, {
   timestamps: true,
   paranoid: true,

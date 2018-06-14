@@ -46,7 +46,7 @@ export default class Main extends React.Component {
       name: form.name,
       description: form.description,
       username: this.props.user.name,
-      creatorGID: this.props.user.gid,
+      creatorUserGid: this.props.user.gid,
       photo: this.props.user.photo,
       email: this.props.user.email,
       type: "Creator"

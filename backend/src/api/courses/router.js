@@ -91,11 +91,11 @@ router.post("/", async (req, res, next) => {
   try {
     let row = await CoursesModel.create({
       name: req.body.name,
-      creatorGID: req.body.creatorGID,
+      creatorUserGid: req.body.creatorUserGid,
       description: req.body.description
     });
     await CoursesAssocModel.create({
-      userGid: req.body.creatorGID,
+      userGid: req.body.creatorUserGid,
       courseId: row.dataValues.id,
       role: "professor",
     });
@@ -110,7 +110,7 @@ router.put("/:id", async (req, res, next) => {
     let row = await CoursesModel.update({
       id: req.body.id,
       name: req.body.name,
-      creatorGID: req.body.creatorGID
+      creatorUserGid: req.body.creatorUserGid
     }, { where: { id: req.params.id }});
     res.json({ data: row[0] });
   } catch (err) {

@@ -7,22 +7,22 @@ export default DB.define("assignments", {
     type: Sequelize.INTEGER,
     allowNull: false,
     primaryKey: true,
-    autoIncrement: true
-  },
-  title: {
-    type: Sequelize.STRING,
-    allowNull: false
-  },
-  description: {
-    type: Sequelize.TEXT
-  },
-  dueDate: {
-    type: Sequelize.STRING
+    autoIncrement: true,
   },
   courseId: {
     type: Sequelize.STRING,
-    allowNull: false
-  }
+    allowNull: false,
+  },
+  title: {
+    type: Sequelize.STRING,
+    allowNull: false,
+  },
+  description: {
+    type: Sequelize.TEXT,
+  },
+  dueDate: {
+    type: Sequelize.STRING,
+  },
 }, {
   timestamps: true,
   paranoid: true,

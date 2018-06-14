@@ -7,19 +7,19 @@ export default DB.define("courses", {
     type: Sequelize.INTEGER,
     allowNull: false,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
   },
+  creatorUserGid: {
+    type: Sequelize.STRING,
+    allowNull: false,
+  }
   name: {
     type: Sequelize.STRING,
-    allowNull: false
+    allowNull: false,
   },
   description: {
-    type: Sequelize.TEXT
+    type: Sequelize.TEXT,
   },
-  creatorGID: {
-    type: Sequelize.STRING,
-    allowNull: false
-  }
 }, {
   timestamps: true,
   paranoid: true,

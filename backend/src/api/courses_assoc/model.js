@@ -13,7 +13,7 @@ export default DB.define("courses_assoc", {
   },
   role: {
     type: Sequelize.ENUM("professor", "student"),
-    allowNull: false
+    allowNull: false,
   },
 }, {
   timestamps: true,
