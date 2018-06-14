@@ -16,7 +16,7 @@ export default function TopBar(props) {
           <MenuIcon />
         </IconButton>
         <Typography variant="title" color="inherit" noWrap style={{ flex: 1 }}>
-          {props.title}
+          { props.title }
         </Typography>
         <AuthButton
           user={props.user}

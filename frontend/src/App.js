@@ -15,11 +15,11 @@ export default class App extends Component {
   }
 
   handleUserUpdate = (user) => {
-    this.setState({ user: user });
+    this.setState({ user });
   }
 
   handleOpenSidebar = () => {
-    this.refSideBar.handleOpen();
+    this.sideBar.handleOpen();
   }
 
   handleHomeClick = () => {
@@ -36,7 +36,7 @@ export default class App extends Component {
           onUserUpdate={this.handleUserUpdate}
         />
         <SideBar
-          ref={(ref) => { this.refSideBar = ref; } }
+          ref={(ref) => { this.sideBar = ref; } }
           onHomeClick={this.handleHomeClick}
         />
         <Paper

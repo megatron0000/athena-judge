@@ -4,8 +4,7 @@ import Config from "./Config";
 
 export default class Api {};
 
-// @victorbreder: this is a wrapper around the Axios library
-// so we can log all Api calls and responses.
+// This is a wrapper around the Axios library so we can log all Api calls and responses.
 
 Api.get = (route) => {
   return new Promise((resolve, reject) => {
