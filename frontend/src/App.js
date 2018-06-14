@@ -1,12 +1,12 @@
-import React, { Component } from "react";
+import React from "react";
 
-import Paper from "material-ui/Paper";
+import Paper from "@material-ui/core/Paper";
 
 import TopBar from "./TopBar/TopBar";
 import SideBar from "./SideBar/SideBar";
 import Main from "./Pages/Main";
 
-export default class App extends Component {
+export default class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {

@@ -1,10 +1,10 @@
-import React, { Component } from "react";
+import React from "react";
 
 import Config from "../Config";
 import LoginButton from "./LoginButton";
 import UserMenu from "./UserMenu";
 
-export default class AuthButton extends Component {
+export default class AuthButton extends React.Component {
   constructor(props) {
     super(props);
     this.state = {

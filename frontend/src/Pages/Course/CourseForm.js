@@ -1,14 +1,14 @@
 import React from "react";
 
-import Typography from "material-ui/Typography";
-import TextField from "material-ui/TextField";
-import Button from "material-ui/Button";
+import Typography from "@material-ui/core/Typography";
+import TextField from "@material-ui/core/TextField";
+import Button from "@material-ui/core/Button";
 import SendIcon from "@material-ui/icons/Send";
-import Dialog from 'material-ui/Dialog/Dialog';
-import DialogActions from 'material-ui/Dialog/DialogActions';
-import DialogContent from 'material-ui/Dialog/DialogContent';
-import DialogContentText from 'material-ui/Dialog/DialogContentText';
-import DialogTitle from 'material-ui/Dialog/DialogTitle';
+import Dialog from '@material-ui/core/Dialog/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
 
 export default class CourseForm extends React.Component {
   constructor(props) {

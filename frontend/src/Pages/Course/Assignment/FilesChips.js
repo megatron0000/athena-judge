@@ -1,8 +1,8 @@
 import React from 'react';
-import Chip from "material-ui/Chip";
-import Switch from "material-ui/Switch";
-import TextField from "material-ui/TextField";
-import Tooltip from "material-ui/Tooltip";
+import Chip from "@material-ui/core/Chip";
+import Switch from "@material-ui/core/Switch";
+import TextField from "@material-ui/core/TextField";
+import Tooltip from "@material-ui/core/Tooltip";
 
 export default class FilesChips extends React.Component {
   constructor(props) {

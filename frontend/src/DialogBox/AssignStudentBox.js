@@ -1,14 +1,17 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { withStyles } from 'material-ui/styles';
-import Button from 'material-ui/Button';
-import Avatar from 'material-ui/Avatar';
-import List, { ListItem, ListItemAvatar, ListItemText } from 'material-ui/List';
-import Dialog, { DialogTitle } from 'material-ui/Dialog';
+import Button from '@material-ui/core/Button';
+import Avatar from '@material-ui/core/Avatar';
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemText from '@material-ui/core/ListItemText';
+import Avatar from '@material-ui/core/Avatar';
+import Dialog from '@material-ui/core/Dialog';
+import DialogTitle from '@material-ui/core/DialogTitle';
 import PersonIcon from '@material-ui/icons/Person';
 import AddIcon from '@material-ui/icons/Add';
-import Typography from 'material-ui/Typography';
-import blue from 'material-ui/colors/blue';
+import Typography from '@material-ui/core/Typography';
+import blue from '@material-ui/core/colors/blue';
 
 export default class AssignStudentBox extends React.Component {
   constructor(props) {
@@ -30,27 +33,21 @@ export default class AssignStudentBox extends React.Component {
         <div>
           <List>
             <ListItem button onClick={() => this.handleListItemClick("atividade")} key={"Atividade"}>
-              <ListItemAvatar>
                 <Avatar >
                   <PersonIcon />
                 </Avatar>
-              </ListItemAvatar>
               <ListItemText primary={"Atividade"} />
             </ListItem>
             <ListItem button onClick={() => this.handleListItemClick("aluno")} key={"Aluno"}>
-              <ListItemAvatar>
                 <Avatar >
                   <PersonIcon />
                 </Avatar>
-              </ListItemAvatar>
               <ListItemText primary={"Aluno"} />
             </ListItem>
             <ListItem button onClick={() => this.handleListItemClick("gerarLink")}>
-              <ListItemAvatar>
                 <Avatar>
                   <AddIcon />
                 </Avatar>
-              </ListItemAvatar>
               <ListItemText primary="Gerar Link de Cadastro" />
             </ListItem>
           </List>

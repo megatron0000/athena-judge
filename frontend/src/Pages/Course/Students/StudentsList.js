@@ -1,13 +1,17 @@
 import React from "react";
 import Api from "../../../Api";
 
-import List, { ListItem, ListItemText, ListItemIcon, ListItemSecondaryAction } from "material-ui/List";
-import IconButton from "material-ui/IconButton";
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
+import ListItemText from '@material-ui/core/ListItemText';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
+import IconButton from "@material-ui/core/IconButton";
 
 import AssignmentIcon from "@material-ui/icons/Assignment";
 import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
-import Button from "material-ui/Button";
+import Button from "@material-ui/core/Button";
 import AddIcon from "@material-ui/icons/Add";
 
 export default class StudentsList extends React.Component {

@@ -1,7 +1,11 @@
 import React from "react";
 
-import List, { ListItem, ListItemText, ListItemIcon, ListItemSecondaryAction } from "material-ui/List";
-import IconButton from "material-ui/IconButton";
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
+import ListItemText from '@material-ui/core/ListItemText';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
+import IconButton from "@material-ui/core/IconButton";
 
 import ClassIcon from "@material-ui/icons/Class";
 

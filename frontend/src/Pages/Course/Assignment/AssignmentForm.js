@@ -2,19 +2,19 @@ import React from "react";
 
 import Config from "../../../Config";
 
-import TextField from "material-ui/TextField";
-import { IconButton, Icon, InputAdornment } from 'material-ui';
-import Button from "material-ui/Button";
+import TextField from "@material-ui/core/TextField";
+import { IconButton, Icon, InputAdornment } from '@material-ui/core';
+import Button from "@material-ui/core/Button";
 import SendIcon from "@material-ui/icons/Send";
 import Undo from "@material-ui/icons/Undo";
 import AttachFile from "@material-ui/icons/AttachFile";
 import InsertDriveFile from "@material-ui/icons/InsertDriveFile";
 import FileUpload from '@material-ui/icons/FileUpload';
-import Dialog from 'material-ui/Dialog/Dialog';
-import DialogActions from 'material-ui/Dialog/DialogActions';
-import DialogContent from 'material-ui/Dialog/DialogContent';
-import DialogContentText from 'material-ui/Dialog/DialogContentText';
-import DialogTitle from 'material-ui/Dialog/DialogTitle';
+import Dialog from '@material-ui/core/Dialog/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
 
 import FilesChips from "./FilesChips";
 import DateTimePicker from "./DateTimePicker";

@@ -1,9 +1,12 @@
 import React from "react";
 import Api from "../Api";
 
-import Drawer from "material-ui/Drawer";
-import List, { ListItem, ListItemIcon, ListItemText } from "material-ui/List";
-import Divider from 'material-ui/Divider';
+import Drawer from "@material-ui/core/Drawer";
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
+import ListItemText from '@material-ui/core/ListItemText';
+import Divider from '@material-ui/core/Divider';
 
 import HomeIcon from "@material-ui/icons/Home";
 import AssignmentIcon from "@material-ui/icons/Assignment";

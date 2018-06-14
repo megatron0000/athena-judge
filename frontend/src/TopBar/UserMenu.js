@@ -1,8 +1,10 @@
 import React from "react";
 
-import Avatar from "material-ui/Avatar";
-import IconButton from "material-ui/IconButton";
-import Menu, { MenuItem } from "material-ui/Menu";
+import Avatar from "@material-ui/core/Avatar";
+import IconButton from "@material-ui/core/IconButton";
+import Menu from '@material-ui/core/Menu';
+import MenuItem from '@material-ui/core/MenuItem';
+
 
 export default class UserMenu extends React.Component {
   constructor(props) {
