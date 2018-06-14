@@ -47,11 +47,11 @@ export default class CoursePage extends React.Component {
 
   getStudents = () => {
     this.setState({loading: true});
-    Api.get("/registrations/registrationsstudents/" + this.props.courseId).then((res) => {
+    Api.get(`/courses/${this.props.courseId}/students`).then((res) => {
       this.setState({
-                      students: res.data.data, 
-                      selfType: res.data.data.find(o => o.gid == this.props.user.gid).type,
-                      loading: false});
+        students: res.data.data, 
+        loading: false
+      });
     }).catch((err) => {
       console.log(err);
       this.setState({loading: false});
@@ -192,7 +192,7 @@ export default class CoursePage extends React.Component {
 
         <List >
           {this.state.students.map((student) => (
-            <ListItem key={student.email}>              
+            <ListItem key={student.gid}>
 
               <Avatar
                 style={{marginLeft: 5, marginRight: 20}}

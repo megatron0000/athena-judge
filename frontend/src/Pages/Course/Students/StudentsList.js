@@ -18,9 +18,6 @@ export default class StudentsList extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      // show: "list",
-      // list: [],
-      // assignment: null,
       data: null,
       loading: false
     };
@@ -28,7 +25,7 @@ export default class StudentsList extends React.Component {
 
   getStudentsList = () => {
     this.setState({ loading: true });
-    Api.get("/registrations/course/" + this.props.courseId).then((res) => {
+    Api.get(`/course/${this.props.courseId}/students`).then((res) => {
       this.setState({ data: res.data.data, loading: false });
     }).catch((err) => {
       console.log(err);

@@ -22,10 +22,11 @@ export default class Welcome extends React.Component {
     super(props);
     
     this.state = {
-      list: [],
-      currentCourses: [],
+      courses: [],
+      teachingCourses: [],
+      enrolledCourses: [],
       loading: false,
-      dialogRegisterOpen: false
+      dialogEnrollOpen: false
     };
   }
 
@@ -45,57 +46,128 @@ export default class Welcome extends React.Component {
   }
 
   getCoursesList = () => {
-    // All courses
-    this.setState({ loading: true });
+    // All courses    
     Api.get("/courses").then((res) => {
-      this.setState({ list: res.data.data, loading: false });
-    }).catch((err) => {
-      console.log(err);
-      this.setState({ loading: false });
+      this.setState({ courses: res.data.data });
     });
-    // My current courses
-    this.setState({ loading: true });
-    Api.get("/coursesgid/" + this.props.user.gid).then((res) => {
-      this.setState({ currentCourses: res.data.data, loading: false });
-    }).catch((err) => {
-      console.log(err);
-      this.setState({ loading: false });
+    // My enrolled courses
+    Api.get(`/courses/enrolled/${this.props.user.gid}`).then((res) => {
+      this.setState({ enrolledCourses: res.data.data });
+    });
+    // My teaching courses
+    Api.get(`/courses/teaching/${this.props.user.gid}`).then((res) => {
+      this.setState({ teachingCourses: res.data.data });
     });
   }
 
-  handleRegister = (courseId) => {
+  handleEnroll = (courseId) => {
     this.setState({ loading: true });
-    Api.post("/registrations/",{
-        gid: this.props.user.gid,
-        email: this.props.user.email,
-        photo: this.props.user.photo,
-        username: this.props.user.name,
-        courseId: courseId
-      }).then((res) => {
+    Api.post(`/courses/${courseId}/enroll`, {
+      gid: this.props.user.gid,
+    }).then((res) => {
       this.getCoursesList();
+      this.setState({ loading: false, dialogEnrollOpen: false });
     }).catch((err) => {
       console.log(err);
-      this.setState({ loading: false });
+      this.setState({ loading: false, dialogEnrollOpen: false });
     });
   }
 
-  handleOpenDialogRegister = () => {
-    this.setState({ dialogRegisterOpen: true });
+  handleOpenEnrollDialog = () => {
+    this.setState({ dialogEnrollOpen: true });
   };
 
-  handleCloseDialogRegister = () => {
-    this.setState({ dialogRegisterOpen: false });
+  handleCloseEnrollDialog = () => {
+    this.setState({ dialogEnrollOpen: false });
   };
 
   render() {
     return (
       <div>
         <Typography variant="title" style={{ paddingLeft: 20, paddingTop: 10, paddingRight: 20, paddingBottom: 4 }} >
-          Meus Cursos
+          Cursos que eu estou inscrito
         </Typography>
 
         <List >
-          {this.state.currentCourses.map((course) => (
+          {this.state.enrolledCourses.map((course) => (
+            <ListItem
+              key={course.id}
+              onClick={() => { this.props.onCourseClick(course.id) }}
+              button
+            >
+              <ListItemIcon>
+                <ClassIcon />
+              </ListItemIcon>
+              <ListItemText primary={course.name} />
+            </ListItem>
+          ))}
+        </List>
+
+        <Typography
+          variant="title"
+          style={{ paddingLeft: 20, paddingTop: 10, paddingRight: 20, paddingBottom: 4 }}
+        >
+          Cursos disponíveis para inscrição
+        </Typography>
+        <List >
+          {this.state.courses.map((course) => (
+            <ListItem
+              key={course.id}
+            >
+            
+              <ListItemIcon>
+                <ClassIcon />
+              </ListItemIcon>
+              
+              <ListItemText primary={course.name} />
+
+              <Button
+                variant="raised"
+                color="secondary"
+                style={{ marginLeft: 20, marginBottom: 20 }}
+                onClick={this.handleOpenEnrollDialog}
+              >
+                Inscrever-se
+              </Button>
+
+              <Dialog
+                open={this.state.dialogEnrollOpen}
+                onClose={this.handleCloseEnrollDialog}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+              >
+                <DialogTitle id="alert-dialog-title">{course.name}</DialogTitle>
+                
+                <DialogContent>
+                  <DialogContentText id="alert-dialog-description">
+                    Tem certeza que deseja se inscrever na disciplina?
+                  </DialogContentText>
+                </DialogContent>
+                
+                <DialogActions>
+                  <Button onClick={this.handleCloseEnrollDialog} color="primary">
+                    Não
+                  </Button>
+                  
+                  <Button 
+                    onClick={ () => { this.handleEnroll(course.id) }} 
+                    color="primary" autoFocus>
+                    Sim
+                  </Button>
+                </DialogActions>
+              
+               </Dialog>
+
+            </ListItem>
+          ))}
+        </List>
+
+        <Typography variant="title" style={{ paddingLeft: 20, paddingTop: 10, paddingRight: 20, paddingBottom: 4 }} >
+          Cursos que eu estou lecionando
+        </Typography>
+
+        <List >
+          {this.state.teachingCourses.map((course) => (
             <ListItem
               key={course.id}
               onClick={() => { this.props.onCourseClick(course.id) }}
@@ -120,65 +192,6 @@ export default class Welcome extends React.Component {
             style={{ marginLeft: 10 }}
           />
         </Button>
-
-        <Typography
-          variant="title"
-          style={{ paddingLeft: 20, paddingTop: 10, paddingRight: 20, paddingBottom: 4 }}
-        >
-          Outros Cursos
-        </Typography>
-        <List >
-          {this.state.list.filter( o => !this.state.currentCourses.map(x => x.id).includes(o.id)).map((course) => (
-            <ListItem
-              key={course.id}
-            >
-            
-              <ListItemIcon>
-                <ClassIcon />
-              </ListItemIcon>
-              
-              <ListItemText primary={course.name} />
-
-              <Button
-                variant="raised"
-                color="secondary"
-                style={{ marginLeft: 20, marginBottom: 20 }}
-                onClick={this.handleOpenDialogRegister}
-              >
-                Inscrever-se
-              </Button>
-
-              <Dialog
-                open={this.state.dialogRegisterOpen}
-                onClose={this.handleCloseDialogRegister}
-                aria-labelledby="alert-dialog-title"
-                aria-describedby="alert-dialog-description"
-              >
-                <DialogTitle id="alert-dialog-title">{course.name}</DialogTitle>
-                
-                <DialogContent>
-                  <DialogContentText id="alert-dialog-description">
-                    Tem certeza que deseja se cadastrar na disciplina?
-                  </DialogContentText>
-                </DialogContent>
-                
-                <DialogActions>
-                  <Button onClick={this.handleCloseDialogRegister} color="primary">
-                    Não
-                  </Button>
-                  
-                  <Button 
-                    onClick={ () => { this.handleRegister(course.id) }} 
-                    color="primary" autoFocus>
-                    Sim
-                  </Button>
-                </DialogActions>
-              
-               </Dialog>
-
-            </ListItem>
-          ))}
-        </List>
 
       </div>
     );
