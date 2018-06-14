@@ -28,7 +28,7 @@ router.get("/enrolled/:userGid", async (req, res, next) => {
   res.json({ data: courses });
 });
 
-router.get("/owned/:userGid", async (req, res, next) => { 
+router.get("/teaching/:userGid", async (req, res, next) => { 
   let courses = await CoursesModel.findAll({
     include: [{
       model: CoursesAssocModel,
