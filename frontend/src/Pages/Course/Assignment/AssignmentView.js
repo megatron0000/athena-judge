@@ -1,10 +1,14 @@
 import React from "react";
 import Api from "../../../Api";
 
+import TextFileUploadButton from "../../../Components/TextFileUploadButton";
+import CodeView from "../../../Components/CodeView";
+
 import Typography from "material-ui/Typography";
 import { CircularProgress } from "material-ui/Progress";
 import Button from "material-ui/Button";
 import SendIcon from "@material-ui/icons/Send";
+import UploadIcon from "@material-ui/icons/FileUpload";
 import Dialog from 'material-ui/Dialog/Dialog';
 import DialogActions from 'material-ui/Dialog/DialogActions';
 import DialogContent from 'material-ui/Dialog/DialogContent';
@@ -16,30 +20,27 @@ export default class AssignmentsView extends React.Component {
     super(props);
     this.state = {
       loading: false,
-      dialogOpenAddSubmission: false
+      code: null,
+      dialogOpenAddSubmission: false,
     };
   }
 
-  handleInputChange = (e) => {
-    this.setState({code: e.target.files[0]});
+  handleUpload = (file) => {
+    console.log(file);
+    this.setState({ code: file.data });
   }
 
-  handleSubmission = (form) => {
-    console.log("handleSubmission", this.props.user);
-    let formData = new FormData();
-    formData.append('assignid', this.props.assignmentid);
-    formData.append('courseId', this.props.courseId);
-    formData.append('submission', form.code);
-    formData.append('username', this.props.user.name);
-    formData.append('usergid', this.props.user.gid);
-    formData.append('email', this.props.user.email);
-
+  handleSubmission = () => {
     this.setState({ loading: true });
-    Api.post("/submissions", formData, {
-      headers: {'Content-Type': 'multipart/form-data'} 
+    Api.post("/submissions", {
+      assignid: this.props.assignmentid,
+      courseId: this.props.courseId,
+      code: this.state.code,
+      username: this.props.user.name,
+      usergid: this.props.user.gid,
+      email: this.props.user.email,
     }).then((res) => {
-      console.log("Submissao Sucedida", res);
-      this.setState({loading: false});
+      this.setState({ loading: false });
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });
@@ -59,9 +60,10 @@ export default class AssignmentsView extends React.Component {
       <div>
         { this.state.loading &&
           <CircularProgress style={{ float: "right", marginRight: 18, marginTop: 18 }} /> }
-          {/*@italotabatinga: sending as file by now, but it should be sent as text to store on submissions-db"*/}
           
-          <div style={{ textAlign: "center", margin: 10 }}>
+        <CodeView>{ this.state.code }</CodeView>
+
+        <div style={{ textAlign: "center", margin: 10 }}>
           <Button
             variant="raised"
             style={{ marginRight: 10 }}
@@ -69,24 +71,14 @@ export default class AssignmentsView extends React.Component {
           >
             Voltar
           </Button>
-          <input
-            accept=".cpp, .c"
-            style={{display: 'none'}}
-            id="input-code-activ"
-            onChange = {this.handleInputChange}
-            type="file"
-          />
-          <label htmlFor="input-code-activ">
-            <Button variant="raised"
-              color="default"
-              style={{ marginRight: 10 }}
-              component = "span"
-            // onClick={this.handleUpload}
-            >
+          <TextFileUploadButton
+            accept=".cpp,.c"
+            style={{ marginRight: 10 }}
+            onUpload={this.handleUpload}
+          >
+            <UploadIcon style={{ marginRight: 16 }} />
             {this.state.code ? "Troque Código" : "Escolha Código"}
-            </Button>
-          </label>
-          
+          </TextFileUploadButton>
           <Button
             variant="raised"
             color="primary"
@@ -95,34 +87,32 @@ export default class AssignmentsView extends React.Component {
             <SendIcon style={{ marginRight: 16 }} />
             Enviar
           </Button>
-
-          <Dialog
+        </div>
+        
+        <Dialog
             open={this.state.dialogOpenAddSubmission}
             onClose={this.handleCloseDialogAddSubmission}
             aria-labelledby="alert-dialog-title"
             aria-describedby="alert-dialog-description"
           >
-            <DialogContent>
-              <DialogContentText id="alert-dialog-description">
-                Tem certeza que deseja submeter esta solução?
-              </DialogContentText>
-            </DialogContent>
-                
-            <DialogActions>
-              <Button onClick={this.handleCloseDialogAddSubmission} color="primary">
-                 Não
-              </Button>
-                  
-              <Button 
-                onClick={() => { this.handleSubmission(this.state), this.handleCloseDialogAddSubmission() }}
-                color="primary" autoFocus>
-                Sim
-              </Button>
-            </DialogActions>
+          <DialogContent>
+            <DialogContentText id="alert-dialog-description">
+              Tem certeza que deseja submeter esta solução?
+            </DialogContentText>
+          </DialogContent>
               
-          </Dialog>
-
-          </div>
+          <DialogActions>
+            <Button onClick={this.handleCloseDialogAddSubmission} color="primary">
+                Não
+            </Button>
+                
+            <Button 
+              onClick={() => { this.handleSubmission(this.state), this.handleCloseDialogAddSubmission() }}
+              color="primary" autoFocus>
+              Sim
+            </Button>
+          </DialogActions>
+        </Dialog>
       </div>
     );
   }

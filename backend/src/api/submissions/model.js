@@ -28,6 +28,10 @@ export default DB.define("submissions", {
   courseId: {
     type: Sequelize.INTEGER,
     allowNull: false
+  },
+  code: {
+    type: Sequelize.TEXT,
+    allowNull: false
   }
 }, {
   timestamps: true,
