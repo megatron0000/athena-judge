@@ -17,26 +17,26 @@ router.post("/upload", upload.fields(
       let row = await AssignmentsModel.create({
       title: req.body.title,
       description: req.body.description,
-      classid: req.body.classid,
+      classId: req.body.classId,
       dueDate: req.body.dueDate
     });
     console.log(req.body);
     console.log('Arquivos-------',req.files);
-    FileSystem.mkdirSync("static/" + req.body.classid +'/' + row.id);
-    FileSystem.mkdirSync("static/" + req.body.classid +'/' + row.id + '/' + 'attachments');
-    FileSystem.mkdirSync("static/" + req.body.classid +'/' + row.id + '/' + 'tests');
+    FileSystem.mkdirSync("static/" + req.body.classId +'/' + row.id);
+    FileSystem.mkdirSync("static/" + req.body.classId +'/' + row.id + '/' + 'attachments');
+    FileSystem.mkdirSync("static/" + req.body.classId +'/' + row.id + '/' + 'tests');
 
     let attachments = req.files['attachments'] | [];
     let tests = req.files['tests'] | [];
     
     for(let i = 0; i < attachments.length; i++) {
-      FileSystem.writeFile("static/" + req.body.classid +'/' + row.id + '/'+ 'attachments/' + attachments[i].originalname, attachments[i].buffer,attachments[i].enconding, (err) => {
+      FileSystem.writeFile("static/" + req.body.classId +'/' + row.id + '/'+ 'attachments/' + attachments[i].originalname, attachments[i].buffer,attachments[i].enconding, (err) => {
         console.log(err);
       });
     }
 
     for(let i = 0; i < tests.length; i++) {
-      FileSystem.writeFile("static/" + req.body.classid +'/' + row.id + '/'+ 'tests/' + tests[i].originalname, tests[i].buffer,tests[i].enconding, (err) => {
+      FileSystem.writeFile("static/" + req.body.classId +'/' + row.id + '/'+ 'tests/' + tests[i].originalname, tests[i].buffer,tests[i].enconding, (err) => {
         console.log(err);
       });
     }
@@ -65,9 +65,9 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.get("/class/:classid", async (req, res, next) => {
+router.get("/class/:classId", async (req, res, next) => {
   try {
-    let rows = await AssignmentsModel.findAll({where: {classid: req.params.classid}});
+    let rows = await AssignmentsModel.findAll({where: {classId: req.params.classId}});
     res.json({ data: rows });
   } catch (err) {
     next(err);
@@ -79,7 +79,7 @@ router.post("/", async (req, res, next) => {
     let row = await AssignmentsModel.create({
       title: req.body.title,
       description: req.body.description,
-      classid: req.body.classid,
+      classId: req.body.classId,
       dueDate: req.body.dueDate,
     });
     res.json({ data: row });
@@ -93,7 +93,7 @@ router.put("/:id", async (req, res, next) => {
     let row = await AssignmentsModel.update({
       title: req.body.title,
       description: req.body.description,
-      classid: req.body.classid,
+      classId: req.body.classId,
       dueDate: req.body.dueDate,
     }, { where: { id: req.params.id }});
     res.json({ data: row[0] });

@@ -38,7 +38,7 @@ router.get("/submissionsassig/:assignid", async (req, res, next) => {
 
 router.post("/", upload.single('submission'), async(req, res, next) => {
   try {
-    let dirpath = Path.join("static", req.body.classid, req.body.assignid, "tests")
+    let dirpath = Path.join("static", req.body.classId, req.body.assignid, "tests")
     let filenames = FileSystem.readdirSync(dirpath);
     let inputnames=[]
     let outputnames=[]
@@ -69,7 +69,7 @@ router.post("/", upload.single('submission'), async(req, res, next) => {
         studentEmail: req.body.email,
         assignmentID: req.body.assignid,
         studentName: req.body.username,
-        classID: req.body.classid
+        classId: req.body.classId
       })
     } catch(err) {
       next(err);

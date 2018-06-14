@@ -30,7 +30,7 @@ export default class AssignmentsView extends React.Component {
     console.log("handleSubmission", this.props.user);
     let formData = new FormData();
     formData.append('assignid', this.props.assignmentid);
-    formData.append('classid', this.props.classid);
+    formData.append('classId', this.props.classId);
     formData.append('submission', form.code);
     formData.append('username', this.props.user.name);
     formData.append('usergid', this.props.user.gid);

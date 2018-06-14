@@ -21,7 +21,7 @@ export default DB.define("registrations", {
     type: Sequelize.STRING,
     allowNull: false
   },
-  classid: {
+  classId: {
     type: Sequelize.INTEGER,
     allowNull: false
   },

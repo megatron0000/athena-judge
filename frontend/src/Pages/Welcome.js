@@ -60,14 +60,14 @@ export default class Welcome extends React.Component {
     });
   }
 
-  handleRegister = (classid) => {
+  handleRegister = (classId) => {
     this.setState({ loading: true });
     Axios.post(Config.api + "/registrations/",{
         gid: this.props.user.gid,
         email: this.props.user.email,
         photo: this.props.user.photo,
         username: this.props.user.name,
-        classid: classid
+        classId: classId
       }).then((res) => {
       this.getClassesList();
     }).catch((err) => {
@@ -92,16 +92,16 @@ export default class Welcome extends React.Component {
         </Typography>
 
         <List >
-          {this.state.currentClasses.map((classes) => (
+          {this.state.currentClasses.map((theClass) => (
             <ListItem
-              key={classes.id}
-              onClick={() => { this.props.showClass(classes.id) }}
+              key={theClass.id}
+              onClick={() => { this.props.onClassClick(theClass.id) }}
               button
             >
               <ListItemIcon>
                 <ClassIcon />
               </ListItemIcon>
-              <ListItemText primary={classes.name} />
+              <ListItemText primary={theClass.name} />
             </ListItem>
           ))}
         </List>
@@ -110,11 +110,11 @@ export default class Welcome extends React.Component {
           variant="raised"
           color="secondary"
           style={{ marginLeft: 20, marginBottom: 20 }}
-          onClick={() => { this.props.showCreateClass(); } }
+          onClick={this.props.onCreateClick}
         >
-          Adicionar
+          Criar novo curso
           <AddIcon 
-            style ={{ marginLeft: 10 }}
+            style={{ marginLeft: 10 }}
           />
         </Button>
 

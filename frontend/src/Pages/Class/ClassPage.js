@@ -1,7 +1,6 @@
 import React from "react";
-import Axios from "axios";
 
-import Config from "../../Config";
+import Api from "../../Api";
 
 import AssignmentPage from "./Assignment/AssignmentPage";
 import AssignmentList from "./Assignment/AssignmentList";
@@ -35,7 +34,7 @@ export default class ClassPage extends React.Component {
 
   getClassData = () => {
     this.setState({ loading: true });
-    Axios.get(Config.api + "/classes/" + this.props.classid).then((res) => {
+    Api.get("/classes/" + this.props.classId).then((res) => {
       this.setState({ data: res.data.data, loading: false });
     }).catch((err) => {
       console.log(err);
@@ -45,7 +44,7 @@ export default class ClassPage extends React.Component {
 
   getStudents = () => {
     this.setState({loading: true});
-    Axios.get(Config.api + "/registrations/registrationsstudents/" + this.props.classid).then((res) => {
+    Api.get("/registrations/registrationsstudents/" + this.props.classId).then((res) => {
       this.setState({
                       students: res.data.data, 
                       selfType: res.data.data.find(o => o.gid == this.props.user.gid).type,
@@ -58,7 +57,7 @@ export default class ClassPage extends React.Component {
 
   getAssignmentById = (assignmentid, callback) => {
     this.setState({ loading: true });
-    Axios.get(Config.api + "/assignments/" + assignmentid).then((res) => {
+    Api.get("/assignments/" + assignmentid).then((res) => {
       this.setState({ assignment: res.data.data, loading: false });
       if (callback) {
         callback();
@@ -80,7 +79,7 @@ export default class ClassPage extends React.Component {
     let formData = new FormData();
     formData.append('title', form.title);
     formData.append('description', form.description);
-    formData.append('classid', this.props.classid);
+    formData.append('classId', this.props.classId);
     formData.append('dueDate', form.dueDate);
     for (let i = 0; i < form.attachments.length; i++) {
       formData.append('attachments', form.attachments[i]);
@@ -91,7 +90,7 @@ export default class ClassPage extends React.Component {
     }
 
     this.setState({ loading: true });
-    Axios.post(Config.api + "/assignments/upload", formData, {
+    Api.post("/assignments/upload", formData, {
       headers: {'Content-Type': 'multipart/form-data'} 
     }).then((res) => {
       console.log(res);
@@ -104,10 +103,10 @@ export default class ClassPage extends React.Component {
 
   handleUpdateAssignment = (form) => {
     this.setState({ loading: true });
-    Axios.put(Config.api + "/assignments/" + form.id, {
+    Api.put("/assignments/" + form.id, {
       title: form.title,
       description: form.description,
-      classid: this.props.classid,
+      classId: this.props.classId,
       dueDate: form.dueDate,
       code: form.code
     }).then((res) => {
@@ -120,7 +119,7 @@ export default class ClassPage extends React.Component {
 
   handleDelete = (id) => {
     this.setState({ loading: true });
-    Axios.delete(Config.api + "/assignments/" + id).then((res) => {
+    Api.delete("/assignments/" + id).then((res) => {
       this.showHomeUpdateAssign();
     }).catch((err) => {
       console.log(err);
@@ -128,9 +127,9 @@ export default class ClassPage extends React.Component {
     });
   }
 
-  handlePromote = (classid, gid) => {
+  handlePromote = (classId, gid) => {
     this.setState({ loading: true });
-    Axios.put(Config.api + "/registrations/regpromote/" + classid + "/"+ gid).then((res) => {
+    Api.put("/registrations/regpromote/" + classId + "/"+ gid).then((res) => {
       console.log(res);
       this.getStudents();
     }).catch((err) => {
@@ -175,7 +174,7 @@ export default class ClassPage extends React.Component {
         
       {
         <AssignmentPage 
-          classid={this.props.classid}
+          classId={this.props.classId}
           selfType={this.state.selfType}
           user={this.props.user}
         />
@@ -230,7 +229,7 @@ export default class ClassPage extends React.Component {
                     </Button>
                   
                     <Button 
-                      onClick={() => { this.handlePromote(this.props.classid, student.gid), this.handleCloseDialogPromote() }}
+                      onClick={() => { this.handlePromote(this.props.classId, student.gid), this.handleCloseDialogPromote() }}
                       color="primary" autoFocus>
                       Sim
                     </Button>

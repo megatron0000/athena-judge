@@ -28,7 +28,7 @@ router.use("/submissions", SubmissionsRouter);
 // router.use("/assignments", AssignmentsRouter);
 
 ClassesModel.hasMany(RegistrModel, {
-  foreignKey: 'classid', // Key in RegistrModel
+  foreignKey: 'classId', // Key in RegistrModel
   sourceKey: 'id' // Key in ClassesModel
 });
 
@@ -66,23 +66,22 @@ router.post("/classes", async (req, res, next) => {
       email: req.body.email,
       photo: req.body.photo,
       username: req.body.username,
-      classid: row.dataValues.id
+      classId: row.dataValues.id
     });
-    FileSystem.mkdirSync(Path.resolve(UPLOADS_DIR, String(row.id)));
     res.json({ data: row, dataReg: rowtemp });
   } catch (err) {
     next(err);
   }
 });
 
-router.get("/registrationsclass/:classid", async (req, res, next) => {
-  console.log("cheguei aq", req.params.classid);
+router.get("/registrationsclass/:classId", async (req, res, next) => {
+  console.log("cheguei aq", req.params.classId);
   try {
     let row = await UsersModel.findAll({
       include: [{
         model: RegistrModel,
         where: {
-          classid: '1'
+          classId: '1'
         }
       }]
     });

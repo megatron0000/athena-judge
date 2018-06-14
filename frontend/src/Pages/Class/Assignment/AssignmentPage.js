@@ -87,7 +87,7 @@ export default class AssignmentPage extends React.Component {
     let formData = new FormData();
     formData.append('title', form.title);
     formData.append('description', form.description);
-    formData.append('classid', this.props.classid);
+    formData.append('classId', this.props.classId);
     formData.append('dueDate', form.dueDate);
     for (let i = 0; i < form.attachments.length; i++) {
       formData.append('attachments', form.attachments[i]);
@@ -116,7 +116,7 @@ export default class AssignmentPage extends React.Component {
     Axios.put(Config.api + "/assignments/" + form.id, {
       title: form.title,
       description: form.description,
-      classid: this.props.classid,
+      classId: this.props.classId,
       dueDate: form.dueDate,
       code: form.code
     }).then((res) => {
@@ -141,7 +141,7 @@ export default class AssignmentPage extends React.Component {
         
         { this.state.show == "list" &&
           <AssignmentList
-            classid={this.props.classid}
+            classId={this.props.classId}
             onEdit={this.showEditById}
             onOpen={this.showView}
             showCreateAssignment = {this.showCreateAssignment}
@@ -165,7 +165,7 @@ export default class AssignmentPage extends React.Component {
         { (this.state.show == "view" && this.props.selfType != "Creator") &&
           <AssignmentView
             onBack={this.showListNoUpdate}
-            classid={this.props.classid}
+            classId={this.props.classId}
             assignmentid={this.state.assignment.id}
             selfType={this.props.selfType}
             user={this.props.user}
@@ -174,7 +174,7 @@ export default class AssignmentPage extends React.Component {
         { (this.state.show == "view" && this.props.selfType == "Creator") &&
           <SubmissionList
             onBack={this.showListNoUpdate}
-            classid={this.props.classid}
+            classId={this.props.classId}
             assignmentid={this.state.assignment.id}
             selfType={this.props.selfType}
           /> }  

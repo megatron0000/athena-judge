@@ -22,10 +22,10 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.get("/registrationsstudents/:classid", async(req, res, next) => {
+router.get("/registrationsstudents/:classId", async(req, res, next) => {
   try {
     let row = await RegistrationsModel.findAll({
-      where:{ classid: req.params.classid }});
+      where:{ classId: req.params.classId }});
       res.json({ data: row });
   } catch (err) {
     next(err);
@@ -41,7 +41,7 @@ router.post("/", async (req, res, next) => {
         email: req.body.email,
         photo: req.body.photo,
         username: req.body.username,
-        classid: req.body.classid
+        classId: req.body.classId
     });
     res.json({ data: row });
   } catch (err) {
@@ -62,11 +62,11 @@ router.put("/:id", async (req, res, next) => {
   }
 });
 
-router.put("/regpromote/:classid/:gid", async (req, res, next) => {
+router.put("/regpromote/:classId/:gid", async (req, res, next) => {
   try {
     let row = await RegistrationsModel.update({
       type: "Creator"
-    }, { where: { gid: req.params.gid, classid: req.params.classid }
+    }, { where: { gid: req.params.gid, classId: req.params.classId }
     });
     res.json({ data: row[0] });
   } catch (err) {

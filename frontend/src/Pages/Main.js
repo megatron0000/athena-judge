@@ -14,27 +14,27 @@ export default class Main extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      show: "home",
-      loading: false
+      show: "Home",
+      loading: false,
+      classId: null
     };
   }
 
   showClass = (id) => {
-    this.setState({show: "class", classid: id});
+    this.setState({ show: "ClassView", classId: id });
   }
 
   showCreateClass = () => {
-    this.setState({ show: "createClass" });
+    this.setState({ show: "ClassCreate" });
   }
 
   showHome = () => {
-    this.setState({ show: "home", classid: null });
-    // this.actualPage.getClassesList();
+    this.setState({ show: "Home", classId: null });
   }
 
   cancelCreateClass = () => {
-    if (this.state.classid != null)
-      this.showClass(this.state.classid);
+    if (this.state.classId != null)
+      this.showClass(this.state.classId);
     else
       this.showHome();
   }
@@ -51,7 +51,7 @@ export default class Main extends React.Component {
       type: "Creator"
     }).then((res) => {
       var resData = res;
-      this.setState({show: "home"});
+      this.setState({ show: "Home", loading: false });
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });
@@ -61,20 +61,18 @@ export default class Main extends React.Component {
   render() {
     return (
       <div>
-        {this.state.show == "home" &&
+        {this.state.show == "Home" &&
           <Welcome 
-            showClass = { this.showClass }
-            showCreateClass={this.showCreateClass}
-            user = {this.props.user}
-            ref={(ref) => { this.actualPage = ref; }}
+            onClassClick={this.showClass}
+            onCreateClick={this.showCreateClass}
+            user={this.props.user}
           />}
-        {this.state.show == "class" &&
+        {this.state.show == "ClassView" &&
           <ClassPage
-            ref={(ref) => { this.actualPage = ref; }}
-            classid={this.state.classid}
-            user = {this.props.user}
+            classId={this.state.classId}
+            user={this.props.user}
           />}
-        {this.state.show == "createClass" &&
+        {this.state.show == "ClassCreate" &&
           <ClassForm
             onBack={this.cancelCreateClass}
             onSubmit={this.handleCreateClass}

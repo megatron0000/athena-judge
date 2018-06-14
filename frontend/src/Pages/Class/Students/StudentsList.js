@@ -26,7 +26,7 @@ export default class StudentsList extends React.Component {
 
   getStudentsList = () => {
     this.setState({ loading: true });
-    Axios.get(Config.api + "/registrations/class/" + this.props.classid).then((res) => {
+    Axios.get(Config.api + "/registrations/class/" + this.props.classId).then((res) => {
       this.setState({ data: res.data.data, loading: false });
     }).catch((err) => {
       console.log(err);

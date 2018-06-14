@@ -30,7 +30,7 @@ export default class AssignmentList extends React.Component {
 
   getAssignmentsList = () => {
     this.setState({ loading: true });
-    Axios.get(Config.api + "/assignments/class/" + this.props.classid).then((res) => {
+    Axios.get(Config.api + "/assignments/class/" + this.props.classId).then((res) => {
       this.setState({ data: res.data.data, loading: false });
     }).catch((err) => {
       console.log(err);
