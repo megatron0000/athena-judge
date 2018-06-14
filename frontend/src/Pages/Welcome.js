@@ -131,7 +131,6 @@ export default class Welcome extends React.Component {
           {this.state.list.filter( o => !this.state.currentCourses.map(x => x.id).includes(o.id)).map((course) => (
             <ListItem
               key={course.id}
-              button
             >
             
               <ListItemIcon>

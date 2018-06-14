@@ -200,7 +200,7 @@ export default class CoursePage extends React.Component {
                 src={student.photo}
               />
 
-              {student.username}
+              <ListItemText primary={student.username} />
 
               {(this.state.selfType == "Creator" && student.type != "Creator") && 
                 <Button
