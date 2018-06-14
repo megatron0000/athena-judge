@@ -44,7 +44,7 @@ export default class CourseForm extends React.Component {
               variant="title"
               style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
             >
-              Criar Novo Curso
+              Criar Curso
             </Typography>
 
             <form style={{ padding: 20 }}>

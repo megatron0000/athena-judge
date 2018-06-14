@@ -115,7 +115,7 @@ export default class Welcome extends React.Component {
           style={{ marginLeft: 20, marginBottom: 20 }}
           onClick={this.props.onCreateClick}
         >
-          Criar novo curso
+          Criar curso
           <AddIcon 
             style={{ marginLeft: 10 }}
           />

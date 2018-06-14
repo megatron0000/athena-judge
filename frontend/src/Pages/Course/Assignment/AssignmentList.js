@@ -137,7 +137,7 @@ export default class AssignmentList extends React.Component {
               this.props.showCreateAssignment();
             }}
           >
-            Adicionar
+            Criar Atividade
             <AddIcon
               style={{ marginLeft: 10 }}
             />
