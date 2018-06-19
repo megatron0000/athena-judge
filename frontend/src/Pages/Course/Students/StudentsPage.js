@@ -3,8 +3,6 @@ import Api from "../../Api";
 
 import Typography from "@material-ui/core/Typography";
 import CircularProgress from "@material-ui/core/CircularProgress";
-import Button from "@material-ui/core/Button";
-import AddIcon from "@material-ui/icons/Add";
 
 import AssignmentForm from "./AssignmentForm";
 import AssignmentList from "./AssignmentList";

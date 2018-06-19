@@ -1,12 +1,6 @@
 import React from "react";
 import Api from "../Api";
 
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
-import ListItemText from '@material-ui/core/ListItemText';
-import IconButton from "@material-ui/core/IconButton";
-
 import Welcome from "./Welcome";
 import CoursePage from "./Course/CoursePage";
 import CourseForm from "./Course/CourseForm";
@@ -47,7 +41,6 @@ export default class Main extends React.Component {
       description: form.description,
       creatorUserGid: this.props.user.gid,
     }).then((res) => {
-      var resData = res;
       this.setState({ show: "Home", loading: false });
     }).catch((err) => {
       console.log(err);
