@@ -1,6 +1,6 @@
 import Express from "express";
 import Multer from "multer"
-import FileSystem from "fs"
+// import FileSystem from "fs"
 import AssignmentsModel from "./model";
 
 const router = Express.Router();

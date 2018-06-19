@@ -4,7 +4,6 @@ import Api from "../../../Api";
 import TextFileUploadButton from "../../../Components/TextFileUploadButton";
 import CodeView from "../../../Components/CodeView";
 
-import Typography from "@material-ui/core/Typography";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import Button from "@material-ui/core/Button";
 import SendIcon from "@material-ui/icons/Send";
@@ -13,7 +12,6 @@ import Dialog from '@material-ui/core/Dialog/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
-import DialogTitle from '@material-ui/core/DialogTitle';
 
 export default class AssignmentsView extends React.Component {
   constructor(props) {

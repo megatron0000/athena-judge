@@ -3,8 +3,6 @@ import React from "react";
 import Api from "../../Api";
 
 import AssignmentPage from "./Assignment/AssignmentPage";
-import AssignmentList from "./Assignment/AssignmentList";
-import AssignmentForm from "./Assignment/AssignmentForm";
 
 import Typography from "@material-ui/core/Typography";
 import CircularProgress from "@material-ui/core/CircularProgress";
@@ -13,14 +11,12 @@ import Button from "@material-ui/core/Button";
 import AddIcon from "@material-ui/icons/Add";
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
-import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction';
 import ListItemText from '@material-ui/core/ListItemText';
 import Avatar from "@material-ui/core/Avatar";
 import Dialog from '@material-ui/core/Dialog/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
-import DialogTitle from '@material-ui/core/DialogTitle';
 
 export default class CoursePage extends React.Component {
   constructor(props) {
