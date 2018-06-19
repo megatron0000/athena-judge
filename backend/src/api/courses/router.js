@@ -149,7 +149,7 @@ router.post("/:id/professors", async (req, res, next) => {
       userGid: userGid,
       role: "professor",
     });
-    res.json({ data: null });
+    res.json({ data: row });
   } catch (err) {
     next(err);
   }
@@ -160,7 +160,7 @@ router.delete("/:id/professors/:userGid", async (req, res, next) => {
     let row = await CoursesAssocModel.destroy({
       where: { userGid: req.params.userGid, role: "professor" }
     });
-    res.json({ data: null });
+    res.json({ data: row });
   } catch (err) {
     next(err);
   }

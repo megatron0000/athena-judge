@@ -41,7 +41,7 @@ router.post("/", async(req, res, next) => {
       courseId: req.body.courseId,
       code: req.body.code,
     });
-    res.json({ data: null });
+    res.json({ data: row });
   } catch (err) {
     next(err);
   }
