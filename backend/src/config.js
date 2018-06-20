@@ -1,7 +1,7 @@
 import Sequelize from "sequelize";
 import Path from "path";
 
-export const DB = new Sequelize("athena", "postgres", "root", {
+export const DB = new Sequelize("athena", "athena", "athena", {
   host: "localhost",
   dialect: "postgres"
 });
