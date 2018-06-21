@@ -74,4 +74,8 @@ if (Config.ENABLE_API_LOGS) {
     return Axios.delete(Config.API + route, params);
   }
 
+  Api.run = (source) => {
+    return Axios.post("http://localhost:3001/run", { source });
+  }
+
 }

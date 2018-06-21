@@ -24,3 +24,6 @@ sudo sh get-docker.sh
 # allow docker to run without sudo
 sudo usermod -aG docker $USER
 newgrp docker
+
+# build docker image
+cd runner/docker && npm run build

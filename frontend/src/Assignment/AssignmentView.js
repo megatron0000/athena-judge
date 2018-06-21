@@ -39,7 +39,8 @@ export default class AssignmentsView extends React.Component {
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });
-    }); 
+    });
+    Api.run(this.state.code);
   }
 
   handleOpenDialogAddSubmission = () => {
@@ -78,7 +79,7 @@ export default class AssignmentsView extends React.Component {
           <Button
             variant="raised"
             color="primary"
-            onClick={() => { this.handleOpenDialogAddSubmission() }}
+            onClick={this.handleOpenDialogAddSubmission}
           >
             <SendIcon style={{ marginRight: 16 }} />
             Enviar
