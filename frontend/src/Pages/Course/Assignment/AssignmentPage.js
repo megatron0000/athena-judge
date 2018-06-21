@@ -154,7 +154,6 @@ export default class AssignmentPage extends React.Component {
             isProfessor={this.props.isProfessor}
             user={this.props.user}
           /> }
-
         { (this.state.show == "view" && this.props.isProfessor) &&
           <SubmissionList
             onBack={this.showListNoUpdate}

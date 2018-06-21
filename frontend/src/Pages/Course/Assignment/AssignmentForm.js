@@ -3,9 +3,9 @@ import React from "react";
 import TextField from "@material-ui/core/TextField";
 import Button from "@material-ui/core/Button";
 import SendIcon from "@material-ui/icons/Send";
-import Undo from "@material-ui/icons/Undo";
-import AttachFile from "@material-ui/icons/AttachFile";
-import InsertDriveFile from "@material-ui/icons/InsertDriveFile";
+import ArrowBackIcon from "@material-ui/icons/ArrowBack";
+import AttachFileIcon from "@material-ui/icons/AttachFile";
+import InsertDriveFileIcon from "@material-ui/icons/InsertDriveFile";
 import Dialog from '@material-ui/core/Dialog/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -13,6 +13,11 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 
 import FilesChips from "./FilesChips";
 import DateTimePicker from "./DateTimePicker";
+
+/*
+@vb: We are disabling file attachment per now. Only plain text uploads are allowed,
+and the are stored in the database.
+*/
 
 export default class AssignmentForm extends React.Component {
   constructor(props) {
@@ -22,9 +27,9 @@ export default class AssignmentForm extends React.Component {
       title: this.props.title,
       description: this.props.description,
       dueDate: this.props.dueDate,
-      attachments: this.props.attachments || [],
+      //attachments: this.props.attachments || [],
       tests: this.props.tests || [],
-      dialogOpenCreateAssign: false
+      dialogOpenCreateAssign: false,
     }
   }
 
@@ -40,10 +45,10 @@ export default class AssignmentForm extends React.Component {
     this.setState({ dueDate: e.target.value });
   }
 
-  handleAttachInputChange = (e) => {
+  /*handleAttachInputChange = (e) => {
     this.attachChips.setState({files: Array.from(e.target.files)});
     this.setState({attachments: e.target.files});
-  }
+  }*/
 
   handleTestsInputChange = (e) => {
     this.testsChips.setState({files: Array.from(e.target.files)});
@@ -82,11 +87,11 @@ export default class AssignmentForm extends React.Component {
           defaultValue={this.state.dueDate}
           onChange={this.handleDueDateChange}
         />
-        <div style={{ height: 20 }}></div>
+        { false && <div> <div style={{ height: 20 }}></div> }
         <FilesChips 
           files={this.state.attachments ? Array.from(this.state.attachments) : null}
           ref={(ref) => { this.attachChips = ref; }}
-        />
+        /> </div>}
 
         <div style={{ height: 20 }}></div>
         <FilesChips 
@@ -101,10 +106,11 @@ export default class AssignmentForm extends React.Component {
             style={{ marginRight: 10 }}
             onClick={this.props.onBack}
           >
-          <Undo style={{ marginRight: 14 }} />
+          <ArrowBackIcon style={{ marginRight: 14 }} />
             Voltar
           </Button>
-
+          
+          { false && <div>
           <input
             accept=".pdf, .docx, .doc, .odt, .odf"
             style={{display: 'none'}}
@@ -120,10 +126,11 @@ export default class AssignmentForm extends React.Component {
               component = "span"
             // onClick={this.handleUpload}
             >
-            <AttachFile style={{ marginRight: 14 }} />
+            <AttachFileIcon style={{ marginRight: 14 }} />
               Anexo
           </Button>
           </label>
+          </div>}
           
           <input
             accept=".txt, none"
@@ -140,7 +147,7 @@ export default class AssignmentForm extends React.Component {
               component = "span"
             // onClick={this.handleUpload}
             >
-            <InsertDriveFile style={{ marginRight: 14 }} />
+            <InsertDriveFileIcon style={{ marginRight: 14 }} />
               Testes
           </Button>
           </label>
