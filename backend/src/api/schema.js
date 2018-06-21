@@ -3,9 +3,14 @@ import SubmissionsModel from "./submissions/model";
 import CoursesModel from "./courses/model";
 import CoursesAssocModel from "./courses_assoc/model";
 import UsersModel from "./users/model";
+import AssignmentsTestsModel from "./assignments_tests/model";
 
 export default async function sync() {
   CoursesModel.hasMany(CoursesAssocModel, {
+    foreignKey: "courseId",
+    sourceKey: "id"
+  });
+  CoursesModel.hasMany(AssignmentsTestsModel, {
     foreignKey: "courseId",
     sourceKey: "id"
   });
@@ -19,6 +24,8 @@ export default async function sync() {
   await CoursesModel.sync({ force: true });
   await CoursesAssocModel.sync({ force: true });
   await UsersModel.sync({ force: true });
+  await AssignmentsTestsModel.sync({ force: true });
+
   console.log("Database schema synced");
 
   // MOCK DATA

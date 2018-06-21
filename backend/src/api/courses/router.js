@@ -3,6 +3,7 @@ import Express from "express";
 import CoursesModel from "./model";
 import CoursesAssocModel from "../courses_assoc/model";
 import UsersModel from "../users/model";
+import AssignmentsModel from "../assignments/model";
 
 const router = Express.Router();
 
@@ -161,6 +162,15 @@ router.delete("/:id/professors/:userGid", async (req, res, next) => {
       where: { userGid: req.params.userGid, role: "professor" }
     });
     res.json({ data: row });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/:id/assignments", async (req, res, next) => {
+  try {
+    let rows = await AssignmentsModel.findAll({where: {courseId: req.params.id}});
+    res.json({ data: rows });
   } catch (err) {
     next(err);
   }

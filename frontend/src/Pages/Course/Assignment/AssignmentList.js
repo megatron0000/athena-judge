@@ -31,7 +31,7 @@ export default class AssignmentList extends React.Component {
 
   getAssignmentsList = () => {
     this.setState({ loading: true });
-    Api.get("/assignments/course/" + this.props.courseId).then((res) => {
+    Api.get(`/courses/${this.props.courseId}/assignments`).then((res) => {
       this.setState({ data: res.data.data, loading: false });
     }).catch((err) => {
       console.log(err);
@@ -40,7 +40,7 @@ export default class AssignmentList extends React.Component {
   }
 
   handleDelete = () => {
-    Api.delete("/assignments/" + this.state.candidateToDelete).then((res) => {  
+    Api.delete(`/assignments/${this.state.candidateToDelete}`).then((res) => {  
       this.setState({ data: this.state.data.filter(o => o.id !== this.state.candidateToDelete), loading: true });
     }).catch((err) => {
       console.log(err);

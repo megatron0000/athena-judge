@@ -80,24 +80,12 @@ export default class AssignmentPage extends React.Component {
   }
 
   handleCreateAssignment = (form) => {
-    let formData = new FormData();
-    formData.append('title', form.title);
-    formData.append('description', form.description);
-    formData.append('courseId', this.props.courseId);
-    formData.append('dueDate', form.dueDate);
-    for (let i = 0; i < form.attachments.length; i++) {
-      formData.append('attachments', form.attachments[i]);
-    }
-    // formData.append('attachments', Array.from(form.attachments));
-    
-    for (let i = 0; i < form.tests.length; i++) {
-      formData.append('tests', form.tests[i]);
-    }
-    // formData.append('tests', form.tests);
-
     this.setState({ loading: true });
-    Api.post("/assignments/upload", formData, {
-      headers: {'Content-Type': 'multipart/form-data'} 
+    Api.post("/assignments", {
+      title: form.title,
+      description: form.description,
+      courseId: this.props.courseId,
+      dueDate: form.dueDate,
     }).then((res) => {
       console.log(res);
       this.showListUpdateAssign();
