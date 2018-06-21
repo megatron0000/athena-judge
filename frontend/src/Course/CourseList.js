@@ -16,6 +16,7 @@ export default class CourseList extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      courseId: null,
       courses: [],
       availableCourses: [],
       teachingCourses: [],
@@ -86,8 +87,8 @@ export default class CourseList extends React.Component {
     });
   }
 
-  handleOpenEnrollDialog = () => {
-    this.setState({ dialogEnrollOpen: true });
+  handleOpenEnrollDialog = (courseId) => {
+    this.setState({ courseId: courseId, dialogEnrollOpen: true });
   };
 
   handleCloseEnrollDialog = () => {
@@ -138,7 +139,7 @@ export default class CourseList extends React.Component {
                 variant="raised"
                 color="secondary"
                 style={{ marginLeft: 20, marginBottom: 20 }}
-                onClick={this.handleOpenEnrollDialog}
+                onClick={() => this.handleOpenEnrollDialog(course.id)}
               >
                 Inscrever-se
               </Button>
@@ -149,7 +150,7 @@ export default class CourseList extends React.Component {
         <ConfirmDialog
           open={this.state.dialogEnrollOpen}
           text="Tem certeza que deseja se inscrever na disciplina?"
-          onConfirm={() => this.handleEnroll(course.id)}
+          onConfirm={() => this.handleEnroll(this.state.courseId)}
           onClose={this.handleCloseEnrollDialog}
         />
 

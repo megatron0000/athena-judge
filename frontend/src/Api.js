@@ -56,6 +56,18 @@ if (Config.ENABLE_API_LOGS) {
     });
   }
 
+  Api.run = (source, input) => {
+    return new Promise((resolve, reject) => {
+      Axios.post("http://localhost:3001/run", { source, input }).then((res) => {
+        console.log("API RUN", res);
+        resolve(res);
+      }).catch((err) => {
+        console.log("ERROR: API RUN", err);
+        reject(err);
+      });
+    });
+  }
+
 } else {
 
   Api.get = (route) => {
@@ -75,14 +87,6 @@ if (Config.ENABLE_API_LOGS) {
   }
 
   Api.run = (source, input) => {
-    return new Promise((resolve, reject) => {
-      Axios.post("http://localhost:3001/run", { source, input }).then((res) => {
-        console.log("API RUN", res);
-        resolve(res);
-      }).catch((err) => {
-        console.log("ERROR: API RUN", err);
-        reject(err);
-      });
-    });
+    return Axios.post("http://localhost:3001/run", { source, input });
   }
 }

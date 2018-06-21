@@ -54,7 +54,7 @@ export default class AssignmentsView extends React.Component {
               actualOutput: output,
             }),
             loading: false,
-          }), () => console.log(this.state.results));
+          }));
           runNext();
         }).catch((err) => {
           console.log("err:", err);
