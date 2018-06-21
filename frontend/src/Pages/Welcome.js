@@ -70,6 +70,9 @@ export default class Welcome extends React.Component {
         for (let course of this.state.enrolledCourses) {
           delete mapCourse[course.id];
         }
+        for (let course of this.state.teachingCourses) {
+          delete mapCourse[course.id];
+        }
         let available = [];
         for (let course in mapCourse) {
           available.push(mapCourse[course]);

@@ -2,7 +2,7 @@ import Express from "express";
 import Cors from "cors";
 
 import DB from "./db";
-import Router from "./api/router";
+import Api from "./api/api";
 
 import Config from "./config";
 
@@ -17,7 +17,7 @@ app.get("/", (req, res) => {
   res.json({ data: "OK" });
 });
 
-app.use("/api", Router);
+app.use("/api", Api);
 
 app.use((req, res, next) => {
   res.status(404);

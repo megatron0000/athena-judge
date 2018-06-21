@@ -1,11 +1,11 @@
 import Express from "express";
-import DB from "../../db";
+import DB from "../db";
 
 const router = Express.Router();
 
 router.get("/", async (req, res, next) => {
   try {
-    let rows = await DB.submissions.findAll();
+    let rows = await DB.assignments.findAll();
     res.json({ data: rows });
   } catch (err) {
     next(err);
@@ -14,31 +14,20 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    let row = await DB.submissions.findById(req.params.id);
+    let row = await DB.assignments.findById(req.params.id);
     res.json({ data: row });
   } catch (err) {
     next(err);
   }
 });
 
-router.get("/submissionsassig/:assignid", async (req, res, next) => {
+router.post("/", async (req, res, next) => {
   try {
-    let row = await DB.submissions.findAll({where: {assignmentID: req.params.assignid}});
-    res.json({ data: row });
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.post("/", async(req, res, next) => {
-  try {
-    let row = await DB.submissions.create({
-      studentGID: req.body.usergid,
-      studentEmail: req.body.email,
-      assignmentID: req.body.assignid,
-      studentName: req.body.username,
+    let row = await DB.assignments.create({
+      title: req.body.title,
+      description: req.body.description,
       courseId: req.body.courseId,
-      code: req.body.code,
+      dueDate: req.body.dueDate,
     });
     res.json({ data: row });
   } catch (err) {
@@ -48,9 +37,10 @@ router.post("/", async(req, res, next) => {
 
 router.put("/:id", async (req, res, next) => {
   try {
-    let row = await DB.submissions.update({
+    let row = await DB.assignments.update({
       title: req.body.title,
       description: req.body.description,
+      courseId: req.body.courseId,
       dueDate: req.body.dueDate,
     }, { where: { id: req.params.id }});
     res.json({ data: row[0] });
@@ -61,11 +51,20 @@ router.put("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    let row = await DB.submissions.destroy({ where: { id: req.params.id }});
+    let row = await DB.assignments.destroy({ where: { id: req.params.id }});
     res.json({ data: row });
   } catch (err) {
     next(err);
   }
 });
+
+router.get("/:id/submissions", async (req, res, next) => {
+  try {
+    let row = await DB.submissions.findAll({where: { assignmentID: req.params.id }});
+    res.json({ data: row });
+  } catch (err) {
+    next(err);
+  }
+})
 
 export default router;

@@ -17,7 +17,7 @@ export default class SubmissionList extends React.Component {
 
   getSubmissionsList = () => {
     this.setState({ loading: true });
-    Api.get("/submissions/submissionsassig/" + this.props.assignmentid).then((res) => {
+    Api.get(`/assignments/${this.props.assignmentid}/submissions`).then((res) => {
       this.setState({ data: res.data.data, loading: false });
     }).catch((err) => {
       console.log(err);
