@@ -67,6 +67,15 @@ router.get("/:id/submissions", async (req, res, next) => {
   }
 });
 
+router.get("/:id/tests", async (req, res, next) => {
+  try {
+    let rows = await DB.assignments_tests.findAll({ where: { assignmentId: req.params.id } });
+    res.json({ data: rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post("/:id/tests", async (req, res, next) => {
   try {
     let row = await DB.assignments_tests.create({

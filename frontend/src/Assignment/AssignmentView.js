@@ -10,6 +10,7 @@ import SendIcon from "@material-ui/icons/Send";
 import UploadIcon from "@material-ui/icons/FileUpload";
 
 import ConfirmDialog from "../Components/ConfirmDialog";
+import SubmissionResult from "../Submission/SubmissionResult";
 
 export default class AssignmentsView extends React.Component {
   constructor(props) {
@@ -17,30 +18,51 @@ export default class AssignmentsView extends React.Component {
     this.state = {
       loading: false,
       code: null,
+      tests: [],
       dialogAddSubmissionOpen: false,
+      results: [],
     };
+  }
+
+  componentDidMount() {
+    this.getTests();
+  }
+
+  getTests = () => {
+    this.setState({ loading: true });
+    Api.get(`/assignments/${this.props.assignmentId}/tests`).then((res) => {
+      this.setState({ tests: res.data.data, loading: false });
+    })
   }
 
   handleUpload = (file) => {
     this.setState({ code: file.data });
   }
 
-  handleSubmission = () => {
-    this.setState({ loading: true });
-    Api.post("/submissions", {
-      assignmentId: this.props.assignmentId,
-      courseId: this.props.courseId,
-      code: this.state.code,
-      username: this.props.user.name,
-      usergid: this.props.user.gid,
-      email: this.props.user.email,
-    }).then((res) => {
-      this.setState({ loading: false });
-    }).catch((err) => {
-      console.log(err);
-      this.setState({ loading: false });
-    });
-    Api.run(this.state.code);
+  handleSubmission = () => {    
+    let current = -1;
+    this.setState({ loading: true, results: [] });
+    const runNext = () => {
+      current++;
+      if (current < this.state.tests.length) {
+        Api.run(this.state.code, this.state.tests[current].input).then((res) => {
+          let output = res.data.data.filter((e) => e.event === "stdout").map((e) => e.data).join("");
+          this.setState((prev) => ({
+            results: prev.results.concat({
+              input: this.state.tests[current].input,
+              expectedOutput: this.state.tests[current].output,
+              actualOutput: output,
+            }),
+            loading: false,
+          }), () => console.log(this.state.results));
+          runNext();
+        }).catch((err) => {
+          console.log("err:", err);
+          this.setState({ loading: false });
+        });
+      }
+    }
+    runNext();
   }
 
   handleOpenDialogAddSubmission = () => {
@@ -59,6 +81,10 @@ export default class AssignmentsView extends React.Component {
         
         { this.state.code != null &&
           <CodeView style={{ marginLeft: 22, marginRight: 22, marginTop: 22 }}>{ this.state.code }</CodeView> }
+
+        <div style={{ padding: 22 }}>
+          { this.state.results.map((result, i) => <SubmissionResult key={i} result={result} /> ) }
+        </div>
 
         <div style={{ textAlign: "center", margin: 20 }}>
           <Button

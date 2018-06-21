@@ -74,8 +74,15 @@ if (Config.ENABLE_API_LOGS) {
     return Axios.delete(Config.API + route, params);
   }
 
-  Api.run = (source) => {
-    return Axios.post("http://localhost:3001/run", { source });
+  Api.run = (source, input) => {
+    return new Promise((resolve, reject) => {
+      Axios.post("http://localhost:3001/run", { source, input }).then((res) => {
+        console.log("API RUN", res);
+        resolve(res);
+      }).catch((err) => {
+        console.log("ERROR: API RUN", err);
+        reject(err);
+      });
+    });
   }
-
 }

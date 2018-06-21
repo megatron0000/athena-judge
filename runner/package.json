@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "dev": "nodemon src/server.js --exec babel-node --plugins transform-es2015-modules-commonjs"
+    "dev": "babel-node src/server.js --plugins transform-es2015-modules-commonjs"
   },
   "author": "",
   "license": "ISC",

@@ -118,6 +118,20 @@ DB.sync = async function sync() {
     description: "Implement efficient sorting algorithms.",
   });
 
+  await AssignmentsTestsModel.create({
+    assignmentId: 2,
+    type: "public",
+    input: "2\n0\n10\n",
+    output: "32.0\n50.0\n",
+  });
+
+  await AssignmentsTestsModel.create({
+    assignmentId: 2,
+    type: "public",
+    input: "2\n60\n100\n",
+    output: "140.0\n212.0\n",
+  });
+
   await CoursesAssocModel.create({
     courseId: 2,
     userGid: "117441890382622508131",

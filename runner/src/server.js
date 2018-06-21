@@ -44,14 +44,15 @@ function compile(socket) {
   return new Promise((resolve, reject) => {
     socket.emit("exec", { command: "g++", args: ["/app/program.cpp", "-o", "/app/program.o"] }, (data) => {
       let { execId } = data;
+      let output = [];
       socket.on(execId, (data2) => {
         let { event, data } = data2;
-        console.log(data2);
+        output.push(data2);
         if (event === "exit") {
           if (data === 0) {
-            resolve();
+            resolve(output);
           } else {
-            reject(data);
+            reject(output);
           }
           socket.off(execId);
         }
@@ -60,52 +61,62 @@ function compile(socket) {
   });
 }
 
-function execute(socket) {
+function execute(socket, input) {
   return new Promise((resolve, reject) => {
-    socket.emit("exec", { command: "/app/program.o", args: [], timeoutMs: 10000 }, (data) => {
+    socket.emit("exec", { command: "/app/program.o", args: [], input: input, timeoutMs: 10000 }, (data) => {
       let { execId } = data;
+      let output = [];
       socket.on(execId, (data2) => {
         let { event, data } = data2;
-        console.log(data2);
+        output.push(data2);
         if (event === "exit") {
           if (data === 0) {
-            resolve();
+            resolve(output);
           } else {
-            reject(data);
+            reject(output);
           }
           socket.off(execId);
         }
       });
     });
+  });
+}
+
+/*
+@vb: Spin up a container even before a request so the execution request
+takes less time for the user.
+*/
+startContainer();
+function startContainer() {
+  ChildProcess.exec("npm run start", { cwd: Path.resolve(__dirname, "..", "docker") }, (err, stdout, stderr) => {
+    if (err) return console.log(err);
+    startContainer();
   });
 }
 
 app.post("/run", async (req, res) => {
   let source = req.body.source;
-
-  console.log("request source: " + source);
-
-  // start docker container
-  ChildProcess.exec("npm run start", { cwd: Path.resolve(__dirname, "..", "docker") }, (err, stdout, stderr) => {
-    console.log("docker:", { err, stdout, stderr });
-  });
-
-  console.log("docker container running");
+  let input = req.body.input;
 
   let socket = SocketIOClient("http://localhost:3002");
   socket.on("connect", async () => {  
-    console.log("socket connected");
+    let error = null;
+    let data = null;
     try {
+      error = "WriteError";
       await writeSource(socket, source);
+      error = "CompileError";
       await compile(socket);
-      await execute(socket);
+      error = "RuntimeError";
+      data = await execute(socket, input);
+      error = null;
     } catch (err) {
-      console.log("err:", err);
+      console.log("error:", err);
+      data = err;
     }
     socket.emit("exit");
     socket.close();
-    console.log("done!");
-    res.json({ data: "OK" });
+    res.json({ data, error });
   });
 });
 
