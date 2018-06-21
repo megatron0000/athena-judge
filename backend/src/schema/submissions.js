@@ -1,8 +1,7 @@
 import Sequelize from "sequelize";
+import Schema from "../schema";
 
-import { DB } from "../../config";
-
-export default DB.define("submissions", {
+export default Schema.define("submissions", {
   id: {
     type: Sequelize.INTEGER,
     allowNull: false,

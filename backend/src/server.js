@@ -1,10 +1,10 @@
 import Express from "express";
 import Cors from "cors";
 
-import ApiSchema from "./api/schema";
-import ApiRouter from "./api/router";
+import DB from "./db";
+import Router from "./api/router";
 
-import { PORT } from "./config";
+import Config from "./config";
 
 const app = Express();
 
@@ -17,7 +17,7 @@ app.get("/", (req, res) => {
   res.json({ data: "OK" });
 });
 
-app.use("/api", ApiRouter);
+app.use("/api", Router);
 
 app.use((req, res, next) => {
   res.status(404);
@@ -30,8 +30,8 @@ app.use((err, req, res, next) => {
   res.json({ error: "InternalServerError", message: err.message });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running at port ${PORT}`);
+app.listen(Config.PORT, () => {
+  console.log(`Server running at port ${Config.PORT}`);
 });
 
-ApiSchema();
+DB.sync();
