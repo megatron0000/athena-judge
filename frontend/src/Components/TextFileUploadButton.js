@@ -10,13 +10,21 @@ export default class TextFileUploadButton extends React.Component {
     input.multiple = this.props.multiple ? true : false;
     input.onchange = () => {
       let reader = new FileReader();
+      let current = -1;
+      function readNext() {
+        current++;
+        if (current < input.files.length) {
+          reader.readAsText(input.files[current]);
+        }
+      }
       reader.onload = () => {
         this.props.onUpload({
-          name: input.files[0].name,
+          name: input.files[current].name,
           data: reader.result,
         });
+        readNext();
       }
-      reader.readAsText(input.files[0]);
+      readNext();
     }
     input.click();
   }
