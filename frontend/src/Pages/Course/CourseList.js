@@ -1,5 +1,5 @@
 import React from "react";
-import Api from "../Api";
+import Api from "../../Api";
 
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
@@ -15,31 +15,21 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 
-export default class Welcome extends React.Component {
+export default class CourseList extends React.Component {
   constructor(props) {
     super(props);
-    
     this.state = {
       courses: [],
       availableCourses: [],
       teachingCourses: [],
       enrolledCourses: [],
       loading: false,
-      dialogEnrollOpen: false
+      dialogEnrollOpen: false,
     };
   }
 
-  // @italotabatinga: Dont know if this is the best way is with
-  // componentDidMount and componentDidUpdate, but it works
-  // when you give Welcome Course the responsability to GET its 
-  // own lists
   componentDidMount = () => {
-    if(this.props.user)
-      this.getCoursesList();
-  }
-
-  componentDidUpdate = (prevProps, prevState, snapshot) => {
-    if(this.props.user && prevProps != this.props) {
+    if (this.props.user != null) {
       this.getCoursesList();
     }
   }
@@ -47,18 +37,22 @@ export default class Welcome extends React.Component {
   getCoursesList = () => {
     this.setState({ loading: true });
     let doneCount = 0;
+
     // All courses    
     Api.get("/courses").then((res) => {
       this.setState({ courses: res.data.data }, done);
     });
+
     // My enrolled courses
     Api.get(`/courses/enrolled/${this.props.user.gid}`).then((res) => {
       this.setState({ enrolledCourses: res.data.data }, done);
     });
+
     // My teaching courses
     Api.get(`/courses/teaching/${this.props.user.gid}`).then((res) => {
       this.setState({ teachingCourses: res.data.data }, done);
     });
+
     function done() {
       doneCount++;
       if (doneCount == 3) { // all done
@@ -77,7 +71,7 @@ export default class Welcome extends React.Component {
         for (let course in mapCourse) {
           available.push(mapCourse[course]);
         }
-        this.setState({ availableCourses: available })
+        this.setState({ availableCourses: available, loading: false });
       }
     }
   }

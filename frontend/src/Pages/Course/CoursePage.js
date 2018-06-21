@@ -22,152 +22,79 @@ export default class CoursePage extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      show: "home",
-      assignmentId: null,
-      students: [],
-      professors: [],
+      course: null,
       isCreator: false,
       isProfessor: false,
-      loading: false,
+      students: [],
+      professors: [],
       dialogOpenPromote: false,
       dialogOpenDemote: false,
+      loading: 0,
     };
   }
 
   getCourseData = () => {
-    this.setState({ loading: true });
-    Api.get("/courses/" + this.props.courseId).then((res) => {
-      this.setState({
+    this.setState((prev) => ({ loading: prev.loading + 1 }));
+    Api.get(`/courses/${this.props.courseId}`).then((res) => {
+      this.setState((prev) => ({
         isCreator: res.data.data.creatorUserGid === this.props.user.gid,
-        data: res.data.data,
-        loading: false
-      });
+        course: res.data.data,
+        loading: prev.loading - 1,
+      }));
     }).catch((err) => {
       console.log(err);
-      this.setState({ loading: false });
+      this.setState((prev) => ({ loading: prev.loading - 1 }));
     });
   }
 
   getStudents = () => {
-    this.setState({loading: true});
+    this.setState((prev) => ({ loading: prev.loading + 1 }));
     Api.get(`/courses/${this.props.courseId}/students`).then((res) => {
-      this.setState({
+      this.setState((prev) => ({
         students: res.data.data, 
-        loading: false
-      });
+        loading: prev.loading - 1,
+      }));
     }).catch((err) => {
       console.log(err);
-      this.setState({loading: false});
+      this.setState((prev) => ({ loading: prev.loading - 1 }));
     });
   }
 
   getProfessors = () => {
-    this.setState({loading: true});
+    this.setState((prev) => ({ loading: prev.loading + 1 }));
     Api.get(`/courses/${this.props.courseId}/professors`).then((res) => {
-      this.setState({
+      this.setState((prev) => ({
         isProfessor: res.data.data.find((e) => e.gid === this.props.user.gid) != null,
-        professors: res.data.data, 
-        loading: false
-      });
+        professors: res.data.data,
+        loading: prev.loading - 1,
+      }));
     }).catch((err) => {
       console.log(err);
-      this.setState({loading: false});
-    });
-  }
-
-  getAssignmentById = (assignmentId, callback) => {
-    this.setState({ loading: true });
-    Api.get("/assignments/" + assignmentId).then((res) => {
-      this.setState({ assignment: res.data.data, loading: false });
-      if (callback) {
-        callback();
-      }
-    }).catch((err) => {
-      console.log(err);
-      this.setState({ loading: false });
-    });
-  }
-
-  showEditById = (assignmentId) => {
-    this.getAssignmentById(assignmentId, this.showUpdateAssignment);
-    // @italotabatinga: A way to make change on show was sending this function below as callback of getassignmentbyID
-    // this.showUpdateAssignment();
-  }
-
-  handleCreateAssignment = (form) => {
-    console.log("CRIANDO", form);
-    let formData = new FormData();
-    formData.append('title', form.title);
-    formData.append('description', form.description);
-    formData.append('courseId', this.props.courseId);
-    formData.append('dueDate', form.dueDate);
-    for (let i = 0; i < form.attachments.length; i++) {
-      formData.append('attachments', form.attachments[i]);
-    }
-    
-    for (let i = 0; i < form.tests.length; i++) {
-      formData.append('tests', form.tests[i]);
-    }
-
-    this.setState({ loading: true });
-    Api.post("/assignments/upload", formData, {
-      headers: {'Content-Type': 'multipart/form-data'} 
-    }).then((res) => {
-      console.log(res);
-      this.showHomeUpdateAssign();
-    }).catch((err) => {
-      console.log(err);
-      this.setState({ loading: false });
-    });    
-  }
-
-  handleUpdateAssignment = (form) => {
-    this.setState({ loading: true });
-    Api.put("/assignments/" + form.id, {
-      title: form.title,
-      description: form.description,
-      courseId: this.props.courseId,
-      dueDate: form.dueDate,
-      code: form.code
-    }).then((res) => {
-      this.showHomeUpdateAssign();
-    }).catch((err) => {
-      console.log(err);
-      this.setState({ loading: false });
-    });
-  }
-
-  handleDelete = (id) => {
-    this.setState({ loading: true });
-    Api.delete("/assignments/" + id).then((res) => {
-      this.showHomeUpdateAssign();
-    }).catch((err) => {
-      console.log(err);
-      this.setState({ loading: false });
+      this.setState((prev) => ({ loading: prev.loading - 1 }));
     });
   }
 
   handlePromote = (courseId, gid) => {
-    this.setState({ loading: true });
+    this.setState((prev) => ({ loading: prev.loading + 1 }));
     Api.post(`/courses/${courseId}/professors`, { userGid: gid }).then((res) => {
       this.getStudents();
       this.getProfessors();
-      this.setState({ loading: false });
+      this.setState((prev) => ({ loading: prev.loading - 1 }));
     }).catch((err) => {
       console.log(err);
-      this.setState({ loading: false });
+      this.setState((prev) => ({ loading: prev.loading - 1 }));
     });
   }
 
   handleDemote = (courseId, gid) => {
-    this.setState({ loading: true });
+    this.setState((prev) => ({ loading: prev.loading + 1 }));
     Api.delete(`/courses/${courseId}/professors/${gid}`).then((res) => {
       this.getStudents();
       this.getProfessors();
-      this.setState({ loading: false });
+      this.setState((prev) => ({ loading: prev.loading - 1 }));
     }).catch((err) => {
       console.log(err);
-      this.setState({ loading: false });
+      this.setState((prev) => ({ loading: prev.loading - 1 }));
     });
   }
 
@@ -196,33 +123,35 @@ export default class CoursePage extends React.Component {
   render() {
     return (
       <div>
-        {this.state.loading &&
+        {this.state.loading > 0 &&
           <CircularProgress style={{ float: "right", marginRight: 18, marginTop: 18 }} />}
+
         <Typography
-          variant="title"
+          variant="headline"
           style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
         >
-          {this.state.data && this.state.data.name}
+          {this.state.course && this.state.course.name}
         </Typography>
 
         <Typography
           variant="subheading"
-          style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
+          style={{ paddingLeft: 20, paddingTop: 4, paddingRight: 20, paddingBottom: 20 }}
         >
-          {this.state.data && this.state.data.description}
+          {this.state.course && this.state.course.description}
         </Typography>
 
         <Divider />
         
-      {
-        <AssignmentPage 
-          courseId={this.props.courseId}
-          isProfessor={this.state.isProfessor}
-          user={this.props.user}
-        />
-      }
+        {
+          <AssignmentPage 
+            courseId={this.props.courseId}
+            isProfessor={this.state.isProfessor}
+            user={this.props.user}
+          />
+        }
 
-      <Divider />
+        <Divider />
+
         <Typography
           variant="title"
           style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
@@ -285,6 +214,7 @@ export default class CoursePage extends React.Component {
         </List>
 
         <Divider />
+
         <Typography
           variant="title"
           style={{ paddingLeft: 20, paddingTop: 22, paddingRight: 20, paddingBottom: 4 }}
@@ -292,7 +222,7 @@ export default class CoursePage extends React.Component {
           Alunos Inscritos
         </Typography>
 
-        <List >
+        <List>
           {this.state.students.map((student) => (
             <ListItem key={student.gid}>
 
@@ -345,9 +275,6 @@ export default class CoursePage extends React.Component {
             </ListItem>
           ))}
         </List>
-
-        <Divider />
-
       </div>
     );
   }

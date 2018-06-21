@@ -1,7 +1,7 @@
 import React from "react";
 import Api from "../Api";
 
-import Welcome from "./Welcome";
+import CourseList from "./Course/CourseList";
 import CoursePage from "./Course/CoursePage";
 import CourseForm from "./Course/CourseForm";
 
@@ -9,9 +9,9 @@ export default class Main extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      show: "Home",
+      show: "CourseList",
       loading: false,
-      courseId: null
+      courseId: null,
     };
   }
 
@@ -24,14 +24,15 @@ export default class Main extends React.Component {
   }
 
   showHome = () => {
-    this.setState({ show: "Home", courseId: null });
+    this.setState({ show: "CourseList", courseId: null });
   }
 
   cancelCreateCourse = () => {
-    if (this.state.courseId != null)
+    if (this.state.courseId != null) {
       this.showCourse(this.state.courseId);
-    else
+    } else {
       this.showHome();
+    }
   }
 
   handleCreateCourse = (form) => {
@@ -41,7 +42,7 @@ export default class Main extends React.Component {
       description: form.description,
       creatorUserGid: this.props.user.gid,
     }).then((res) => {
-      this.setState({ show: "Home", loading: false });
+      this.setState({ show: "CourseList", loading: false });
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });
@@ -51,8 +52,8 @@ export default class Main extends React.Component {
   render() {
     return (
       <div>
-        {this.state.show == "Home" &&
-          <Welcome 
+        {this.state.show == "CourseList" &&
+          <CourseList 
             onCourseClick={this.showCourse}
             onCreateClick={this.showCreateCourse}
             user={this.props.user}

@@ -6,6 +6,7 @@ import Paper from "@material-ui/core/Paper";
 import TopBar from "./TopBar/TopBar";
 import SideBar from "./SideBar/SideBar";
 import Main from "./Pages/Main";
+import Typography from "@material-ui/core/Typography";
 
 export default class App extends React.Component {
   constructor(props) {
@@ -51,10 +52,21 @@ export default class App extends React.Component {
           elevation={4}
           style={{ marginTop: 80, maxWidth: 960, marginLeft: "auto", marginRight: "auto" }}
         >
-          <Main 
-            ref={(ref) => { this.main = ref; } }
-            user={this.state.user}
-          />
+          {
+            this.state.user != null ?
+            <Main 
+              ref={(ref) => { this.main = ref; } }
+              user={this.state.user}
+            />
+            :
+            <Typography
+              variant="title"
+              style={{ paddingLeft: 20, paddingRight: 20, paddingTop: 100, paddingBottom: 200,
+                textAlign: "center", color: "#666" }}
+            >
+              Por favor, realize login para acessar o sistema.
+            </Typography>
+          }
         </Paper>
         <div style={{ height: 120 }}></div>
       </div>
