@@ -6,10 +6,11 @@
 
 ## Running in development
 
-1. Open two command prompts.
+1. Open three command prompts.
 2. In the first command prompt, run "cd backend" then "npm run dev".
-3. In the second command promp, run "cd frontend" then "npm run dev".
-4. A browser window should pop up with everything working.
+3. In the second command promp, run "cd runner" then "npm run dev".
+4. In the third command promp, run "cd frontend" then "npm run dev".
+5. A browser window should pop up with everything working.
 
 Using this setup, your server will restart whenever you make a change in the backend and your browser will refresh whenever you make a change in the frontend.
 
