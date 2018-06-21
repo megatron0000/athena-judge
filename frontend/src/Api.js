@@ -6,11 +6,11 @@ export default class Api {};
 
 // This is a wrapper around the Axios library so we can log all Api calls and responses.
 
-if (Config.enableApiLogs) {
+if (Config.ENABLE_API_LOGS) {
 
   Api.get = (route) => {
     return new Promise((resolve, reject) => {
-      Axios.get(Config.api + route).then((res) => {
+      Axios.get(Config.API + route).then((res) => {
         console.log("API GET", route, res.data);
         resolve(res);
       }).catch((err) => {
@@ -22,7 +22,7 @@ if (Config.enableApiLogs) {
 
   Api.post = (route, params) => {
     return new Promise((resolve, reject) => {
-      Axios.post(Config.api + route, params).then((res) => {
+      Axios.post(Config.API + route, params).then((res) => {
         console.log("API POST", route, params, res.data);
         resolve(res);
       }).catch((err) => {
@@ -34,7 +34,7 @@ if (Config.enableApiLogs) {
 
   Api.put = (route, params) => {
     return new Promise((resolve, reject) => {
-      Axios.put(Config.api + route, params).then((res) => {
+      Axios.put(Config.API + route, params).then((res) => {
         console.log("API PUT", route, params, res.data);
         resolve(res);
       }).catch((err) => {
@@ -46,7 +46,7 @@ if (Config.enableApiLogs) {
 
   Api.delete = (route, params) => {
     return new Promise((resolve, reject) => {
-      Axios.delete(Config.api + route, params).then((res) => {
+      Axios.delete(Config.API + route, params).then((res) => {
         console.log("API DELETE", route, params, res.data);
         resolve(res);
       }).catch((err) => {
@@ -59,19 +59,19 @@ if (Config.enableApiLogs) {
 } else {
 
   Api.get = (route) => {
-    return Axios.get(Config.api + route);
+    return Axios.get(Config.API + route);
   }
 
   Api.post = (route, params) => {
-    return Axios.post(Config.api + route, params);
+    return Axios.post(Config.API + route, params);
   }
 
   Api.put = (route, params) => {
-    return Axios.put(Config.api + route, params);
+    return Axios.put(Config.API + route, params);
   }
 
   Api.delete = (route, params) => {
-    return Axios.delete(Config.api + route, params);
+    return Axios.delete(Config.API + route, params);
   }
 
 }

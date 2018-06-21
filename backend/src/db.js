@@ -35,8 +35,6 @@ DB.sync = async function sync() {
   await UsersModel.sync({ force: true });
   await AssignmentsTestsModel.sync({ force: true });
 
-  console.log("Database schema synced");
-
   // MOCK DATA
   // Users generated at https://randomuser.me/
   await UsersModel.create({

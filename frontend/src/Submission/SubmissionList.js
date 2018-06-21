@@ -30,7 +30,6 @@ export default class SubmissionList extends React.Component {
   }
 
   render() {
-    console.log("coe rapaziada", this.state.data);
     return (
       <div>
       <Typography

@@ -21,7 +21,7 @@ export default class AuthButton extends React.Component {
     }
     window.gapi.load("auth2", () => {
       window.gapi.auth2.init({
-        client_id: Config.gauthClientId
+        client_id: Config.GAUTH_CLIENT_ID
       }).then((gauth) => {
         this.handleUserUpdate(gauth.currentUser.get());
         this.setState({ gauth: gauth });

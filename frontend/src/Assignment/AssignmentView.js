@@ -22,7 +22,6 @@ export default class AssignmentsView extends React.Component {
   }
 
   handleUpload = (file) => {
-    console.log(file);
     this.setState({ code: file.data });
   }
 
@@ -56,10 +55,11 @@ export default class AssignmentsView extends React.Component {
       <div>
         { this.state.loading &&
           <CircularProgress style={{ float: "right", marginRight: 18, marginTop: 18 }} /> }
-          
-        <CodeView>{ this.state.code }</CodeView>
+        
+        { this.state.code != null &&
+          <CodeView style={{ marginLeft: 22, marginRight: 22, marginTop: 22 }}>{ this.state.code }</CodeView> }
 
-        <div style={{ textAlign: "center", margin: 10 }}>
+        <div style={{ textAlign: "center", margin: 20 }}>
           <Button
             variant="raised"
             style={{ marginRight: 10 }}
@@ -73,7 +73,7 @@ export default class AssignmentsView extends React.Component {
             onUpload={this.handleUpload}
           >
             <UploadIcon style={{ marginRight: 16 }} />
-            {this.state.code ? "Troque Código" : "Escolha Código"}
+            {this.state.code ? "Trocar Código" : "Escolher Código"}
           </TextFileUploadButton>
           <Button
             variant="raised"
