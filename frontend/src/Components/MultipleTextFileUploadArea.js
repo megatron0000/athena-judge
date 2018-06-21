@@ -3,7 +3,7 @@ import React from "react";
 import TextFileUploadButton from "./TextFileUploadButton";
 
 import UploadIcon from "@material-ui/icons/FileUpload";
-import AttachmentIcon from "@material-ui/icons/Attachment";
+import InsertDriveFileIcon from "@material-ui/icons/InsertDriveFile";
 import Avatar from '@material-ui/core/Avatar';
 import Chip from '@material-ui/core/Chip';
 
@@ -46,13 +46,13 @@ export default class MultipleTextFileUploadArea extends React.Component {
 
         >
           <UploadIcon style={{ marginRight: 16 }} />
-          Adicionar
+          Enviar
         </TextFileUploadButton>
         <div>
           { this.state.files.map((file, i) => (
             <Chip
               key={i}
-              avatar={<Avatar><AttachmentIcon /></Avatar>}
+              avatar={<Avatar><InsertDriveFileIcon /></Avatar>}
               label={file.name}
               style={{ margin: 5 }}
               onDelete={() => this.handleDelete(i)}

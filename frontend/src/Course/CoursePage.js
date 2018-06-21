@@ -201,7 +201,7 @@ export default class CoursePage extends React.Component {
                     </Button>
                   
                     <Button 
-                      onClick={() => { this.handleDemote(this.props.courseId, professor.gid), this.handleCloseDialogDemote() }}
+                      onClick={() => { this.handleDemote(this.props.courseId, professor.gid); this.handleCloseDialogDemote() }}
                       color="primary" autoFocus>
                       Sim
                     </Button>
@@ -264,7 +264,7 @@ export default class CoursePage extends React.Component {
                     </Button>
                   
                     <Button 
-                      onClick={() => { this.handlePromote(this.props.courseId, student.gid), this.handleCloseDialogPromote() }}
+                      onClick={() => { this.handlePromote(this.props.courseId, student.gid); this.handleCloseDialogPromote() }}
                       color="primary" autoFocus>
                       Sim
                     </Button>

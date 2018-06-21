@@ -105,7 +105,7 @@ export default class AssignmentsView extends React.Component {
             </Button>
                 
             <Button 
-              onClick={() => { this.handleSubmission(this.state), this.handleCloseDialogAddSubmission() }}
+              onClick={() => { this.handleSubmission(this.state); this.handleCloseDialogAddSubmission() }}
               color="primary" autoFocus>
               Sim
             </Button>
