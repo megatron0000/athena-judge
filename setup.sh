@@ -1,5 +1,5 @@
 # install Node.js and NPM
-sudo apt-get install nodejs npm -y
+sudo apt-get install nodejs npm  -y
 
 # install NPM package dependecies
 cd backend
@@ -20,6 +20,7 @@ sudo -u postgres psql -c "CREATE USER athena WITH PASSWORD 'athena'"
 sudo -u postgres psql -c "CREATE DATABASE athena WITH OWNER='athena'"
 
 # install Docker
+sudo apt-get install curl -y
 curl -fsSL get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 
