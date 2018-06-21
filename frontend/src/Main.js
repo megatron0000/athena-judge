@@ -52,18 +52,18 @@ export default class Main extends React.Component {
   render() {
     return (
       <div>
-        {this.state.show == "CourseList" &&
+        {this.state.show === "CourseList" &&
           <CourseList 
             onCourseClick={this.showCourse}
             onCreateClick={this.showCreateCourse}
             user={this.props.user}
           />}
-        {this.state.show == "CourseView" &&
+        {this.state.show === "CourseView" &&
           <CoursePage
             courseId={this.state.courseId}
             user={this.props.user}
           />}
-        {this.state.show == "CourseCreate" &&
+        {this.state.show === "CourseCreate" &&
           <CourseForm
             onBack={this.cancelCreateCourse}
             onSubmit={this.handleCreateCourse}

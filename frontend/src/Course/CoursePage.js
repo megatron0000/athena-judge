@@ -213,7 +213,7 @@ export default class CoursePage extends React.Component {
 
               <ListItemText primary={student.name} />
 
-              { this.state.isCreator && this.state.professors.find((e) => e.gid == student.gid) == null && 
+              { this.state.isCreator && this.state.professors.find((e) => e.gid === student.gid) == null && 
                 <Button
                   variant="raised"
                   color="secondary"

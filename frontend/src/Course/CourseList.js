@@ -52,7 +52,7 @@ export default class CourseList extends React.Component {
 
     function done() {
       doneCount++;
-      if (doneCount == 3) { // all done
+      if (doneCount === 3) { // all done
         // compute the list of available courses (all courses removing already enrolled courses)
         let mapCourse = {};
         for (let course of this.state.courses) {

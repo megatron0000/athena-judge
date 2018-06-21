@@ -57,7 +57,7 @@ export default class AssignmentPage extends React.Component {
   }
 
   showUpdate = (id) => {
-    this.setState((prev) => ({ show: "update", assignment: prev.list.find((e) => e.id == id) }));
+    this.setState((prev) => ({ show: "update", assignment: prev.list.find((e) => e.id === id) }));
   }
 
   getAssignmentById = (assignmentId, callback) => {
@@ -143,7 +143,7 @@ export default class AssignmentPage extends React.Component {
           Atividades
         </Typography>
         
-        { this.state.show == "list" &&
+        { this.state.show === "list" &&
           <AssignmentList
             courseId={this.props.courseId}
             onEdit={this.showEditById}
@@ -152,12 +152,12 @@ export default class AssignmentPage extends React.Component {
             ref={(ref) => { this.refAssignList = ref; }}            
             isProfessor={this.props.isProfessor}
           /> }
-        { this.state.show == "create" &&
+        { this.state.show === "create" &&
           <AssignmentForm
             onBack={this.showListNoUpdate}
             onSubmit={this.handleCreateAssignment}
           /> }
-        { this.state.show == "update" &&
+        { this.state.show === "update" &&
           <AssignmentForm
             onBack={this.showListNoUpdate}
             assignmentId={this.state.assignment.id}
@@ -166,7 +166,7 @@ export default class AssignmentPage extends React.Component {
             dueDate={this.state.assignment.dueDate}
             onSubmit={this.handleUpdateAssignment}
           /> }
-        { (this.state.show == "view" && !this.props.isProfessor) &&
+        { (this.state.show === "view" && !this.props.isProfessor) &&
           <AssignmentView
             onBack={this.showListNoUpdate}
             courseId={this.props.courseId}
@@ -174,7 +174,7 @@ export default class AssignmentPage extends React.Component {
             isProfessor={this.props.isProfessor}
             user={this.props.user}
           /> }
-        { (this.state.show == "view" && this.props.isProfessor) &&
+        { (this.state.show === "view" && this.props.isProfessor) &&
           <SubmissionList
             onBack={this.showListNoUpdate}
             courseId={this.props.courseId}
