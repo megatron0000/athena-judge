@@ -26,8 +26,8 @@ export default class AssignmentForm extends React.Component {
       title: this.props.title,
       description: this.props.description,
       dueDate: this.props.dueDate,
-      publicTests: [],
-      privateTests: [],
+      publicTestsInput: [],
+      publicTestsOutput: [],
       dialogOpenCreateAssign: false,
     }
   }
@@ -44,12 +44,12 @@ export default class AssignmentForm extends React.Component {
     this.setState({ dueDate: e.target.value });
   }
 
-  handlePublicTestsChange = (files) => {
-    this.setState({ publicTests: files });
+  handlePublicTestsInputChange = (files) => {
+    this.setState({ publicTestsInput: files });
   }
 
-  handlePrivateTestsChange = (files) => {
-    this.setState({ privateTests: files });
+  handlePublicTestsOutputChange = (files) => {
+    this.setState({ publicTestsOutput: files });
   }
 
   handleOpenDialogCreateAssign = () => {
@@ -87,19 +87,19 @@ export default class AssignmentForm extends React.Component {
 
         <div style={{ height: 20 }}></div>
         <Typography variant="caption">
-          Testes Públicos
+          Entradas dos testes públicos
         </Typography>
         <MultipleTextFileUploadArea
-          onChange={this.handlePublicTestsChange}
+          onChange={this.handlePublicTestsInputChange}
           style={{ paddingTop: 10 }}
         />
 
         <div style={{ height: 20 }}></div>
         <Typography variant="caption">
-          Testes Privados
+          Saída dos testes públicos
         </Typography>
         <MultipleTextFileUploadArea
-          onChange={this.handlePrivateTestsChange}
+          onChange={this.handlePublicTestsOutputChange}
           style={{ paddingTop: 10 }}
         />
 

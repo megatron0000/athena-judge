@@ -86,41 +86,12 @@ export default class AssignmentList extends React.Component {
                     <EditIcon />
                   </IconButton>
 
-                  <Dialog
-                    open={this.state.dialogOpenDeleteAssign}
-                    onClose={this.handleCloseDialogDeleteAssign}
-                    aria-labelledby="alert-dialog-title"
-                    aria-describedby="alert-dialog-description"
-                  >
-                    <DialogContent>
-                      <DialogContentText id="alert-dialog-description">
-                        Tem certeza que deseja apagar esta atividade?
-                      </DialogContentText>
-                    </DialogContent>
-                
-                    <DialogActions>
-                      <Button onClick={this.handleCloseDialogDeleteAssign} color="primary">
-                         Não
-                      </Button>
-                  
-                      <Button 
-                        onClick={() => { this.handleDelete(); this.handleCloseDialogDeleteAssign() }}
-                        color="primary" autoFocus>
-                        Sim
-                      </Button>
-                    </DialogActions>
-              
-                  </Dialog>
-
-
                   <IconButton
                    aria-label="Delete"
                     onClick={() => {this.handleOpenDialogDeleteAssign(assignment.id)}}
                   >
                     <DeleteIcon />
                   </IconButton>
-
-                  
 
                 </ListItemSecondaryAction>
               }
@@ -142,6 +113,31 @@ export default class AssignmentList extends React.Component {
             />
           </Button>
         }
+        <Dialog
+          open={this.state.dialogOpenDeleteAssign}
+          onClose={this.handleCloseDialogDeleteAssign}
+          aria-labelledby="alert-dialog-title"
+          aria-describedby="alert-dialog-description"
+        >
+          <DialogContent>
+            <DialogContentText id="alert-dialog-description">
+              Tem certeza que deseja apagar esta atividade?
+            </DialogContentText>
+          </DialogContent>
+      
+          <DialogActions>
+            <Button onClick={this.handleCloseDialogDeleteAssign} color="primary">
+                Não
+            </Button>
+        
+            <Button 
+              onClick={() => { this.handleDelete(); this.handleCloseDialogDeleteAssign() }}
+              color="primary" autoFocus>
+              Sim
+            </Button>
+          </DialogActions>
+    
+        </Dialog>
       </div>
     );
   }

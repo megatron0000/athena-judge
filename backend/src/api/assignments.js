@@ -70,7 +70,7 @@ router.get("/:id/submissions", async (req, res, next) => {
 router.post("/:id/tests", async (req, res, next) => {
   try {
     let row = await DB.assignments_tests.create({
-      assignmentId: req.param.id,
+      assignmentId: req.params.id,
       type: req.body.type,
       input: req.body.input,
       output: req.body.output,

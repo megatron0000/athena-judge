@@ -87,12 +87,32 @@ export default class AssignmentPage extends React.Component {
       courseId: this.props.courseId,
       dueDate: form.dueDate,
     }).then((res) => {
-      console.log(res);
-      this.showListUpdateAssign();
+      let assignmentId = res.data.data.id;
+
+      let testCount = Math.min(form.publicTestsInput.length, form.publicTestsOutput.length);
+      let current = -1;
+      const sendNext = () => {
+        current++;
+        if (current < testCount) {
+          Api.post(`/assignments/${assignmentId}/tests`, {
+            type: "public",
+            input: form.publicTestsInput[current].data,
+            output: form.publicTestsOutput[current].data,
+          }).then((res) => {
+            sendNext();
+          }).catch((err) => {
+            console.log(err);
+          });
+        } else {
+          this.setState({ loading: false });
+          this.showListUpdateAssign();
+        }
+      }
+      sendNext();
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });
-    });    
+    });
   }
 
   handleUpdateAssignment = (form) => {

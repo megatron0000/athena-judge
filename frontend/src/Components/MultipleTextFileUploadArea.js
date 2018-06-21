@@ -42,8 +42,7 @@ export default class MultipleTextFileUploadArea extends React.Component {
           accept=".txt"
           multiple={true}
           onUpload={this.handleUpload}
-          style={{ float: "left" }}
-
+          style={{ float: "left", marginRight: 8 }}
         >
           <UploadIcon style={{ marginRight: 16 }} />
           Enviar
