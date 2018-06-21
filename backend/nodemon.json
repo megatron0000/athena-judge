@@ -1,9 +1,0 @@
-{
-  "ignore": [
-    "static/*"
-  ],
-  "events": {
-      "restart": "[ \"$(ls -A static/)\" ] && rm -r static/* || :",
-      "start": "[ \"$(ls -A static/)\" ] && rm -r static/* || :"
-  }
-}
