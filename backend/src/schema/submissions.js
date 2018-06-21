@@ -8,11 +8,11 @@ export default Schema.define("submissions", {
     primaryKey: true,
     autoIncrement: true,
   },
-  studentGID: {
+  studentUserGid: {
     type: Sequelize.STRING,
     allowNull: false,
   },
-  assignmentID: {
+  assignmentId: {
     type: Sequelize.INTEGER,
     allowNull: false,
   },

@@ -12,6 +12,10 @@ export default Schema.define("assignments_tests", {
     type: Sequelize.INTEGER,
     allowNull: false,
   },
+  type: {
+    type: Sequelize.ENUM("public", "private"),
+    allowNull: false,
+  },
   input: {
     type: Sequelize.TEXT,
     allowNull: false,
@@ -20,10 +24,6 @@ export default Schema.define("assignments_tests", {
     type: Sequelize.TEXT,
     allowNull: false,
   },
-  type: {
-    type: Sequelize.ENUM("public", "private"),
-    allowNull: false,
-  }
 }, {
   timestamps: true,
   paranoid: true,

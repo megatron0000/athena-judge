@@ -31,7 +31,7 @@ export default class AssignmentsView extends React.Component {
   handleSubmission = () => {
     this.setState({ loading: true });
     Api.post("/submissions", {
-      assignid: this.props.assignmentid,
+      assignmentId: this.props.assignmentId,
       courseId: this.props.courseId,
       code: this.state.code,
       username: this.props.user.name,

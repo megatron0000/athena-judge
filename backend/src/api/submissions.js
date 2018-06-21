@@ -24,9 +24,9 @@ router.get("/:id", async (req, res, next) => {
 router.post("/", async(req, res, next) => {
   try {
     let row = await DB.submissions.create({
-      studentGID: req.body.usergid,
+      studentUserGid: req.body.usergid,
       studentEmail: req.body.email,
-      assignmentID: req.body.assignid,
+      assignmentId: req.body.assignmentId,
       studentName: req.body.username,
       courseId: req.body.courseId,
       code: req.body.code,

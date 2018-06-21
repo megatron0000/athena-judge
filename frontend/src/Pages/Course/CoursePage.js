@@ -23,7 +23,7 @@ export default class CoursePage extends React.Component {
     super(props);
     this.state = {
       show: "home",
-      assignmentid: null,
+      assignmentId: null,
       students: [],
       professors: [],
       isCreator: false,
@@ -75,9 +75,9 @@ export default class CoursePage extends React.Component {
     });
   }
 
-  getAssignmentById = (assignmentid, callback) => {
+  getAssignmentById = (assignmentId, callback) => {
     this.setState({ loading: true });
-    Api.get("/assignments/" + assignmentid).then((res) => {
+    Api.get("/assignments/" + assignmentId).then((res) => {
       this.setState({ assignment: res.data.data, loading: false });
       if (callback) {
         callback();
@@ -88,8 +88,8 @@ export default class CoursePage extends React.Component {
     });
   }
 
-  showEditById = assignmentid => {
-    this.getAssignmentById(assignmentid, this.showUpdateAssignment);
+  showEditById = (assignmentId) => {
+    this.getAssignmentById(assignmentId, this.showUpdateAssignment);
     // @italotabatinga: A way to make change on show was sending this function below as callback of getassignmentbyID
     // this.showUpdateAssignment();
   }

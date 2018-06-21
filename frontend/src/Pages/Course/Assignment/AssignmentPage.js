@@ -60,9 +60,9 @@ export default class AssignmentPage extends React.Component {
     this.setState((prev) => ({ show: "update", assignment: prev.list.find((e) => e.id == id) }));
   }
 
-  getAssignmentById = (assignmentid, callback) => {
+  getAssignmentById = (assignmentId, callback) => {
     this.setState({ loading: true });
-    Api.get("/assignments/" + assignmentid).then((res) => {
+    Api.get("/assignments/" + assignmentId).then((res) => {
       this.setState({ assignment: res.data.data, loading: false });
       if (callback) {
         callback();
@@ -73,8 +73,8 @@ export default class AssignmentPage extends React.Component {
     });
   }
 
-  showEditById = assignmentid => {
-    this.getAssignmentById(assignmentid, this.showUpdateAssignment);
+  showEditById = (assignmentId) => {
+    this.getAssignmentById(assignmentId, this.showUpdateAssignment);
     // @italotabatinga: A way to make change on show was sending this function below as callback of getassignmentbyID
     // this.showUpdateAssignment();
   }
@@ -140,7 +140,7 @@ export default class AssignmentPage extends React.Component {
         { this.state.show == "update" &&
           <AssignmentForm
             onBack={this.showListNoUpdate}
-            assignmentid={this.state.assignment.id}
+            assignmentId={this.state.assignment.id}
             title={this.state.assignment.title}
             description={this.state.assignment.description}
             dueDate={this.state.assignment.dueDate}
@@ -150,7 +150,7 @@ export default class AssignmentPage extends React.Component {
           <AssignmentView
             onBack={this.showListNoUpdate}
             courseId={this.props.courseId}
-            assignmentid={this.state.assignment.id}
+            assignmentId={this.state.assignment.id}
             isProfessor={this.props.isProfessor}
             user={this.props.user}
           /> }
@@ -159,7 +159,7 @@ export default class AssignmentPage extends React.Component {
           <SubmissionList
             onBack={this.showListNoUpdate}
             courseId={this.props.courseId}
-            assignmentid={this.state.assignment.id}
+            assignmentId={this.state.assignment.id}
             isProfessor={this.props.isProfessor}
           /> }  
       </div>

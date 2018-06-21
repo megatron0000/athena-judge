@@ -60,11 +60,25 @@ router.delete("/:id", async (req, res, next) => {
 
 router.get("/:id/submissions", async (req, res, next) => {
   try {
-    let row = await DB.submissions.findAll({where: { assignmentID: req.params.id }});
+    let row = await DB.submissions.findAll({where: { assignmentId: req.params.id }});
     res.json({ data: row });
   } catch (err) {
     next(err);
   }
-})
+});
+
+router.post("/:id/tests", async (req, res, next) => {
+  try {
+    let row = await DB.assignments_tests.create({
+      assignmentId: req.param.id,
+      type: req.body.type,
+      input: req.body.input,
+      output: req.body.output,
+    });
+    res.json({ data: row });
+  } catch (err) {
+    next(err);
+  }
+});
 
 export default router;

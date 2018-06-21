@@ -18,7 +18,7 @@ export default class AssignmentForm extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      id: this.props.assignmentid,
+      id: this.props.assignmentId,
       title: this.props.title,
       description: this.props.description,
       dueDate: this.props.dueDate,
