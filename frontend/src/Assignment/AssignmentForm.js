@@ -6,10 +6,10 @@ import SendIcon from "@material-ui/icons/Send";
 import ArrowBackIcon from "@material-ui/icons/ArrowBack";
 import AttachFileIcon from "@material-ui/icons/AttachFile";
 import InsertDriveFileIcon from "@material-ui/icons/InsertDriveFile";
-import Dialog from '@material-ui/core/Dialog/Dialog';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogContentText from '@material-ui/core/DialogContentText';
+import Dialog from "@material-ui/core/Dialog/Dialog";
+import DialogActions from "@material-ui/core/DialogActions";
+import DialogContent from "@material-ui/core/DialogContent";
+import DialogContentText from "@material-ui/core/DialogContentText";
 
 import FilesChips from "./FilesChips";
 import DateTimePicker from "./DateTimePicker";
@@ -113,7 +113,7 @@ export default class AssignmentForm extends React.Component {
           { false && <div>
           <input
             accept=".pdf, .docx, .doc, .odt, .odf"
-            style={{display: 'none'}}
+            style={{display: "none"}}
             id="input-attach-activ"
             onChange = {this.handleAttachInputChange}
             multiple
@@ -134,7 +134,7 @@ export default class AssignmentForm extends React.Component {
           
           <input
             accept=".txt, none"
-            style={{display: 'none'}}
+            style={{display: "none"}}
             id="input-tests-activ"
             onChange = {this.handleTestsInputChange}
             multiple

@@ -1,5 +1,5 @@
 import React from "react";
-import Api from "../../../Api";
+import Api from "../Api";
 
 import Typography from "@material-ui/core/Typography";
 import CircularProgress from "@material-ui/core/CircularProgress";

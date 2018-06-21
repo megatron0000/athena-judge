@@ -2,11 +2,11 @@ import React from "react";
 import Api from "./Api";
 
 import Paper from "@material-ui/core/Paper";
+import Typography from "@material-ui/core/Typography";
 
 import TopBar from "./TopBar/TopBar";
 import SideBar from "./SideBar/SideBar";
-import Main from "./Pages/Main";
-import Typography from "@material-ui/core/Typography";
+import Main from "./Main";
 
 export default class App extends React.Component {
   constructor(props) {

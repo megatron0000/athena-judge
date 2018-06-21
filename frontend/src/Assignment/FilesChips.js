@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import Chip from "@material-ui/core/Chip";
 import Switch from "@material-ui/core/Switch";
 import TextField from "@material-ui/core/TextField";
@@ -19,7 +19,7 @@ export default class FilesChips extends React.Component {
         {this.state.files && this.state.files.map((file) => {
           let name = file.name.substr(2);
           let type = file.name[0];
-          if (type === 'e')
+          if (type === "e")
           return(
             <div key = {this.state.files.indexOf(file)}>
           <Tooltip title="Teste Público?">

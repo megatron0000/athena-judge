@@ -1,5 +1,5 @@
 import React from "react";
-import Api from "../Api";
+import Api from "./Api";
 
 import CourseList from "./Course/CourseList";
 import CoursePage from "./Course/CoursePage";
