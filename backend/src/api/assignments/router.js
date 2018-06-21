@@ -1,12 +1,11 @@
 import Express from "express";
-import AssignmentsModel from "./model";
-import AssignmentsTestsModel from "../assignments_tests/model";
+import DB from "../../db";
 
 const router = Express.Router();
 
 router.get("/", async (req, res, next) => {
   try {
-    let rows = await AssignmentsModel.findAll();
+    let rows = await DB.assignments.findAll();
     res.json({ data: rows });
   } catch (err) {
     next(err);
@@ -15,7 +14,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    let row = await AssignmentsModel.findById(req.params.id);
+    let row = await DB.assignments.findById(req.params.id);
     res.json({ data: row });
   } catch (err) {
     next(err);
@@ -24,7 +23,7 @@ router.get("/:id", async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    let row = await AssignmentsModel.create({
+    let row = await DB.assignments.create({
       title: req.body.title,
       description: req.body.description,
       courseId: req.body.courseId,
@@ -38,7 +37,7 @@ router.post("/", async (req, res, next) => {
 
 router.put("/:id", async (req, res, next) => {
   try {
-    let row = await AssignmentsModel.update({
+    let row = await DB.assignments.update({
       title: req.body.title,
       description: req.body.description,
       courseId: req.body.courseId,
@@ -52,7 +51,7 @@ router.put("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    let row = await AssignmentsModel.destroy({ where: { id: req.params.id }});
+    let row = await DB.assignments.destroy({ where: { id: req.params.id }});
     res.json({ data: row });
   } catch (err) {
     next(err);

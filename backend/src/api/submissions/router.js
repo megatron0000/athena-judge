@@ -1,12 +1,11 @@
 import Express from "express";
-
-import SubmissionsModel from "./model";
+import DB from "../../db";
 
 const router = Express.Router();
 
 router.get("/", async (req, res, next) => {
   try {
-    let rows = await SubmissionsModel.findAll();
+    let rows = await DB.submissions.findAll();
     res.json({ data: rows });
   } catch (err) {
     next(err);
@@ -15,7 +14,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    let row = await SubmissionsModel.findById(req.params.id);
+    let row = await DB.submissions.findById(req.params.id);
     res.json({ data: row });
   } catch (err) {
     next(err);
@@ -24,7 +23,7 @@ router.get("/:id", async (req, res, next) => {
 
 router.get("/submissionsassig/:assignid", async (req, res, next) => {
   try {
-    let row = await SubmissionsModel.findAll({where: {assignmentID: req.params.assignid}});
+    let row = await DB.submissions.findAll({where: {assignmentID: req.params.assignid}});
     res.json({ data: row });
   } catch (err) {
     next(err);
@@ -33,7 +32,7 @@ router.get("/submissionsassig/:assignid", async (req, res, next) => {
 
 router.post("/", async(req, res, next) => {
   try {
-    let row = await SubmissionsModel.create({
+    let row = await DB.submissions.create({
       studentGID: req.body.usergid,
       studentEmail: req.body.email,
       assignmentID: req.body.assignid,
@@ -49,7 +48,7 @@ router.post("/", async(req, res, next) => {
 
 router.put("/:id", async (req, res, next) => {
   try {
-    let row = await SubmissionsModel.update({
+    let row = await DB.submissions.update({
       title: req.body.title,
       description: req.body.description,
       dueDate: req.body.dueDate,
@@ -62,7 +61,7 @@ router.put("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    let row = await SubmissionsModel.destroy({ where: { id: req.params.id }});
+    let row = await DB.submissions.destroy({ where: { id: req.params.id }});
     res.json({ data: row });
   } catch (err) {
     next(err);

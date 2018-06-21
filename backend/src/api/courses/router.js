@@ -1,15 +1,11 @@
 import Express from "express";
-
-import CoursesModel from "./model";
-import CoursesAssocModel from "../courses_assoc/model";
-import UsersModel from "../users/model";
-import AssignmentsModel from "../assignments/model";
+import DB from "../../db";
 
 const router = Express.Router();
 
 router.get("/", async (req, res, next) => {
   try {
-    let rows = await CoursesModel.findAll();
+    let rows = await DB.courses.findAll();
     res.json({ data: rows });
   } catch (err) {
     next(err);
@@ -17,9 +13,9 @@ router.get("/", async (req, res, next) => {
 });
 
 router.get("/enrolled/:userGid", async (req, res, next) => { 
-  let courses = await CoursesModel.findAll({
+  let courses = await DB.courses.findAll({
     include: [{
-      model: CoursesAssocModel,
+      model: DB.courses_assoc,
       where: {
         userGid: req.params.userGid,
         role: "student",
@@ -30,9 +26,9 @@ router.get("/enrolled/:userGid", async (req, res, next) => {
 });
 
 router.get("/teaching/:userGid", async (req, res, next) => { 
-  let courses = await CoursesModel.findAll({
+  let courses = await DB.courses.findAll({
     include: [{
-      model: CoursesAssocModel,
+      model: DB.courses_assoc,
       where: {
         userGid: req.params.userGid,
         role: "professor",
@@ -44,7 +40,7 @@ router.get("/teaching/:userGid", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    let row = await CoursesModel.findOne({ where: { id: req.params.id } });
+    let row = await DB.courses.findOne({ where: { id: req.params.id } });
     res.json({ data: row });
   } catch (err) {
     next(err);
@@ -56,11 +52,11 @@ router.post("/:id/students", async (req, res, next) => {
   @vb: Race condition may allow double enrollment, but should hardly ever occur.
   */
   try {
-    let row = await CoursesAssocModel.findOne({ where:
+    let row = await DB.courses_assoc.findOne({ where:
       { courseId: req.params.id, userGid: req.body.gid, role: "student" }
     });
     if (row == null) {
-      await CoursesAssocModel.create({
+      await DB.courses_assoc.create({
         courseId: req.params.id,
         userGid: req.body.gid,
         role: "student",
@@ -76,9 +72,9 @@ router.post("/:id/students", async (req, res, next) => {
 
 router.get("/:id/students", async (req, res, next) => {
   try {
-    let users = await UsersModel.findAll({
+    let users = await DB.users.findAll({
       include: [{
-        model: CoursesAssocModel,
+        model: DB.courses_assoc,
         where: { courseId: req.params.id, role: "student" },
       }],
     });
@@ -90,9 +86,9 @@ router.get("/:id/students", async (req, res, next) => {
 
 router.get("/:id/professors", async (req, res, next) => {
   try {
-    let users = await UsersModel.findAll({
+    let users = await DB.users.findAll({
       include: [{
-        model: CoursesAssocModel,
+        model: DB.courses_assoc,
         where: { courseId: req.params.id, role: "professor" },
       }],
     });
@@ -104,12 +100,12 @@ router.get("/:id/professors", async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    let row = await CoursesModel.create({
+    let row = await DB.courses.create({
       name: req.body.name,
       creatorUserGid: req.body.creatorUserGid,
       description: req.body.description
     });
-    await CoursesAssocModel.create({
+    await DB.courses_assoc.create({
       userGid: req.body.creatorUserGid,
       courseId: row.dataValues.id,
       role: "professor",
@@ -122,7 +118,7 @@ router.post("/", async (req, res, next) => {
 
 router.put("/:id", async (req, res, next) => {
   try {
-    let row = await CoursesModel.update({
+    let row = await DB.courses.update({
       id: req.body.id,
       name: req.body.name,
       creatorUserGid: req.body.creatorUserGid
@@ -135,7 +131,7 @@ router.put("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    let row = await CoursesModel.destroy({ where: { id: req.params.id }});
+    let row = await DB.courses.destroy({ where: { id: req.params.id }});
     res.json({ data: row });
   } catch (err) {
     next(err);
@@ -145,7 +141,7 @@ router.delete("/:id", async (req, res, next) => {
 router.post("/:id/professors", async (req, res, next) => {
   try {
     let userGid = req.body.userGid;
-    let row = await CoursesAssocModel.create({
+    let row = await DB.courses_assoc.create({
       courseId: req.params.id,
       userGid: userGid,
       role: "professor",
@@ -158,7 +154,7 @@ router.post("/:id/professors", async (req, res, next) => {
 
 router.delete("/:id/professors/:userGid", async (req, res, next) => {
   try {
-    let row = await CoursesAssocModel.destroy({
+    let row = await DB.courses_assoc.destroy({
       where: { userGid: req.params.userGid, role: "professor" }
     });
     res.json({ data: row });
@@ -169,7 +165,7 @@ router.delete("/:id/professors/:userGid", async (req, res, next) => {
 
 router.get("/:id/assignments", async (req, res, next) => {
   try {
-    let rows = await AssignmentsModel.findAll({where: {courseId: req.params.id}});
+    let rows = await DB.assignments.findAll({where: {courseId: req.params.id}});
     res.json({ data: rows });
   } catch (err) {
     next(err);
