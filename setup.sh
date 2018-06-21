@@ -6,6 +6,8 @@ cd backend
 npm install
 cd ../frontend
 npm install
+cd ../runner
+npm install
 cd ..
 
 # install PostgreSQL
