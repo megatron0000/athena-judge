@@ -20,3 +20,7 @@ sudo -u postgres psql -c "CREATE DATABASE athena WITH OWNER='athena'"
 # install Docker
 curl -fsSL get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
+
+# allow docker to run without sudo
+sudo usermod -aG docker $USER
+newgrp docker
