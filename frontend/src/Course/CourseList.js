@@ -9,11 +9,8 @@ import Typography from "@material-ui/core/Typography";
 import ClassIcon from "@material-ui/icons/Class";
 import AddIcon from "@material-ui/icons/Add";
 import Button from "@material-ui/core/Button";
-import Dialog from "@material-ui/core/Dialog/Dialog";
-import DialogActions from "@material-ui/core/DialogActions";
-import DialogContent from "@material-ui/core/DialogContent";
-import DialogContentText from "@material-ui/core/DialogContentText";
-import DialogTitle from "@material-ui/core/DialogTitle";
+
+import ConfirmDialog from "../Components/ConfirmDialog";
 
 export default class CourseList extends React.Component {
   constructor(props) {
@@ -145,38 +142,16 @@ export default class CourseList extends React.Component {
               >
                 Inscrever-se
               </Button>
-
-              <Dialog
-                open={this.state.dialogEnrollOpen}
-                onClose={this.handleCloseEnrollDialog}
-                aria-labelledby="alert-dialog-title"
-                aria-describedby="alert-dialog-description"
-              >
-                <DialogTitle id="alert-dialog-title">{course.name}</DialogTitle>
-                
-                <DialogContent>
-                  <DialogContentText id="alert-dialog-description">
-                    Tem certeza que deseja se inscrever na disciplina?
-                  </DialogContentText>
-                </DialogContent>
-                
-                <DialogActions>
-                  <Button onClick={this.handleCloseEnrollDialog} color="primary">
-                    Não
-                  </Button>
-                  
-                  <Button 
-                    onClick={ () => { this.handleEnroll(course.id) }} 
-                    color="primary" autoFocus>
-                    Sim
-                  </Button>
-                </DialogActions>
-              
-               </Dialog>
-
             </ListItem>
           ))}
         </List>
+
+        <ConfirmDialog
+          open={this.state.dialogEnrollOpen}
+          text="Tem certeza que deseja se inscrever na disciplina?"
+          onConfirm={() => this.handleEnroll(course.id)}
+          onClose={this.handleCloseEnrollDialog}
+        />
 
         <Typography variant="title" style={{ paddingLeft: 20, paddingTop: 10, paddingRight: 20, paddingBottom: 4 }} >
           Cursos que eu estou lecionando

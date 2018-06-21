@@ -8,10 +8,8 @@ import CircularProgress from "@material-ui/core/CircularProgress";
 import Button from "@material-ui/core/Button";
 import SendIcon from "@material-ui/icons/Send";
 import UploadIcon from "@material-ui/icons/FileUpload";
-import Dialog from "@material-ui/core/Dialog/Dialog";
-import DialogActions from "@material-ui/core/DialogActions";
-import DialogContent from "@material-ui/core/DialogContent";
-import DialogContentText from "@material-ui/core/DialogContentText";
+
+import ConfirmDialog from "../Components/ConfirmDialog";
 
 export default class AssignmentsView extends React.Component {
   constructor(props) {
@@ -19,7 +17,7 @@ export default class AssignmentsView extends React.Component {
     this.state = {
       loading: false,
       code: null,
-      dialogOpenAddSubmission: false,
+      dialogAddSubmissionOpen: false,
     };
   }
 
@@ -46,11 +44,11 @@ export default class AssignmentsView extends React.Component {
   }
 
   handleOpenDialogAddSubmission = () => {
-    this.setState({ dialogOpenAddSubmission: true });
+    this.setState({ dialogAddSubmissionOpen: true });
   };
 
   handleCloseDialogAddSubmission = () => {
-    this.setState({ dialogOpenAddSubmission: false });
+    this.setState({ dialogAddSubmissionOpen: false });
   };
 
   render() {
@@ -87,30 +85,12 @@ export default class AssignmentsView extends React.Component {
           </Button>
         </div>
         
-        <Dialog
-            open={this.state.dialogOpenAddSubmission}
-            onClose={this.handleCloseDialogAddSubmission}
-            aria-labelledby="alert-dialog-title"
-            aria-describedby="alert-dialog-description"
-          >
-          <DialogContent>
-            <DialogContentText id="alert-dialog-description">
-              Tem certeza que deseja submeter esta solução?
-            </DialogContentText>
-          </DialogContent>
-              
-          <DialogActions>
-            <Button onClick={this.handleCloseDialogAddSubmission} color="primary">
-                Não
-            </Button>
-                
-            <Button 
-              onClick={() => { this.handleSubmission(this.state); this.handleCloseDialogAddSubmission() }}
-              color="primary" autoFocus>
-              Sim
-            </Button>
-          </DialogActions>
-        </Dialog>
+        <ConfirmDialog
+          open={this.state.dialogAddSubmissionOpen}
+          text="Tem certeza que deseja submeter esta solução?"
+          onConfirm={() => this.handleSubmission(this.state)}
+          onClose={this.handleCloseDialogAddSubmission}
+        />
       </div>
     );
   }

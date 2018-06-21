@@ -13,10 +13,8 @@ import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemText from "@material-ui/core/ListItemText";
 import Avatar from "@material-ui/core/Avatar";
-import Dialog from "@material-ui/core/Dialog/Dialog";
-import DialogActions from "@material-ui/core/DialogActions";
-import DialogContent from "@material-ui/core/DialogContent";
-import DialogContentText from "@material-ui/core/DialogContentText";
+
+import ConfirmDialog from "../Components/ConfirmDialog";
 
 export default class CoursePage extends React.Component {
   constructor(props) {
@@ -183,35 +181,16 @@ export default class CoursePage extends React.Component {
                 </Button>
               }
 
-              <Dialog
-                  open={this.state.dialogOpenDemote}
-                  onClose={this.handleCloseDialogDemote}
-                  aria-labelledby="alert-dialog-title"
-                  aria-describedby="alert-dialog-description"
-                >
-                  <DialogContent>
-                    <DialogContentText id="alert-dialog-description">
-                      Tem certeza que deseja remover este professor?
-                    </DialogContentText>
-                  </DialogContent>
-                
-                  <DialogActions>
-                    <Button onClick={this.handleCloseDialogDemote} color="primary">
-                      Não
-                    </Button>
-                  
-                    <Button 
-                      onClick={() => { this.handleDemote(this.props.courseId, professor.gid); this.handleCloseDialogDemote() }}
-                      color="primary" autoFocus>
-                      Sim
-                    </Button>
-                  </DialogActions>
-              
-                </Dialog>
-
             </ListItem>
           ))}
         </List>
+
+        <ConfirmDialog
+          open={this.state.dialogOpenDemote}
+          text="Tem certeza que deseja remover este professor?"
+          onConfirm={() => this.handleDemote(this.props.courseId, professor.gid)}
+          onClose={this.handleCloseDialogDemote}
+        />
 
         <Divider />
 
@@ -246,35 +225,15 @@ export default class CoursePage extends React.Component {
                 </Button>
               }
 
-              <Dialog
-                  open={this.state.dialogOpenPromote}
-                  onClose={this.handleCloseDialogPromote}
-                  aria-labelledby="alert-dialog-title"
-                  aria-describedby="alert-dialog-description"
-                >
-                  <DialogContent>
-                    <DialogContentText id="alert-dialog-description">
-                      Tem certeza que deseja promover esse aluno à condição de Professor?
-                    </DialogContentText>
-                  </DialogContent>
-                
-                  <DialogActions>
-                    <Button onClick={this.handleCloseDialogPromote} color="primary">
-                      Não
-                    </Button>
-                  
-                    <Button 
-                      onClick={() => { this.handlePromote(this.props.courseId, student.gid); this.handleCloseDialogPromote() }}
-                      color="primary" autoFocus>
-                      Sim
-                    </Button>
-                  </DialogActions>
-              
-                </Dialog>
-
             </ListItem>
           ))}
         </List>
+        <ConfirmDialog
+          open={this.state.dialogOpenPromote}
+          text="Tem certeza que deseja promover esse aluno à condição de Professor?"
+          onConfirm={() => this.handlePromote(this.props.courseId, student.gid)}
+          onClose={this.handleCloseDialogPromote}
+        />
       </div>
     );
   }

@@ -53,7 +53,7 @@ export default class App extends React.Component {
           style={{ marginTop: 80, maxWidth: 960, marginLeft: "auto", marginRight: "auto" }}
         >
           {
-            this.state.user != null ?
+            (this.state.user != null) ?
             <Main 
               ref={(ref) => { this.main = ref; } }
               user={this.state.user}

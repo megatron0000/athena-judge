@@ -4,18 +4,15 @@ import TextField from "@material-ui/core/TextField";
 import Button from "@material-ui/core/Button";
 import SendIcon from "@material-ui/icons/Send";
 import ArrowBackIcon from "@material-ui/icons/ArrowBack";
-import Dialog from "@material-ui/core/Dialog/Dialog";
-import DialogActions from "@material-ui/core/DialogActions";
-import DialogContent from "@material-ui/core/DialogContent";
-import DialogContentText from "@material-ui/core/DialogContentText";
 import Typography from "@material-ui/core/Typography";
 
 import DateTimePicker from "./DateTimePicker";
 import MultipleTextFileUploadArea from "../Components/MultipleTextFileUploadArea";
+import ConfirmDialog from "../Components/ConfirmDialog";
 
 /*
 @vb: We are disabling file attachment per now. Only plain text uploads are allowed,
-and the are stored in the database.
+and they are stored in the database.
 */
 
 export default class AssignmentForm extends React.Component {
@@ -28,7 +25,7 @@ export default class AssignmentForm extends React.Component {
       dueDate: this.props.dueDate,
       publicTestsInput: [],
       publicTestsOutput: [],
-      dialogOpenCreateAssign: false,
+      dialogCreateAssignmentOpen: false,
     }
   }
 
@@ -53,11 +50,11 @@ export default class AssignmentForm extends React.Component {
   }
 
   handleOpenDialogCreateAssign = () => {
-    this.setState({ dialogOpenCreateAssign: true });
+    this.setState({ dialogCreateAssignmentOpen: true });
   };
 
-  handleCloseDialogCreateAssign = () => {
-    this.setState({ dialogOpenCreateAssign: false });
+  handleCloseDialogCreateAssignment = () => {
+    this.setState({ dialogCreateAssignmentOpen: false });
   };
 
   render() {
@@ -119,35 +116,15 @@ export default class AssignmentForm extends React.Component {
             onClick={() => { this.handleOpenDialogCreateAssign() }}
           >
             <SendIcon style={{ marginRight: 14 }} />
-            Criar Atividade
+            { (this.props.assignmentId == null) ? "Criar Atividade" : "Editar Atividade" }
           </Button>
 
-          <Dialog
-            open={this.state.dialogOpenCreateAssign}
-            onClose={this.handleCloseDialogCreateAssign}
-            aria-labelledby="alert-dialog-title"
-            aria-describedby="alert-dialog-description"
-          >
-            <DialogContent>
-              <DialogContentText id="alert-dialog-description">
-                Tem certeza que deseja adicionar esta atividade?
-              </DialogContentText>
-            </DialogContent>
-                
-            <DialogActions>
-              <Button onClick={this.handleCloseDialogCreateAssign} color="primary">
-                Não
-              </Button>
-            
-               <Button 
-                onClick={() => { this.props.onSubmit(this.state); this.handleCloseDialogCreateAssign() }}
-                color="primary" autoFocus>
-                Sim
-              </Button>
-            </DialogActions>
-              
-          </Dialog>
-
+          <ConfirmDialog
+            open={this.state.dialogCreateAssignmentOpen}
+            text={`Tem certeza que deseja ${ (this.props.assignmentId == null) ? "criar" : "editar" } esta atividade?`}
+            onConfirm={() => this.props.onSubmit(this.state)}
+            onClose={this.handleCloseDialogCreateAssignment}
+          />
         </div>
       </div>
     );

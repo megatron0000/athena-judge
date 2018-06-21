@@ -22,6 +22,10 @@ router.get("/:gid", async (req, res, next) => {
 });
 
 router.put("/:gid", async (req, res, next) => {
+  /*
+  @vb: race condition. sequelize's upsert would be better since it its atomic, but
+  i couldn't get it to work.
+  */
   try {
     let user = await DB.users.findOne({
       where: { gid: req.params.gid }

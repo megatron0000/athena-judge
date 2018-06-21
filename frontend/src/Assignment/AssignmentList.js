@@ -13,10 +13,8 @@ import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
 import Button from "@material-ui/core/Button";
 import AddIcon from "@material-ui/icons/Add";
-import Dialog from "@material-ui/core/Dialog/Dialog";
-import DialogActions from "@material-ui/core/DialogActions";
-import DialogContent from "@material-ui/core/DialogContent";
-import DialogContentText from "@material-ui/core/DialogContentText";
+
+import ConfirmDialog from "../Components/ConfirmDialog";
 
 export default class AssignmentList extends React.Component {
   constructor(props) {
@@ -24,7 +22,7 @@ export default class AssignmentList extends React.Component {
     this.state = {
       data: null,
       loading: false,
-      dialogOpenDeleteAssign: false,
+      dialogDeleteAssignmentOpen: false,
       candidateToDelete: null
     };
   }
@@ -53,11 +51,11 @@ export default class AssignmentList extends React.Component {
   }
 
   handleOpenDialogDeleteAssign = (id) => {
-    this.setState({ dialogOpenDeleteAssign: true,  candidateToDelete: id});
+    this.setState({ dialogDeleteAssignmentOpen: true,  candidateToDelete: id});
   };
 
-  handleCloseDialogDeleteAssign = () => {
-    this.setState({ dialogOpenDeleteAssign: false });
+  handleCloseDialogDeleteAssignment = () => {
+    this.setState({ dialogDeleteAssignmentOpen: false });
   };
 
   render() {
@@ -113,31 +111,13 @@ export default class AssignmentList extends React.Component {
             />
           </Button>
         }
-        <Dialog
-          open={this.state.dialogOpenDeleteAssign}
-          onClose={this.handleCloseDialogDeleteAssign}
-          aria-labelledby="alert-dialog-title"
-          aria-describedby="alert-dialog-description"
-        >
-          <DialogContent>
-            <DialogContentText id="alert-dialog-description">
-              Tem certeza que deseja apagar esta atividade?
-            </DialogContentText>
-          </DialogContent>
-      
-          <DialogActions>
-            <Button onClick={this.handleCloseDialogDeleteAssign} color="primary">
-                Não
-            </Button>
-        
-            <Button 
-              onClick={() => { this.handleDelete(); this.handleCloseDialogDeleteAssign() }}
-              color="primary" autoFocus>
-              Sim
-            </Button>
-          </DialogActions>
-    
-        </Dialog>
+
+        <ConfirmDialog
+          open={this.state.dialogDeleteAssignmentOpen}
+          text="Tem certeza que deseja apagar esta atividade?"
+          onConfirm={this.handleDelete}
+          onClose={this.handleCloseDialogDeleteAssignment}
+        />
       </div>
     );
   }
