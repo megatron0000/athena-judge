@@ -34,6 +34,13 @@ server.on("connection", (socket) => {
     let finished = false;
     let child = ChildProcess.spawn(command, args || [], { cwd: __dirname });
 
+    // else error in stdin leads the node process to throw 
+    // (unhandled error), destroying the container
+    child.stdin.on('error', err => {
+        console.log('child stdin error: ')
+        console.log(err)
+    })
+
     // feed input to stdio if provided
     if (input != null) {
       child.stdin.write(input);

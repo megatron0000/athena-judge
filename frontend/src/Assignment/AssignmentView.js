@@ -43,6 +43,7 @@ export default class AssignmentsView extends React.Component {
     let current = -1;
     this.setState({ loading: true, results: [] });
     const runNext = () => {
+      this.setState(prev => ({ loading: true, results: prev.results }));
       current++;
       if (current < this.state.tests.length) {
         Api.run(this.state.code, this.state.tests[current].input).then((res) => {
@@ -60,6 +61,8 @@ export default class AssignmentsView extends React.Component {
           console.log("err:", err);
           this.setState({ loading: false });
         });
+      } else {
+        this.setState({ loading: false });
       }
     }
     runNext();
