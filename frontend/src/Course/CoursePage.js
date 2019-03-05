@@ -28,6 +28,8 @@ export default class CoursePage extends React.Component {
       dialogOpenPromote: false,
       dialogOpenDemote: false,
       loading: 0,
+      studentToPromote: null,
+      professorToDemote: null
     };
   }
 
@@ -102,16 +104,22 @@ export default class CoursePage extends React.Component {
     this.getProfessors();
   }
 
-  handleOpenDialogPromote = () => {
-    this.setState({ dialogOpenPromote: true });
+  handleOpenDialogPromote = (student) => {
+    this.setState({ 
+      dialogOpenPromote: true,
+      studentToPromote: student
+    });
   };
 
   handleCloseDialogPromote = () => {
     this.setState({ dialogOpenPromote: false });
   };
 
-  handleOpenDialogDemote = () => {
-    this.setState({ dialogOpenDemote: true });
+  handleOpenDialogDemote = (professor) => {
+    this.setState({ 
+      dialogOpenDemote: true,
+      professorToDemote: professor
+    });
   };
 
   handleCloseDialogDemote = () => {
@@ -174,7 +182,7 @@ export default class CoursePage extends React.Component {
                   variant="raised"
                   color="secondary"
                   style={{ marginLeft: 20, marginBottom: 20 }}
-                  onClick={this.handleOpenDialogDemote} 
+                  onClick={() => this.handleOpenDialogDemote(professor)} 
                 >
                   Remover
                   <AddIcon style ={{ marginLeft: 10 }} />
@@ -188,7 +196,7 @@ export default class CoursePage extends React.Component {
         <ConfirmDialog
           open={this.state.dialogOpenDemote}
           text="Tem certeza que deseja remover este professor?"
-          onConfirm={() => this.handleDemote(this.props.courseId, professor.gid)}
+          onConfirm={() => this.handleDemote(this.props.courseId, this.state.professorToDemote.gid)}
           onClose={this.handleCloseDialogDemote}
         />
 
@@ -218,7 +226,7 @@ export default class CoursePage extends React.Component {
                   variant="raised"
                   color="secondary"
                   style={{ marginLeft: 20, marginBottom: 20 }}
-                  onClick={this.handleOpenDialogPromote} 
+                  onClick={() => this.handleOpenDialogPromote(student)} 
                 >
                   Promover
                   <AddIcon style ={{ marginLeft: 10 }} />
@@ -231,7 +239,7 @@ export default class CoursePage extends React.Component {
         <ConfirmDialog
           open={this.state.dialogOpenPromote}
           text="Tem certeza que deseja promover esse aluno à condição de Professor?"
-          onConfirm={() => this.handlePromote(this.props.courseId, student.gid)}
+          onConfirm={() => this.handlePromote(this.props.courseId, this.state.studentToPromote.gid)}
           onClose={this.handleCloseDialogPromote}
         />
       </div>

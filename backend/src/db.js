@@ -14,6 +14,7 @@ DB.courses_assoc = CoursesAssocModel;
 DB.submissions = SubmissionsModel;
 DB.users = UsersModel;
 
+// Sequelize sync() method deletes database records.
 DB.sync = async function sync() {
   CoursesModel.hasMany(CoursesAssocModel, {
     foreignKey: "courseId",

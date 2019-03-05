@@ -1,5 +1,8 @@
 # install Node.js and NPM
-sudo apt-get install nodejs npm  -y
+sudo apt-get update
+sudo apt-get install npm -y
+sudo npm install -g n
+sudo n latest
 
 # install NPM package dependecies
 cd backend
