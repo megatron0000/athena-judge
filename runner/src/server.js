@@ -8,6 +8,7 @@ import Cors from "cors";
 import SocketIOClient from "socket.io-client";
 import ChildProcess from "child_process";
 import Path from "path";
+import { setPortFree, startContainer } from './containers';
 
 const PORT = 3001;
 
@@ -82,23 +83,13 @@ function execute(socket, input) {
   });
 }
 
-/*
-@vb: Spin up a container even before a request so the execution request
-takes less time for the user.
-*/
-startContainer();
-function startContainer() {
-  ChildProcess.exec("npm run start", { cwd: Path.resolve(__dirname, "..", "docker") }, (err, stdout, stderr) => {
-    if (err) return console.log(err);
-    startContainer();
-  });
-}
+
 
 app.post("/run", async (req, res) => {
   let source = req.body.source;
   let input = req.body.input;
-
-  let socket = SocketIOClient("http://localhost:3002");
+  let port = await startContainer();
+  let socket = SocketIOClient(`http://localhost:${port}`);
   socket.on("connect", async () => {  
     let error = null;
     let data = null;
@@ -116,6 +107,7 @@ app.post("/run", async (req, res) => {
     }
     socket.emit("exit");
     socket.close();
+    setPortFree(port);
     res.json({ data, error });
   });
 });

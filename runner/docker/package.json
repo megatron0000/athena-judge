@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "docker build -t runner .",
-    "start": "docker run -p 3002:3002 --memory=1024m --cpus=1 runner"
+    "start": "docker run -d -p $HOSTPORT:3002 --memory=512m --cpus=1 runner"
   },
   "author": "",
   "license": "ISC",
