@@ -8,7 +8,7 @@ import Cors from "cors";
 import SocketIOClient from "socket.io-client";
 import ChildProcess from "child_process";
 import Path from "path";
-import { setPortFree, startContainer } from './containers';
+import { setPortFree, startContainer, killedByOOM } from './containers';
 
 const PORT = 3001;
 
@@ -88,7 +88,7 @@ function execute(socket, input) {
 app.post("/run", async (req, res) => {
   let source = req.body.source;
   let input = req.body.input;
-  let port = await startContainer();
+  let { port, containerId } = await startContainer();
   let socket = SocketIOClient(`http://localhost:${port}`);
   socket.on("connect", async () => {  
     let error = null;
@@ -101,9 +101,14 @@ app.post("/run", async (req, res) => {
       error = "RuntimeError";
       data = await execute(socket, input);
       error = null;
-    } catch (err) {
-      console.log("error:", err);
-      data = err;
+    } catch (outputs) {
+      console.log("error:", outputs);
+      data = outputs;
+      if (await killedByOOM(containerId)) {
+        error = 'OutOfMemoryError';
+      } else if (outputs[outputs.length - 2].data === 'Time Limit Exceeded') {
+        error = 'TimeLimitError';
+      }
     }
     socket.emit("exit");
     socket.close();

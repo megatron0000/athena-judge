@@ -35,7 +35,7 @@ async function getOpenPort() {
 }
 
 /**
- * Starts container and return port.
+ * Starts container and return port and containerId.
  * May throw in case of any error
  */
 export async function startContainer() {
@@ -44,7 +44,19 @@ export async function startContainer() {
     cwd: Path.resolve(__dirname, "..", "docker")
     // timeout: 30000
   });
-  return port
+  const containerId = data.stdout.split('\n').slice(-2)[0];
+  return { port, containerId };
+}
+
+/*
+ * Returns true if and only if container was killed by excess memory usage.
+ * 
+ * If container is not already stopped at call time, stops it as well.
+ */
+export async function killedByOOM(containerId) {
+  await child_exec(`docker container stop ${containerId}`);
+  const stat = await child_exec(`docker inspect --format '{{.State.OOMKilled}}' ${containerId}`);
+  return stat.stdout.match('true') !== null;
 }
 
 /**
