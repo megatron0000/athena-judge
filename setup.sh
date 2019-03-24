@@ -29,7 +29,10 @@ sudo sh get-docker.sh
 
 # allow docker to run without sudo
 sudo usermod -aG docker $USER
-newgrp docker
+newgrp docker <<EONG
 
 # build docker image
 cd runner/docker && npm run build
+echo "Now you have to log out and log in again before running the application"
+
+EONG

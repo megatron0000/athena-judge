@@ -2,7 +2,7 @@
 [![DeepScan grade](https://deepscan.io/api/projects/2668/branches/18208/badge/grade.svg)](https://deepscan.io/dashboard#view=project&pid=2668&bid=18208)
 ## Setup
 
-1. Run "sudo ./setup.sh".
+1. Run "./setup.sh". DO NOT run with sudo.
 
 ## Running in development
 
