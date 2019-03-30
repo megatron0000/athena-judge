@@ -4,7 +4,8 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "dev": "babel-node src/server.js --plugins transform-es2015-modules-commonjs"
+    "dev": "babel-node src/server.js --plugins transform-es2015-modules-commonjs",
+    "test": "mocha"
   },
   "author": "",
   "license": "ISC",
@@ -12,12 +13,15 @@
     "cors": "^2.8.4",
     "express": "^4.16.3",
     "portfinder": "1.0.20",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.7",
     "socket.io-client": "^2.1.1"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
+    "mocha": "^6.0.2",
     "nodemon": "^1.17.5"
   }
 }

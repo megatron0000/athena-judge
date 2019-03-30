@@ -22,13 +22,13 @@ const child_exec = util.promisify(require('child_process')
 */
 const portsInUse = {};
 
-async function getOpenPort() {
+async function getOpenPort(startPort=3000, stopPort=4000) {
   const port = await portfinder.getPortPromise({
-    port: 3000,
-    stopPort: 4000
+    port: startPort,
+    stopPort: stopPort
   });
   if (portsInUse[port]) {
-  	return getOpenPort();
+  	return getOpenPort(port + 1, stopPort);
   }
   portsInUse[port] = true;
   return port;
