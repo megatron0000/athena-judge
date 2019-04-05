@@ -36,3 +36,4 @@ cd runner/docker && npm run build
 echo "Now you have to log out and log in again before running the application"
 
 EONG
+rm get-docker.sh
