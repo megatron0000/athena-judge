@@ -4,9 +4,20 @@
  * Each script in need of env vars must call this one
  */
 
- const path = require('path')
+function configEnvironment() {
+  const path = require('path')
+  const fs = require('fs')
 
-require('dotenv').config({path: path.resolve(__dirname, '.env')}); // load .env file into process.env
+  const env = fs.readFileSync(path.resolve(__dirname, '.env'), 'utf8')
+  env.split('\n').forEach(envLine => {
+    let match
+    if (match = envLine.match(/(.+?)=(.+)/)) {
+      process.env[match[1]] = path.resolve(__dirname, match[2])
+    }
+  })
+}
+
+configEnvironment()
 
 // If modifying these scopes, delete user token credentials
 const SCOPES = [
