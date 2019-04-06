@@ -6,7 +6,7 @@ const {Storage} = require('@google-cloud/storage');
 // helper, see https://github.com/GoogleCloudPlatform/google-cloud-node/blob/master/docs/authentication.md
 const storage = new Storage({
   projectId: 'ces29-athena',
-  keyFilename: '../credentials/keyfile.json'
+  keyFilename: process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_CREDENTIALS']
 });
 
 // Makes an authenticated API request.

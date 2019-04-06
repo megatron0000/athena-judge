@@ -4,8 +4,8 @@
   // Creates a client
   const storage = new Storage({
     projectId: 'ces29-athena',
-    keyFilename: '../credentials/keyfile.json'
-  }); 
+    keyFilename: process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_CREDENTIALS']
+}); 
   /**
    * TODO(developer): Uncomment these variables before running the sample.
    */
