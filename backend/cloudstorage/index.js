@@ -2,11 +2,6 @@ const GCS = require('./lib.js'); // GCS = Google Cloud Storage
 const fs = require('fs');
 const path = require('path');
 
-const getFiles = (dir) => {
-    const files = allFilesSync(dir);
-
-}
-
 const allFilesSync = (dir, fileList = []) => {
     fs.readdirSync(dir).forEach(file => {
         const filePath = path.join(dir, file)
