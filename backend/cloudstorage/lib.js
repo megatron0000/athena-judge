@@ -68,7 +68,7 @@ async function listFilesByPrefix(prefix, delimiter) {
   }
 
   // Lists files in the bucket, filtered by a prefix
-  const [files] = await storage.bucket().getFiles(options);
+  const [files] = await storage.bucket(bucketName).getFiles(options);
 
   console.log('Files:');
   files.forEach(file => {

@@ -22,26 +22,19 @@ const allFilesSync = (dir, fileList = []) => {
     return fileList
 }
 
-async function submitStudentDirectory(directory) {
-    filesList = allFilesSync(directory);
-    console.log(filesList);
+async function submitStudentDirectory(localDirectory) {
+    const cloudDirectory = 'aaa/bb/';
+    filesList = allFilesSync(localDirectory);
 
-    // filesList.forEach(file => {
-    //     let directory = '';
-    //     if(file instanceof Map) {
-    //         directory += file;
-    //         const dir = file;
-    //         dir.forEach(file => {
-                
-    //         });
-    //     }
-    //     const filePath = path.join(directory, file);
-    //     console.log("FilePath = ", filePath);
-    //     GCS.uploadFile(filePath, filePath);
-    // });
-
-    GCS.listFiles();
+    filesList.forEach(file => {
+        GCS.uploadFile(file, cloudDirectory+file);
+    });
 }
 
+// GCS.listFiles();
 
-submitStudentDirectory('../cloudstorage');
+// submitStudentDirectory('../cloudstorage');
+
+
+// GCS.listFiles();
+// GCS.listFilesByPrefix('aaa/', '/');
