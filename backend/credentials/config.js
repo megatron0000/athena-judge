@@ -4,7 +4,9 @@
  * Each script in need of env vars must call this one
  */
 
-require('dotenv').config(); // load .env file into process.env
+ const path = require('path')
+
+require('dotenv').config({path: path.resolve(__dirname, '.env')}); // load .env file into process.env
 
 // If modifying these scopes, delete user token credentials
 const SCOPES = [

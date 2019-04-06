@@ -16,13 +16,26 @@ const pubsub = new PubSub();
 // References an existing subscription
 const subscription = pubsub.subscription('projects/ces29-athena/subscriptions/PenguinSubscription');
 
+const listeners = []
+
+
+
+exports.AttachPubSubListener = AttachPubSubListener
+/**
+ * 
+ * @param {(notification: any) => any} cb 
+ */
+function AttachPubSubListener(cb) {
+  listeners.push(cb)
+}
+
 // Create an event handler to handle messages
-let messageCount = 0;
 const messageHandler = message => {
   console.log(`Received message ${message.id} (${new Date()}):`);
   console.log(`\tData: ${message.data}`);
   console.log(`\tAttributes: ${JSON.stringify(message.attributes)}`);
-  messageCount += 1;
+
+  listeners.forEach(listener => listener(message))
 
   // "Ack" (acknowledge receipt of) the message
   message.ack();
