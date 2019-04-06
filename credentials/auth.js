@@ -4,7 +4,7 @@
  */
 
 const { OAuth2Client } = require('googleapis-common')
-const { SCOPES } = require('./config')
+const { SCOPES } = require('../pubsub/config')
 
 const fs = require('fs');
 const readline = require('readline');
