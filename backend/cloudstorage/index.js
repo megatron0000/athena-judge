@@ -13,7 +13,7 @@ const allFilesSync = (dir, fileList = []) => {
         
         if(fs.statSync(filePath).isDirectory()) {
             allFilesSync(filePath).forEach(children => {
-                fileList.push(file + '/' + children);
+                fileList.push(path.join(file, children));
             });
         } else {
             fileList.push(file);
