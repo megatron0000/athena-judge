@@ -82,7 +82,7 @@ async function listFilesByPrefix(bucketName, prefix, delimiter) {
   // [END storage_list_files_with_prefix]
 }
 
-async function uploadFile(bucketName, filename) {
+async function uploadFile(bucketName, localFilename, destinationPath) {
   /**
    * TODO(developer): Uncomment the following lines before running the sample.
    */
@@ -90,9 +90,10 @@ async function uploadFile(bucketName, filename) {
   // const filename = 'Local file to upload, e.g. ./local/path/to/file.txt';
 
   // Uploads a local file to the bucket
-  await storage.bucket(bucketName).upload(filename, {
+  await storage.bucket(bucketName).upload(localFilename, {
     // Support for HTTP requests made with `Accept-Encoding: gzip`
     gzip: true,
+    destination: destinationPath,
     // By setting the option `destination`, you can change the name of the
     // object you are uploading to a bucket.
     metadata: {
@@ -103,7 +104,7 @@ async function uploadFile(bucketName, filename) {
     },
   });
 
-  console.log(`${filename} uploaded to ${bucketName}.`);
+  console.log(`${localFilename} uploaded to ${bucketName}.`);
   // [END storage_upload_file]
 }
 
