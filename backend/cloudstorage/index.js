@@ -26,6 +26,18 @@ async function submitStudentDirectory(courseId, courseWorkId, submissionId, loca
     });
 }
 
+async function submitProfessorDirectory(courseId, courseWorkId, submissionId, localDirectory) {
+    const cloudDirectory = path.posix.join(courseId, courseWorkId, submissionId) + '/';
+    filesList = allFilesSync(localDirectory);
+
+    filesList.forEach(file => {
+        GCS.uploadFile(file, path.posix.join(cloudDirectory, file));
+    });
+}
+
+filesList = allFilesSync('../cloudstorage');
+console.log(filesList)
+
 // GCS.listFiles();
 
 // submitStudentDirectory('123', 'courseWorkIdddd', 'minhaSubmissao' , '../cloudstorage');
