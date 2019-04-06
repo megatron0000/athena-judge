@@ -17,26 +17,26 @@ const allFilesSync = (dir, fileList = []) => {
     return fileList
 }
 
+
 async function submitStudentDirectory(courseId, courseWorkId, submissionId, localDirectory) {
-    const cloudDirectory = path.posix.join(courseId, courseWorkId, submissionId) + '/';
-    filesList = allFilesSync(localDirectory);
+    // Local directory is the path of the directory of the students submission
+    const cloudDirectory = path.posix.join(courseId, courseWorkId, submissionId);
+    files = allFilesSync(localDirectory);
 
-    filesList.forEach(file => {
+    files.forEach(file => {
         GCS.uploadFile(file, path.posix.join(cloudDirectory, file));
     });
 }
 
-async function submitProfessorDirectory(courseId, courseWorkId, submissionId, localDirectory) {
-    const cloudDirectory = path.posix.join(courseId, courseWorkId, submissionId) + '/';
-    filesList = allFilesSync(localDirectory);
+async function submitProfessorFiles(courseId, courseWorkId, files) {
+    // files is a string of files containing the submission tests files of the professor
+    const cloudDirectory = path.posix.join(courseId, courseWorkId, "testFiles");
 
-    filesList.forEach(file => {
+    files.forEach(file => {
         GCS.uploadFile(file, path.posix.join(cloudDirectory, file));
     });
 }
 
-filesList = allFilesSync('../cloudstorage');
-console.log(filesList)
 
 // GCS.listFiles();
 
