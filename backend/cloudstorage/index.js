@@ -6,13 +6,12 @@ const {Storage} = require('@google-cloud/storage');
 // Instantiates a client. Explicitly use service account credentials by
 // specifying the private key file. All clients in google-cloud-node have this
 // helper, see https://github.com/GoogleCloudPlatform/google-cloud-node/blob/master/docs/authentication.md
-const credentialsPath = '../credentials/' + process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_CREDENTIALS'];
 const bucketName = 'bucket-name-athena-test';
 
 // Creates a client
 const storage = new Storage({
   projectId: 'ces29-athena',
-  keyFilename: credentialsPath
+  keyFilename: process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_CREDENTIALS']
 }); 
 
 'use strict';
