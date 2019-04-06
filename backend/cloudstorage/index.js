@@ -7,8 +7,7 @@ const {Storage} = require('@google-cloud/storage');
 // specifying the private key file. All clients in google-cloud-node have this
 // helper, see https://github.com/GoogleCloudPlatform/google-cloud-node/blob/master/docs/authentication.md
 const credentialsPath = '../credentials/' + process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_CREDENTIALS'];
-
-console.log("Env = ", credentialsPath);
+const bucketName = 'bucket-name-athena-test';
 
 // Creates a client
 const storage = new Storage({
@@ -18,7 +17,7 @@ const storage = new Storage({
 
 'use strict';
 
-async function listFiles(bucketName) {
+async function listFiles() {
   /**
    * TODO(developer): Uncomment the following line before running the sample.
    */
@@ -34,10 +33,7 @@ async function listFiles(bucketName) {
   // [END storage_list_files]
 }
 
-const bucketName = 'bucket-name-athena-test';
-listFiles(bucketName)
-
-async function listFilesByPrefix(bucketName, prefix, delimiter) {
+async function listFilesByPrefix(prefix, delimiter) {
   /**
    * TODO(developer): Uncomment the following lines before running the sample.
    */
@@ -73,7 +69,7 @@ async function listFilesByPrefix(bucketName, prefix, delimiter) {
   }
 
   // Lists files in the bucket, filtered by a prefix
-  const [files] = await storage.bucket(bucketName).getFiles(options);
+  const [files] = await storage.bucket().getFiles(options);
 
   console.log('Files:');
   files.forEach(file => {
@@ -82,7 +78,7 @@ async function listFilesByPrefix(bucketName, prefix, delimiter) {
   // [END storage_list_files_with_prefix]
 }
 
-async function uploadFile(bucketName, localFilename, destinationPath) {
+async function uploadFile(localFilename, destinationPath) {
   /**
    * TODO(developer): Uncomment the following lines before running the sample.
    */
@@ -108,7 +104,7 @@ async function uploadFile(bucketName, localFilename, destinationPath) {
   // [END storage_upload_file]
 }
 
-async function downloadFile(bucketName, srcFilename, destFilename) {
+async function downloadFile(srcFilename, destFilename) {
   /**
    * TODO(developer): Uncomment the following lines before running the sample.
    */
@@ -133,7 +129,7 @@ async function downloadFile(bucketName, srcFilename, destFilename) {
   // [END storage_download_file]
 }
 
-async function deleteFile(bucketName, filename) {
+async function deleteFile(filename) {
   /**
    * TODO(developer): Uncomment the following lines before running the sample.
    */
@@ -150,7 +146,7 @@ async function deleteFile(bucketName, filename) {
   // [END storage_delete_file]
 }
 
-async function getMetadata(bucketName, filename) {
+async function getMetadata(filename) {
   /**
    * TODO(developer): Uncomment the following lines before running the sample.
    */
@@ -191,7 +187,7 @@ async function getMetadata(bucketName, filename) {
   // [END storage_get_metadata]
 }
 
-async function makePublic(bucketName, filename) {
+async function makePublic(filename) {
   /**
    * TODO(developer): Uncomment the following lines before running the sample.
    */
@@ -208,7 +204,7 @@ async function makePublic(bucketName, filename) {
   // [END storage_make_public]
 }
 
-async function moveFile(bucketName, srcFilename, destFilename) {
+async function moveFile(srcFilename, destFilename) {
   /**
    * TODO(developer): Uncomment the following lines before running the sample.
    */
@@ -254,3 +250,12 @@ async function copyFile(
   // [END storage_copy_file]
 }
 
+exports.listFiles = listFiles;
+exports.listFilesByPrefix = listFilesByPrefix;
+exports.uploadFile = uploadFile;
+exports.downloadFile = downloadFile;
+exports.deleteFile = deleteFile;
+exports.getMetadata = getMetadata;
+exports.makePublic = makePublic;
+exports.moveFile = moveFile;
+exports.copyFile = copyFile;
