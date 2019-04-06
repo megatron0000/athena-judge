@@ -17,19 +17,20 @@ const allFilesSync = (dir, fileList = []) => {
     return fileList
 }
 
-async function submitStudentDirectory(localDirectory) {
-    const cloudDirectory = 'aaa/bb/';
+async function submitStudentDirectory(courseId, courseWorkId, submissionId, localDirectory) {
+    const cloudDirectory = path.posix.join(courseId, courseWorkId, submissionId) + '/';
     filesList = allFilesSync(localDirectory);
 
     filesList.forEach(file => {
-        GCS.uploadFile(file, cloudDirectory+file);
+        GCS.uploadFile(file, path.posix.join(cloudDirectory, file));
     });
 }
 
 // GCS.listFiles();
 
-// submitStudentDirectory('../cloudstorage');
+// submitStudentDirectory('123', 'courseWorkIdddd', 'minhaSubmissao' , '../cloudstorage');
 
 
 // GCS.listFiles();
 // GCS.listFilesByPrefix('aaa/', '/');
+
