@@ -4,9 +4,9 @@
   "description": "",
   "main": "src/server.js",
   "scripts": {
-    "dev": "nodemon src/server.js --exec babel-node --plugins transform-es2015-modules-commonjs",
-    "prod": "babel src -d dist --plugins transform-es2015-modules-commonjs && node dist/server.js",
-    "test": "mocha"
+    "test": "mocha",
+    "dev_v0": "nodemon src/v0/server.js --exec babel-node --plugins transform-es2015-modules-commonjs",
+    "prod_v0": "babel src -d dist --plugins transform-es2015-modules-commonjs && node dist/v0/server.js"
   },
   "author": "",
   "license": "ISC",
