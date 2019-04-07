@@ -1,44 +1,30 @@
 require('../credentials/config')
 
 // Imports the Google Cloud client library.
-const {Storage} = require('@google-cloud/storage');
+const { Storage } = require('@google-cloud/storage');
 
 // Instantiates a client. Explicitly use service account credentials by
 // specifying the private key file. All clients in google-cloud-node have this
 // helper, see https://github.com/GoogleCloudPlatform/google-cloud-node/blob/master/docs/authentication.md
-const bucketName = 'bucket-name-athena-test';
 
 // Creates a client
 const storage = new Storage({
-  projectId: 'ces29-athena',
+  projectId: process.env['GOOGLE_PROJECT_ID'],
   keyFilename: process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_CREDENTIALS']
 });
+
+const bucket = storage.bucket(process.env['CLOUDSTORAGE_BUCKET_NAME'])
 
 'use strict';
 
 async function listFiles() {
-  /**
-   * TODO(developer): Uncomment the following line before running the sample.
-   */
-  // const bucketName = 'Name of a bucket, e.g. my-bucket';
 
   // Lists files in the bucket
-  const [files] = await storage.bucket(bucketName).getFiles();
+  return await bucket.getFiles();
 
-  console.log('Files:');
-  files.forEach(file => {
-    console.log(file.name);
-  });
-  // [END storage_list_files]
 }
 
-async function listFilesByPrefix(prefix, delimiter) {
-  /**
-   * TODO(developer): Uncomment the following lines before running the sample.
-   */
-  // const bucketName = 'Name of a bucket, e.g. my-bucket';
-  // const prefix = 'Prefix by which to filter, e.g. public/';
-  // const delimiter = 'Delimiter to use, e.g. /';
+async function listFilesByPrefix(prefix) {
 
   /**
    * This can be used to list all blobs in a "folder", e.g. "public/".
@@ -60,32 +46,18 @@ async function listFilesByPrefix(prefix, delimiter) {
    *   /a/1.txt
    */
   const options = {
-    prefix: prefix,
+    prefix: prefix
   };
 
-  if (delimiter) {
-    options.delimiter = delimiter;
-  }
-
   // Lists files in the bucket, filtered by a prefix
-  const [files] = await storage.bucket(bucketName).getFiles(options);
-
-  console.log('Files:');
-  files.forEach(file => {
-    console.log(file.name);
-  });
-  // [END storage_list_files_with_prefix]
+  const [files] = await bucket.getFiles(options)
+  return files;
 }
 
 async function uploadFile(localFilename, destinationPath) {
-  /**
-   * TODO(developer): Uncomment the following lines before running the sample.
-   */
-  // const bucketName = 'Name of a bucket, e.g. my-bucket';
-  // const filename = 'Local file to upload, e.g. ./local/path/to/file.txt';
 
   // Uploads a local file to the bucket
-  await storage.bucket(bucketName).upload(localFilename, {
+  await bucket.upload(localFilename, {
     // Support for HTTP requests made with `Accept-Encoding: gzip`
     gzip: true,
     destination: destinationPath,
@@ -99,17 +71,11 @@ async function uploadFile(localFilename, destinationPath) {
     },
   });
 
-  console.log(`${localFilename} uploaded to ${bucketName}.`);
+  // console.log(`${localFilename} uploaded to ${bucket.name}.`);
   // [END storage_upload_file]
 }
 
 async function downloadFile(srcFilename, destFilename) {
-  /**
-   * TODO(developer): Uncomment the following lines before running the sample.
-   */
-  // const bucketName = 'Name of a bucket, e.g. my-bucket';
-  // const srcFilename = 'Remote file to download, e.g. file.txt';
-  // const destFilename = 'Local destination for file, e.g. ./local/path/to/file.txt';
 
   const options = {
     // The path to which the file should be downloaded, e.g. "./file.txt"
@@ -117,46 +83,31 @@ async function downloadFile(srcFilename, destFilename) {
   };
 
   // Downloads the file
-  await storage
-    .bucket(bucketName)
-    .file(srcFilename)
-    .download(options);
+  await bucket.file(srcFilename).download(options);
 
-  console.log(
-    `gs://${bucketName}/${srcFilename} downloaded to ${destFilename}.`
-  );
   // [END storage_download_file]
 }
 
 async function deleteFile(filename) {
-  /**
-   * TODO(developer): Uncomment the following lines before running the sample.
-   */
-  // const bucketName = 'Name of a bucket, e.g. my-bucket';
-  // const filename = 'File to delete, e.g. file.txt';
 
   // Deletes the file from the bucket
-  await storage
-    .bucket(bucketName)
-    .file(filename)
-    .delete();
+  return bucket.file(filename).delete();
 
-  console.log(`gs://${bucketName}/${filename} deleted.`);
   // [END storage_delete_file]
 }
 
+/**
+ * 
+ * @param {string[]} filenames 
+ */
+async function deleteFiles(filenames) {
+  return Promise.all(filenames.map(deleteFile))
+}
+
 async function getMetadata(filename) {
-  /**
-   * TODO(developer): Uncomment the following lines before running the sample.
-   */
-  // const bucketName = 'Name of a bucket, e.g. my-bucket';
-  // const filename = 'File to access, e.g. file.txt';
 
   // Gets the metadata for the file
-  const [metadata] = await storage
-    .bucket(bucketName)
-    .file(filename)
-    .getMetadata();
+  const [metadata] = await bucket.file(filename).getMetadata();
 
   console.log(`File: ${metadata.name}`);
   console.log(`Bucket: ${metadata.bucket}`);
@@ -187,38 +138,21 @@ async function getMetadata(filename) {
 }
 
 async function makePublic(filename) {
-  /**
-   * TODO(developer): Uncomment the following lines before running the sample.
-   */
-  // const bucketName = 'Name of a bucket, e.g. my-bucket';
-  // const filename = 'File to make public, e.g. file.txt';
 
   // Makes the file public
-  await storage
-    .bucket(bucketName)
-    .file(filename)
-    .makePublic();
+  await bucket.file(filename).makePublic();
 
-  console.log(`gs://${bucketName}/${filename} is now public.`);
+  console.log(`gs://${bucket.name}/${filename} is now public.`);
   // [END storage_make_public]
 }
 
 async function moveFile(srcFilename, destFilename) {
-  /**
-   * TODO(developer): Uncomment the following lines before running the sample.
-   */
-  // const bucketName = 'Name of a bucket, e.g. my-bucket';
-  // const srcFilename = 'File to move, e.g. file.txt';
-  // const destFilename = 'Destination for file, e.g. moved.txt';
 
   // Moves the file within the bucket
-  await storage
-    .bucket(bucketName)
-    .file(srcFilename)
-    .move(destFilename);
+  await bucket.file(srcFilename).move(destFilename);
 
   console.log(
-    `gs://${bucketName}/${srcFilename} moved to gs://${bucketName}/${destFilename}.`
+    `gs://${bucket.name}/${srcFilename} moved to gs://${bucket.name}/${destFilename}.`
   );
   // [END storage_move_file]
 }
@@ -229,13 +163,6 @@ async function copyFile(
   destBucketName,
   destFilename
 ) {
-  /**
-   * TODO(developer): Uncomment the following lines before running the sample.
-   */
-  // const srcBucketName = 'Name of the source bucket, e.g. my-bucket';
-  // const srcFilename = 'Name of the source file, e.g. file.txt';
-  // const destBucketName = 'Name of the destination bucket, e.g. my-other-bucket';
-  // const destFilename = 'Destination name of file, e.g. file.txt';
 
   // Copies the file to the other bucket
   await storage
@@ -254,6 +181,7 @@ exports.listFilesByPrefix = listFilesByPrefix;
 exports.uploadFile = uploadFile;
 exports.downloadFile = downloadFile;
 exports.deleteFile = deleteFile;
+exports.deleteFiles = deleteFiles
 exports.getMetadata = getMetadata;
 exports.makePublic = makePublic;
 exports.moveFile = moveFile;

@@ -1,8 +1,3 @@
-/*
-@vb: At the moment, the runner is not perfectly secure and does
-not deal with concurrent requests. It just works minimally.
-*/
-
 import Express from "express";
 import Cors from "cors";
 import SocketIOClient from "socket.io-client";

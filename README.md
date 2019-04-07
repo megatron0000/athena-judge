@@ -35,6 +35,8 @@ Refer to the project structure
 
 ## Project structure
 
+> **TODO: OUTDATED !! SHOULD BE UPDATED !!**
+
 note: `/` means the directory of this README file.
 
 
