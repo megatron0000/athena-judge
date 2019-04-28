@@ -1,5 +1,9 @@
 require('../credentials/config')
 
+const fs = require('fs')
+const path = require('path')
+const { mkdirSync } = require('mkdir-recursive')
+
 // Imports the Google Cloud client library.
 const { Storage } = require('@google-cloud/storage');
 
@@ -51,7 +55,7 @@ async function listFilesByPrefix(prefix) {
 
   // Lists files in the bucket, filtered by a prefix
   const [files] = await bucket.getFiles(options)
-  return files;
+  return files.map(file => file.name);
 }
 
 async function uploadFile(localFilename, destinationPath) {
@@ -76,6 +80,8 @@ async function uploadFile(localFilename, destinationPath) {
 }
 
 async function downloadFile(srcFilename, destFilename) {
+
+  mkdirSync(path.dirname(destFilename))
 
   const options = {
     // The path to which the file should be downloaded, e.g. "./file.txt"
