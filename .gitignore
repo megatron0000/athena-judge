@@ -5,3 +5,4 @@ backend/uploads/
 frontend/dist/bundle.js
 npm-debug.log
 **/credentials/*.json
+get-docker.sh

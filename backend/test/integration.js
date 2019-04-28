@@ -16,9 +16,9 @@ describe('Integration', function () {
   });
 
   it('should listen to CourseWork publish events and retrieve test files from GCS', async () => {
-      AttachPubSubListener(async (pubsubMessage) => {
-        console.log(pubsubMessage);
-      });
+    AttachPubSubListener(async (pubsubMessage) => {
+      // console.log(pubsubMessage);
+    });
   });
 
 })
