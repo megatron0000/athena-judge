@@ -1,5 +1,6 @@
 const assert = require('assert');
-const request = require('request-promise-native');
+const { createReadStream, readFileSync, unlinkSync } = require('fs')
+const { resolve } = require('path')
 const drive = require('../drive')
 
 require('../credentials/config');
@@ -12,9 +13,27 @@ describe('Drive', function () {
   it('should download files', async () => {
     const content = 'my test content'
     const fileId = await drive.createFile(content)
-    const downloaded_content = await drive.downloadFile(fileId)
+    const localDestination = resolve(__dirname, 'sample-files', '.drivedownload')
+    await drive.downloadFile(fileId, localDestination)
     await drive.deleteFile(fileId)
-    assert.equal(downloaded_content, content, 'Downloaded file has different content from uploaded one')
+    assert.equal(
+      readFileSync(localDestination),
+      content,
+      'Downloaded file has different content from uploaded one'
+    )
+    unlinkSync(localDestination)
+  })
+
+  it('should inform MIME type', async function () {
+    const fileId = await drive.createFile(createReadStream(
+      resolve(__dirname, 'sample-files', 'file4.zip')
+    ))
+    const mime = await drive.getFileMIME(fileId)
+    assert.notEqual(
+      drive.MIME.zip.indexOf(mime),
+      -1,
+      'Zip file MIME not correctly identified'
+    )
   })
 
 
