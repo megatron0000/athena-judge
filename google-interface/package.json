@@ -1,0 +1,22 @@
+{
+  "name": "google-interface",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/pubsub": "^0.28.1",
+    "@google-cloud/storage": "^2.5.0",
+    "googleapis": "^39.2.0",
+    "mkdir-recursive": "^0.4.0"
+  },
+  "devDependencies": {
+    "mocha": "^6.1.4",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.7"
+  }
+}

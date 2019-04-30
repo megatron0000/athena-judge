@@ -1,9 +1,9 @@
 const assert = require('assert');
 const { createReadStream, readFileSync, unlinkSync } = require('fs')
 const { resolve } = require('path')
-const drive = require('../drive')
+const drive = require('../src/drive')
 
-require('../credentials/config');
+require('../src/credentials/config');
 
 
 describe('Drive', function () {

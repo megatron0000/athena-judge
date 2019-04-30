@@ -1,4 +1,4 @@
-const GCS = require('./lib.js'); // GCS = Google Cloud Storage
+const GCS = require('./lib'); // GCS = Google Cloud Storage
 const fs = require('fs')
 const path = require('path')
 

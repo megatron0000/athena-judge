@@ -1,11 +1,11 @@
 let assert = require('assert');
 let request = require('request-promise-native');
 
-require('../credentials/config');
+require('../src/credentials/config');
 
 
-const { Authenticate } = require('../credentials/auth')
-const { AttachPubSubListener, StopPubSub } = require('../pubsub')
+const { Authenticate } = require('../src/credentials/auth')
+const { AttachPubSubListener, StopPubSub } = require('../src/pubsub')
 const { classroom_v1 } = require('googleapis')
 
 describe('Pub/Sub', function () {

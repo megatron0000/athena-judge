@@ -1,12 +1,12 @@
-require('../credentials/config')
+require('../src/credentials/config')
 
 const assert = require('assert')
 
 const fs = require('fs')
 const path = require('path')
 
-const storage = require('../cloudstorage/lib')
-const GCS = require('../cloudstorage')
+const storage = require('../src/cloudstorage/lib')
+const GCS = require('../src/cloudstorage')
 
 const testBucket = 'athena-mocha-test-bucket'
 const testCourseId = 'placeholder-course-id'

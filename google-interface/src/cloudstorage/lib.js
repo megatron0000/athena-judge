@@ -63,7 +63,7 @@ async function uploadFile(localFilename, destinationPath) {
   // Uploads a local file to the bucket
   await bucket.upload(localFilename, {
     // Support for HTTP requests made with `Accept-Encoding: gzip`
-    gzip: true,
+    gzip: false,
     destination: destinationPath,
     // By setting the option `destination`, you can change the name of the
     // object you are uploading to a bucket.
@@ -86,6 +86,7 @@ async function downloadFile(srcFilename, destFilename) {
   const options = {
     // The path to which the file should be downloaded, e.g. "./file.txt"
     destination: destFilename,
+    gzip: false
   };
 
   // Downloads the file

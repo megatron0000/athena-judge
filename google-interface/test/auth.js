@@ -1,10 +1,10 @@
 let assert = require('assert');
 let request = require('request-promise-native');
 
-require('../credentials/config');
+require('../src/credentials/config');
 
 
-const { Authenticate } = require('../credentials/auth')
+const { Authenticate } = require('../src/credentials/auth')
 const { classroom_v1 } = require('googleapis')
 
 describe('Authentication', function () {
