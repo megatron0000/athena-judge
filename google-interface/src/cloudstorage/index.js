@@ -62,8 +62,8 @@ async function uploadCourseWorkTestFiles(courseId, courseWorkId, files) {
   await Promise.all(
     files.map(async (file, index) => {
       await Promise.all([
-        GCS.uploadFile(file.input, path.posix.join(cloudDirectory, index, 'input')),
-        GCS.uploadFile(file.output, path.posix.join(cloudDirectory, index, 'output'))
+        GCS.uploadFile(file.input, path.posix.join(cloudDirectory, index.toString(), 'input')),
+        GCS.uploadFile(file.output, path.posix.join(cloudDirectory, index.toString(), 'output'))
       ])
     })
   )
@@ -109,9 +109,9 @@ async function deleteCourseWorkTestFile(courseId, courseWorkId, testNumber) {
     'courseWorks',
     courseWorkId,
     'testFiles',
-    testNumber
+    testNumber.toString()
   )
-  const testFiles = GCS.listFilesByPrefix(cloudDirectory)
+  const testFiles = await GCS.listFilesByPrefix(cloudDirectory)
   await GCS.deleteFiles(testFiles)
 }
 
@@ -142,13 +142,33 @@ async function downloadTeacherCredential(courseId, localDestinationPath) {
  * @param {string} submissionId 
  * @param {string} localDestinationDir 
  */
-async function downloadSubmissionFiles(courseId, courseWorkId, submissionId, localDestinationDir) {
+async function downloadCourseWorkSubmissionFiles(courseId, courseWorkId, submissionId, localDestinationDir) {
   const cloudDirectory = path.posix.join(
     courseId,
     'courseWorks',
     courseWorkId,
     'submissions',
     submissionId
+  )
+  const filenames = await GCS.listFilesByPrefix(cloudDirectory)
+
+  await Promise.all(
+    filenames.map(filename => GCS.downloadFile(
+      filename,
+      path.join(
+        localDestinationDir,
+        path.relative(cloudDirectory, filename)
+      )
+    ))
+  )
+}
+
+async function downloadCourseWorkTestFiles(courseId, courseWorkId, submissionId, localDestinationDir) {
+  const cloudDirectory = path.posix.join(
+    courseId,
+    'courseWorks',
+    courseWorkId,
+    'testFiles'
   )
   const filenames = await GCS.listFilesByPrefix(cloudDirectory)
 
@@ -171,4 +191,5 @@ exports.deleteCourseWorkSubmissionFiles = deleteCourseWorkSubmissionFiles
 exports.deleteCourseWorkTestFile = deleteCourseWorkTestFile
 exports.deleteTeacherCredential = deleteTeacherCredential
 exports.downloadTeacherCredential = downloadTeacherCredential
-exports.downloadSubmissionFiles = downloadSubmissionFiles
+exports.downloadCourseWorkSubmissionFiles = downloadCourseWorkSubmissionFiles
+exports.downloadCourseWorkTestFiles = downloadCourseWorkTestFiles

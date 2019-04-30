@@ -4,6 +4,7 @@ const assert = require('assert')
 
 const fs = require('fs')
 const path = require('path')
+const process = require('child_process')
 
 const storage = require('../src/cloudstorage/lib')
 const GCS = require('../src/cloudstorage')
@@ -82,7 +83,7 @@ describe('Cloud Storage', function () {
     )
 
 
-    await GCS.downloadSubmissionFiles(
+    await GCS.downloadCourseWorkSubmissionFiles(
       testCourseId,
       testCourseWorkIds[0],
       testSubmissionIds[0],
@@ -121,6 +122,49 @@ describe('Cloud Storage', function () {
         testCourseWorkIds[0],
         'submissions',
         testSubmissionIds[0]
+      ))).length,
+      0
+    )
+
+  })
+
+  it('should upload/download/delete coursework test files', async () => {
+    await GCS.uploadCourseWorkTestFiles(
+      testCourseId,
+      testCourseWorkIds[0],
+      [{
+        input: path.resolve(__dirname, 'sample-files', 'file1'),
+        output: path.resolve(__dirname, 'sample-files', 'file2')
+      }]
+    )
+
+    await GCS.downloadCourseWorkTestFiles(
+      testCourseId,
+      testCourseWorkIds[0],
+      testSubmissionIds[0],
+      path.resolve(__dirname, 'sample-files', '.testdownload')
+    )
+
+    assert.equal(
+      fs.readFileSync(path.resolve(__dirname, 'sample-files', '.testdownload', '0', 'input'), 'utf8'),
+      fs.readFileSync(path.resolve(__dirname, 'sample-files', 'file1'), 'utf8')
+    )
+
+    assert.equal(
+      fs.readFileSync(path.resolve(__dirname, 'sample-files', '.testdownload', '0', 'output'), 'utf8'),
+      fs.readFileSync(path.resolve(__dirname, 'sample-files', 'file2'), 'utf8')
+    )
+
+    process.execSync('rm -f -r ' + path.resolve(__dirname, 'sample-files', '.testdownload'))
+
+    await GCS.deleteCourseWorkTestFile(testCourseId, testCourseWorkIds[0], 0)
+
+    assert.equal(
+      (await storage.listFilesByPrefix(path.posix.join(
+        testCourseId,
+        'courseWorks',
+        testCourseWorkIds[0],
+        'testFiles'
       ))).length,
       0
     )
