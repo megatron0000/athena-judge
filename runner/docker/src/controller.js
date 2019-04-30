@@ -2,6 +2,7 @@ const SocketIO = require("socket.io");
 const FS = require("fs");
 const Path = require("path");
 const ChildProcess = require("child_process");
+const { cloudstorage } = require('./google-interface')
 
 const PORT = 3002;
 
@@ -11,7 +12,7 @@ function randomString() {
   return Math.random().toString(36).substring(2, 15);
 }
 
-server.on("connection", (socket) => {
+/* server.on("connection", (socket) => {
   // client socket connected
   console.log("client socket connected: " + socket.id);
 
@@ -79,4 +80,116 @@ server.on("connection", (socket) => {
     process.exit(0);
   });
 
-});
+}); */
+
+server.on('connection', client => {
+  const ctx = {}
+
+  client.on('downloadSourceAndTests', async (courseId, courseWorkId, submissionId, callback) => {
+    ctx.courseId = courseId
+    ctx.courseWorkId = courseWorkId
+    ctx.submissionId = submissionId
+    ctx.status = { ok: true, message: 'Waiting command' }
+    ctx.localSrcDir = Path.join('/tmp', submissionId, 'src')
+    ctx.localTestDir = Path.join('/tmp', submissionId, 'test')
+
+    try {
+      await Promise.all([
+        cloudstorage.downloadCourseWorkTestFiles(
+          ctx.courseId,
+          ctx.courseWorkId,
+          ctx.submissionId,
+          ctx.localTestDir
+        ),
+        cloudstorage.downloadCourseWorkSubmissionFiles(
+          ctx.courseId,
+          ctx.courseWorkId,
+          ctx.submissionId,
+          ctx.localSrcDir
+        )
+      ])
+
+      ctx.status = {
+        ok: true,
+        message: 'Downloaded source and test files'
+      }
+
+    } catch (err) {
+      ctx.status = {
+        ok: false,
+        message: 'Error downloading files: ' + err.message
+      }
+    }
+
+    return callback(ctx.status)
+
+  })
+
+  client.on('compileSource', callback => {
+    /**
+     * @type {string[]}
+     */
+    const sourceList = FS.readdirSync(ctx.localSrcDir)
+    const mainFile = sourceList.find(source => source === 'main.cpp')
+
+    if (!mainFile) {
+      ctx.status = {
+        ok: false,
+        message: 'File main.cpp not present at root directory'
+      }
+      return callback(ctx.status)
+    }
+
+    ChildProcess.exec(`g++ ${ctx.localSrcDir}/main.cpp -o ${ctx.localSrcDir}/main.o`, (err, stdout, stderr) => {
+      if (err) {
+        ctx.status = {
+          ok: false,
+          message: 'Compilation Error: ' + stderr
+        }
+      } else {
+        ctx.status = {
+          ok: true,
+          message: 'Compiled source'
+        }
+      }
+
+      return callback(status)
+    })
+
+  })
+
+  client.on('runTests', async () => {
+    const testCount = FS.readdirSync(ctx.localTestDir).length
+
+    for (let i = 0; i < testCount; i++) {
+      const inputPath = Path.join(ctx.localTestDir, i.toString(), 'input')
+      const outputPath = Path.join(ctx.localTestDir, i.toString(), 'output')
+      const binPath = Path.join(ctx.localSrcDir, 'main.o')
+      await new Promise(resolve => {
+        ChildProcess.exec(`${binPath} << ${inputPath}`, (err, stdout, stderr) => {
+          const testResult = {
+            input: FS.readFileSync(inputPath),
+            expectedOutput: FS.readFileSync(outputPath),
+            output: stdout,
+            error: stderr,
+            pass: err ? false : true
+          }
+
+          client.emit('testResult', testResult)
+          resolve()
+
+        })
+      })
+    }
+
+    client.emit('executionEnd')
+
+  })
+
+  client.on('stopContainer', () => {
+    server.close()
+    process.exit(0)
+  })
+
+
+})
