@@ -7,12 +7,14 @@ const { OAuth2Client } = require('googleapis-common')
 const { SCOPES } = require('./config')
 
 const fs = require('fs');
+const path = require('path')
 const readline = require('readline');
 const {
   google
 } = require('googleapis');
 
 const pubsub = require('@google-cloud/pubsub')
+const gcs = require('../cloudstorage')
 
 
 // The file token.json stores the user's access and refresh tokens, and is
@@ -24,8 +26,7 @@ const OAUTH_USER_TOKEN_FILE = process.env['OAUTH_USER_TOKEN_FILE']
 /**
  * @return {Promise<OAuth2Client>}
  */
-exports.Authenticate = Authenticate
-function Authenticate() {
+exports.Authenticate = function Authenticate() {
   function resolver(resolve, reject) {
     // Load client secrets from a local file.
     fs.readFile(OAUTH_CLIENT_CREDENTIALS_PATH, (err, credentials) => {
@@ -98,4 +99,51 @@ function getNewToken(oAuth2Client, resolve, reject) {
       });
     });
   });
+}
+
+/**
+ * @type {{[courseId: string]: OAuth2Client}}
+ */
+const credcache = {}
+
+/**
+ * @param {string} courseId
+ */
+exports.getOAuth2Client = async function getOAuth2Client(courseId) {
+  if (!credcache[courseId]) {
+    const tokenPath = path.resolve(__dirname, 'credcache', courseId.toString())
+
+    const [token, clientCred] = await Promise.all([
+      gcs.downloadTeacherCredential(courseId, tokenPath)
+        .then(() => new Promise((resolve, reject) => {
+          fs.readFile(tokenPath, (err, token) => {
+            if (err) {
+              reject(err)
+            }
+            return resolve(JSON.parse(token))
+          })
+        })),
+      new Promise((resolve, reject) => {
+        fs.readFile(OAUTH_CLIENT_CREDENTIALS_PATH, (err, clientCred) => {
+          if (err) {
+            reject(err)
+          }
+          return resolve(JSON.parse(clientCred))
+        })
+      })
+    ])
+
+    const {
+      client_secret,
+      client_id,
+      redirect_uris
+    } = clientCred.installed
+    const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0])
+    oAuth2Client.setCredentials(token)
+
+    credcache[courseId] = oAuth2Client
+
+  }
+
+  return credcache[courseId]
 }

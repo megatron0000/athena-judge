@@ -1,23 +1,26 @@
 require('../credentials/config')
 const { google } = require('googleapis')
-const Authenticate = require('../credentials/auth').Authenticate
+const { getOAuth2Client } = require('../credentials/auth')
 
 classroom_instance = null
 
-async function classroom() {
+/**
+ * 
+ * @param {string} courseId 
+ */
+async function classroom(courseId) {
   if (!classroom_instance) {
-    const auth = await Authenticate()
     classroom_instance = google.classroom({
       version: 'v1',
-      auth
+      auth: await getOAuth2Client(courseId)
     })
   }
 
   return classroom_instance
 }
 
-exports.createRegistration = async function createRegistration() {
-  (await classroom()).registrations.create({
+exports.createRegistration = async function createRegistration(courseId) {
+  (await classroom(courseId)).registrations.create({
     requestBody: {
       cloudPubsubTopic: {
         topicName: process.env['PUBSUB_TOPIC']
@@ -25,7 +28,7 @@ exports.createRegistration = async function createRegistration() {
       feed: {
         feedType: 'COURSE_WORK_CHANGES',
         courseWorkChangesInfo: {
-          courseId: process.env['CLASSROOM_TEST_COURSE_ID']
+          courseId: courseId
         }
       }
     }

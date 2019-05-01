@@ -709,7 +709,4 @@ describe('/run', function () {
     ])
   })
 
-  after(() => {
-    process.exit(0)
-  })
 })

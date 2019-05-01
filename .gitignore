@@ -7,3 +7,4 @@ npm-debug.log
 **/credentials/*.json
 get-docker.sh
 .vscode/
+**/credcache/**

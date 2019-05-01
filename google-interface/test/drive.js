@@ -5,6 +5,7 @@ const drive = require('../src/drive')
 
 require('../src/credentials/config');
 
+const testCourseId = process.env['CLASSROOM_TEST_COURSE_ID']
 
 describe('Drive', function () {
 
@@ -12,10 +13,10 @@ describe('Drive', function () {
 
   it('should download files', async () => {
     const content = 'my test content'
-    const fileId = await drive.createFile(content)
+    const fileId = await drive.createFile(testCourseId, content)
     const localDestination = resolve(__dirname, 'sample-files', '.drivedownload')
-    await drive.downloadFile(fileId, localDestination)
-    await drive.deleteFile(fileId)
+    await drive.downloadFile(testCourseId, fileId, localDestination)
+    await drive.deleteFile(testCourseId, fileId)
     assert.equal(
       readFileSync(localDestination),
       content,
@@ -25,10 +26,10 @@ describe('Drive', function () {
   })
 
   it('should inform MIME type', async function () {
-    const fileId = await drive.createFile(createReadStream(
+    const fileId = await drive.createFile(testCourseId, createReadStream(
       resolve(__dirname, 'sample-files', 'file4.zip')
     ))
-    const mime = await drive.getFileMIME(fileId)
+    const mime = await drive.getFileMIME(testCourseId, fileId)
     assert.notEqual(
       drive.MIME.zip.indexOf(mime),
       -1,
