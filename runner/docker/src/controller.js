@@ -85,11 +85,13 @@ function randomString() {
 server.on('connection', client => {
   const ctx = {}
 
-  client.on('downloadSourceAndTests', async (courseId, courseWorkId, submissionId, callback) => {
+  client.on('downloadSourceAndTests', async (parameters, callback) => {
+    const { courseId, courseWorkId, submissionId } = parameters
     ctx.courseId = courseId
     ctx.courseWorkId = courseWorkId
     ctx.submissionId = submissionId
     ctx.status = { ok: true, message: 'Waiting command' }
+    ctx.localSubmissionDir = Path.join('/tmp', submissionId)
     ctx.localSrcDir = Path.join('/tmp', submissionId, 'src')
     ctx.localTestDir = Path.join('/tmp', submissionId, 'test')
 
@@ -153,12 +155,13 @@ server.on('connection', client => {
         }
       }
 
-      return callback(status)
+      return callback(ctx.status)
     })
 
   })
 
-  client.on('runTests', async () => {
+  client.on('runTests', async parameters => {
+    const { executionTimeout, memLimitMB } = parameters
     const testCount = FS.readdirSync(ctx.localTestDir).length
 
     for (let i = 0; i < testCount; i++) {
@@ -166,23 +169,31 @@ server.on('connection', client => {
       const outputPath = Path.join(ctx.localTestDir, i.toString(), 'output')
       const binPath = Path.join(ctx.localSrcDir, 'main.o')
       await new Promise(resolve => {
-        ChildProcess.exec(`${binPath} << ${inputPath}`, (err, stdout, stderr) => {
-          const testResult = {
-            input: FS.readFileSync(inputPath),
-            expectedOutput: FS.readFileSync(outputPath),
-            output: stdout,
-            error: stderr,
-            pass: err ? false : true
+        console.log(memLimitMB)
+        ChildProcess.exec(
+          `ulimit -v ${memLimitMB * 1024}; ${binPath} < ${inputPath}`,
+          { timeout: executionTimeout },
+          (err, stdout, stderr) => {
+
+            const expectedOutput = FS.readFileSync(outputPath, 'utf8')
+            const testResult = {
+              input: FS.readFileSync(inputPath, 'utf8'),
+              expectedOutput,
+              output: stdout,
+              error: !err ? '' : stderr || 'Timeout',
+              pass: !err && stdout === expectedOutput
+            }
+            client.emit('testResult', testResult)
+            resolve()
+
           }
-
-          client.emit('testResult', testResult)
-          resolve()
-
-        })
+        )
       })
     }
 
-    client.emit('executionEnd')
+    ChildProcess.exec(`rm -r -f ${ctx.localSubmissionDir}`, (err, stdout, stderr) => {
+      client.emit('executionEnd')
+    })
 
   })
 

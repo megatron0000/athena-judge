@@ -4,12 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "docker build -t runner .",
-    "start": "docker run -d -p $HOSTPORT:3002 --memory=512m --cpus=1 runner"
+    "build": "bash build-docker.sh",
+    "start": "docker run --log-driver=journald -d -p $HOSTPORT:3002 --memory=512m --cpus=1 runner"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "socket.io": "^2.1.1"
+    "@google-cloud/pubsub": "^0.28.1",
+    "@google-cloud/storage": "^2.5.0",
+    "googleapis": "^39.2.0",
+    "mkdir-recursive": "^0.4.0",
+    "socket.io": "^2.1.1",
+    "tree-kill": "^1.2.1"
   }
 }

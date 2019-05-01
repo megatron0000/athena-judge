@@ -118,6 +118,22 @@ async function deleteCourseWorkTestFile(courseId, courseWorkId, testNumber) {
 /**
  * 
  * @param {string} courseId 
+ * @param {string} courseWorkId 
+ */
+async function deleteCourseWorkTestFiles(courseId, courseWorkId) {
+  const cloudDirectory = path.posix.join(
+    courseId,
+    'courseWorks',
+    courseWorkId,
+    'testFiles'
+  )
+  const testFiles = await GCS.listFilesByPrefix(cloudDirectory)
+  await GCS.deleteFiles(testFiles)
+}
+
+/**
+ * 
+ * @param {string} courseId 
  */
 async function deleteTeacherCredential(courseId) {
   await GCS.deleteFile(path.posix.join(courseId, 'teacherCredential.json'))
@@ -189,6 +205,7 @@ exports.uploadCourseWorkTestFiles = uploadCourseWorkTestFiles
 exports.uploadTeacherCredential = uploadTeacherCredential
 exports.deleteCourseWorkSubmissionFiles = deleteCourseWorkSubmissionFiles
 exports.deleteCourseWorkTestFile = deleteCourseWorkTestFile
+exports.deleteCourseWorkTestFiles = deleteCourseWorkTestFiles
 exports.deleteTeacherCredential = deleteTeacherCredential
 exports.downloadTeacherCredential = downloadTeacherCredential
 exports.downloadCourseWorkSubmissionFiles = downloadCourseWorkSubmissionFiles

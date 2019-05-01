@@ -77,26 +77,27 @@ function execute(socket, input) {
     })
   })
 }
+*/
 
 async function downloadSourceAndTests(socket, courseId, courseWorkId, submissionId) {
   return new Promise((resolve, reject) => {
     socket.emit('downloadSourceAndTests', { courseId, courseWorkId, submissionId }, status => resolve(status))
   })
-} */
+}
 
 async function compileSource(socket) {
   return new Promise((resolve, reject) => {
-    socket.emit('compileSource', null, status => resolve(status))
+    socket.emit('compileSource', status => resolve(status))
   })
 }
 
 
-async function runTests(socket, executionTimeout, containerId) {
+async function runTests(socket, executionTimeout, memLimitMB, containerId) {
   return new Promise((resolve, reject) => {
     const testResults = []
-    const status = { ok: true, message: 'All tests run' }
 
-    function endExecution(executionStatus) {
+    async function endExecution(executionStatus) {
+      let status
       if (await killedByOOM(containerId)) {
         status = {
           ok: false,
@@ -110,20 +111,24 @@ async function runTests(socket, executionTimeout, containerId) {
     }
 
     socket.on('testResult', result => testResults.push(result))
-    socket.on('executionEnd', endExecution)
-    socket.on('error', endExecution)
+    socket.on('executionEnd', () => endExecution({ ok: true, message: 'All tests run' }))
+    socket.on('error', () => endExecution({ ok: false, message: 'Internal Socket error' }))
 
-    socket.emit('runTests')
+    socket.emit('runTests', { executionTimeout, memLimitMB })
   })
 }
 
 
 
 app.post("/run", async (req, res) => {
-  const { courseId, courseWorkId, submissionId, executionTimeout } = req.body
+  console.log('/run activated')
+  const { courseId, courseWorkId, submissionId, executionTimeout, memLimitMB } = req.body
   let { port, containerId } = await startContainer()
+  console.log('port: ', port)
+  console.log('containerId: ', containerId)
   let socket = SocketIOClient(`http://localhost:${port}`)
   socket.on("connect", async () => {
+    console.log('docker connected')
     /* let error = null
     let data = null
     try {
@@ -146,15 +151,22 @@ app.post("/run", async (req, res) => {
     let testResults = []
     let status = await downloadSourceAndTests(socket, courseId, courseWorkId, submissionId)
 
+    console.log('downloaded files')
+
     if (status.ok) {
       status = await compileSource(socket)
     }
 
+    console.log('compiled source')
+
     if (status.ok) {
-      const result = await runTests(socket, executionTimeout, containerId)
+      const result = await runTests(socket, executionTimeout, memLimitMB, containerId)
       testResults = result.testResults
       status = result.status
+      console.log('status: ')
     }
+
+    console.log('ran tests')
 
     socket.emit('stopContainer')
     socket.close()
