@@ -180,6 +180,7 @@ server.on('connection', client => {
               input: FS.readFileSync(inputPath, 'utf8'),
               expectedOutput,
               output: stdout,
+              // TODO: This timeout identification is not 100% reliable
               error: !err ? '' : stderr || 'Timeout',
               pass: !err && stdout === expectedOutput
             }
