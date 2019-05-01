@@ -515,4 +515,201 @@ describe('/run', function () {
       )
     ])
   })
+
+  it('should allow multiple users at the same time', async () => {
+    const anotherSubmissionId = 'another-test-id'
+    await Promise.all([
+      cloudstorage.uploadCourseWorkSubmissionFiles(
+        testCourseId,
+        testCourseWorkId,
+        testSubmissionId,
+        correctSubmissionDir
+      ),
+      cloudstorage.uploadCourseWorkSubmissionFiles(
+        testCourseId,
+        testCourseWorkId,
+        anotherSubmissionId,
+        wrongSubmissionDir
+      ),
+      cloudstorage.uploadCourseWorkTestFiles(
+        testCourseId,
+        testCourseWorkId,
+        [{
+          input: resolve(sampleTestsDir, 'input0'),
+          output: resolve(sampleTestsDir, 'output0')
+        }, {
+          input: resolve(sampleTestsDir, 'input1'),
+          output: resolve(sampleTestsDir, 'output1')
+        }]
+      )
+    ])
+
+    const options = clone_obj(default_options)
+    options.body = {
+      courseId: testCourseId,
+      courseWorkId: testCourseWorkId,
+      submissionId: testSubmissionId,
+      executionTimeout: 30000,
+      memLimitMB: 1024
+    }
+    const options1 = clone_obj(default_options)
+    options1.body = {
+      courseId: testCourseId,
+      courseWorkId: testCourseWorkId,
+      submissionId: anotherSubmissionId,
+      executionTimeout: 30000,
+      memLimitMB: 1024
+    }
+
+    const responses = await Promise.all([request(options), request(options1)])
+    const [test0Response, test1Response] = responses[0].testResults
+    const [test0Response1, test1Response1] = responses[1].testResults
+    const { status } = responses[0]
+    const { status: status1 } = responses[1]
+
+    assert.equal(
+      status.ok,
+      true
+    )
+
+    assert.equal(
+      status.message,
+      'All tests run'
+    )
+
+
+    assert.equal(
+      test0Response.input,
+      readFileSync(resolve(sampleTestsDir, 'input0'))
+    )
+
+    assert.equal(
+      test1Response.input,
+      readFileSync(resolve(sampleTestsDir, 'input1'))
+    )
+
+    assert.equal(
+      test0Response.expectedOutput,
+      readFileSync(resolve(sampleTestsDir, 'output0'))
+    )
+
+    assert.equal(
+      test1Response.expectedOutput,
+      readFileSync(resolve(sampleTestsDir, 'output1'))
+    )
+
+    assert.equal(
+      test0Response.expectedOutput,
+      test0Response.output
+    )
+
+    assert.equal(
+      test1Response.expectedOutput,
+      test1Response.output
+    )
+
+    assert.equal(
+      test0Response.error,
+      ''
+    )
+
+    assert.equal(
+      test1Response.error,
+      ''
+    )
+
+    assert.equal(
+      test0Response.pass,
+      true
+    )
+
+    assert.equal(
+      test1Response.pass,
+      true
+    )
+
+    //
+
+    assert.equal(
+      status1.ok,
+      true
+    )
+
+    assert.equal(
+      status1.message,
+      'All tests run'
+    )
+
+    assert.equal(
+      test0Response1.input,
+      readFileSync(resolve(sampleTestsDir, 'input0'))
+    )
+
+    assert.equal(
+      test1Response1.input,
+      readFileSync(resolve(sampleTestsDir, 'input1'))
+    )
+
+    assert.equal(
+      test0Response1.expectedOutput,
+      readFileSync(resolve(sampleTestsDir, 'output0'))
+    )
+
+    assert.equal(
+      test1Response1.expectedOutput,
+      readFileSync(resolve(sampleTestsDir, 'output1'))
+    )
+
+    assert.equal(
+      test0Response1.expectedOutput,
+      test0Response1.output
+    )
+
+    assert.notEqual(
+      test1Response1.expectedOutput,
+      test1Response1.output
+    )
+
+    assert.equal(
+      test0Response1.error,
+      ''
+    )
+
+    assert.equal(
+      test1Response1.error,
+      ''
+    )
+
+    assert.equal(
+      test0Response1.pass,
+      true
+    )
+
+    assert.equal(
+      test1Response1.pass,
+      false
+    )
+
+
+    await Promise.all([
+      cloudstorage.deleteCourseWorkSubmissionFiles(
+        testCourseId,
+        testCourseWorkId,
+        testSubmissionId
+      ),
+      cloudstorage.deleteCourseWorkSubmissionFiles(
+        testCourseId,
+        testCourseWorkId,
+        anotherSubmissionId
+      ),
+      cloudstorage.deleteCourseWorkTestFiles(
+        testCourseId,
+        testCourseWorkId
+      )
+    ])
+  })
+
+  after(() => {
+    process.exit(0)
+  })
 })
