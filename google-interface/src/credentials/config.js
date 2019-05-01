@@ -40,6 +40,7 @@ const SCOPES = [
   'https://www.googleapis.com/auth/classroom.push-notifications',
   'https://www.googleapis.com/auth/classroom.rosters',
   'https://www.googleapis.com/auth/classroom.coursework.students',
-  'https://www.googleapis.com/auth/drive'
+  'https://www.googleapis.com/auth/drive',
+  'https://www.googleapis.com/auth/classroom.coursework.me'
 ];
 exports.SCOPES = SCOPES
