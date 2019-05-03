@@ -26,15 +26,31 @@ describe('Drive', function () {
   })
 
   it('should inform MIME type', async function () {
-    const fileId = await drive.createFile(testCourseId, createReadStream(
-      resolve(__dirname, 'sample-files', 'file4.zip')
-    ))
-    const mime = await drive.getFileMIME(testCourseId, fileId)
+    const fileIds = await Promise.all(
+      ['file4.zip', 'file5.tar', 'file6.tar.gz']
+        .map(fileName => drive.createFile(testCourseId, createReadStream(
+          resolve(__dirname, 'sample-files', fileName)
+        )))
+    )
+    const mimes = await Promise.all(
+      fileIds.map(fileId => drive.getFileMIME(testCourseId, fileId))
+    )
     assert.notEqual(
-      drive.MIME.zip.indexOf(mime),
+      drive.MIME.zip.indexOf(mimes[0]),
       -1,
       'Zip file MIME not correctly identified'
     )
+    assert.notEqual(
+      drive.MIME.tar.indexOf(mimes[1]),
+      -1,
+      'Tar file MIME not correctly identified'
+    )
+    assert.notEqual(
+      drive.MIME.gzip.indexOf(mimes[2]),
+      -1,
+      'Gzip file MIME not correctly identified'
+    )
+    await Promise.all(fileIds.map(fileId => drive.deleteFile(testCourseId, fileId)))
   })
 
 

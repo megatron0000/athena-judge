@@ -4,7 +4,7 @@ let request = require('request-promise-native');
 require('../src/credentials/config');
 
 
-const { Authenticate } = require('../src/credentials/auth')
+const { getOAuth2ClientFromLocalCredentials } = require('../src/credentials/auth')
 const { AttachPubSubListener, StopPubSub } = require('../src/pubsub')
 const { classroom_v1 } = require('googleapis')
 
@@ -14,7 +14,7 @@ describe('Pub/Sub', function () {
 
   it('should enable listening for Classroom notifications', async () => {
 
-    const auth = await Authenticate()
+    const auth = await getOAuth2ClientFromLocalCredentials()
     const classroom = new classroom_v1.Classroom({ auth })
 
     const { data } = await classroom.courses.courseWork.create({
@@ -25,7 +25,7 @@ describe('Pub/Sub', function () {
         workType: 'ASSIGNMENT'
       }
     })
-
+    
     return new Promise((resolve, reject) => {
       AttachPubSubListener(async () => {
         await classroom.courses.courseWork.delete({

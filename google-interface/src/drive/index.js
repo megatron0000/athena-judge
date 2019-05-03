@@ -1,31 +1,27 @@
 const { google } = require('googleapis')
 const { getOAuth2Client } = require('../credentials/auth')
 const { createWriteStream } = require('fs')
-
-drive_instance = null
+const { mkdirSync } = require('mkdir-recursive')
+const { dirname } = require('path')
 
 /**
  * 
  * @param {string} courseId 
  */
 async function getDrive(courseId) {
-  if (!drive_instance) {
-    const auth = await getOAuth2Client(courseId)
-    drive_instance = google.drive({
-      version: 'v3',
-      auth
-    })
-  }
-
-  return drive_instance
+  return google.drive({
+    version: 'v3',
+    auth: await getOAuth2Client(courseId)
+  })
 }
 
 /**
- * @param courseId {string}
- * @param fileId {string}
+ * @param {string} courseId
+ * @param {string} fileId
  * @returns {string}
  */
 exports.downloadFile = async function downloadFile(courseId, fileId, localDestinationPath) {
+  mkdirSync(dirname(localDestinationPath))
   const drive = await getDrive(courseId)
   // ref: https://github.com/AfroMan94/lern2drive/blob/28dd6b7a8a4c9e3d42fcfc2b7189d96bdc3fc5d0/services/googleDrive/googleDrive.js
   const { data: stream } = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'stream' })
@@ -38,7 +34,7 @@ exports.downloadFile = async function downloadFile(courseId, fileId, localDestin
 }
 
 /**
- * @param content {string | ReadableStream}
+ * @param {string | ReadableStream} content 
  * @returns {string} the created file id
  */
 exports.createFile = async function createFile(courseId, content) {
@@ -70,5 +66,11 @@ exports.MIME = {
     'application/zip',
     'multipart/x-zip',
     'application/x-zip'
+  ],
+  tar: [
+    'application/x-tar'
+  ],
+  gzip: [
+    'application/x-gzip'
   ]
 }

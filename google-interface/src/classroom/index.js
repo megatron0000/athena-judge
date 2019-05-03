@@ -2,21 +2,16 @@ require('../credentials/config')
 const { google } = require('googleapis')
 const { getOAuth2Client } = require('../credentials/auth')
 
-classroom_instance = null
 
 /**
  * 
  * @param {string} courseId 
  */
 async function classroom(courseId) {
-  if (!classroom_instance) {
-    classroom_instance = google.classroom({
-      version: 'v1',
-      auth: await getOAuth2Client(courseId)
-    })
-  }
-
-  return classroom_instance
+  return google.classroom({
+    version: 'v1',
+    auth: await getOAuth2Client(courseId)
+  })
 }
 
 /**
@@ -76,4 +71,28 @@ exports.getStudentMailFromSubmission = async function getStudentMailFromSubmissi
   const { emailAddress } = studentObj.profile
 
   return emailAddress
+}
+
+exports.submissionIsTurnedIn = async function submissionIsTurnedIn(courseId, courseWorkId, submissionId) {
+  const { data: submissionObj } = await (await classroom(courseId)).courses.courseWork.studentSubmissions.get({
+    courseId,
+    courseWorkId,
+    id: submissionId
+  })
+
+  return submissionObj.state === 'TURNED_IN'
+}
+
+exports.getSubmissionDriveFileIds = async function getSubmissionDriveFileIds(courseId, courseWorkId, submissionId) {
+  const { data: submissionObj } = await (await classroom(courseId)).courses.courseWork.studentSubmissions.get({
+    courseId,
+    courseWorkId,
+    id: submissionId
+  })
+
+  return submissionObj
+    .assignmentSubmission
+    .attachments
+    .filter(attachment => attachment.driveFile && true)
+    .map(attachment => attachment.driveFile.id)
 }
