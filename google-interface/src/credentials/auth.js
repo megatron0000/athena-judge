@@ -34,7 +34,7 @@ exports.Authenticate = function Authenticate() {
         err.message = 'Error loading client oauth credentials file: ' + err.message
         return reject(err)
       }
-      // Authorize a client with credentials, then call the Google Classroom API.
+      // Authorize a client with credentials
       authorize(JSON.parse(credentials), resolve, reject);
     });
   }
