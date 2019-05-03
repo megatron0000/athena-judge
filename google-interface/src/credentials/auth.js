@@ -69,7 +69,7 @@ function authorize(credentials, userTokenPath, resolve, reject) {
 /**
  * Get and store new token after prompting for user authorization, and then
  * execute the given callback with the authorized OAuth2 client.
- * @param {google.auth.OAuth2} oAuth2Client The OAuth2 client to get token for.
+ * @param {OAuth2Client} oAuth2Client The OAuth2 client to get token for.
  */
 function getNewToken(oAuth2Client, userTokenPath, resolve, reject) {
   const authUrl = oAuth2Client.generateAuthUrl({
@@ -133,7 +133,7 @@ exports.getOAuth2Client = async function getOAuth2Client(courseId) {
           })
         })),
       new Promise((resolve, reject) => {
-        fs.readFile(OAUTH_CLIENT_CREDENTIALS_PATH, (err, clientCred) => {
+        fs.readFile(process.env['OAUTH_CLIENT_CREDENTIALS_PATH'], (err, clientCred) => {
           if (err) {
             reject(err)
           }

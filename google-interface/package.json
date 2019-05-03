@@ -11,6 +11,7 @@
   "dependencies": {
     "@google-cloud/pubsub": "^0.28.1",
     "@google-cloud/storage": "^2.5.0",
+    "@types/mocha": "^5.2.6",
     "googleapis": "^39.2.0",
     "mkdir-recursive": "^0.4.0"
   },
