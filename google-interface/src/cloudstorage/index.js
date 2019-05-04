@@ -7,7 +7,7 @@ const path = require('path')
  * @param {string} dir
  * @param {Promise<string[]>} fileList
  */
-const allFiles = async (dir, fileList = []) => {
+const allFiles = async (dir) => {
   const dirContent = await fs.readdir(dir)
   const subDirsContent = []
   const fileList = []
@@ -18,7 +18,7 @@ const allFiles = async (dir, fileList = []) => {
     if (stat.isFile()) {
       fileList.push(cont)
     } else if (stat.isDirectory()) {
-      subDirsContent.push(allFiles(path.join(dir, cont)))
+      subDirsContent.push(allFiles(path.posix.join(dir, cont)))
     }
   }))
 
@@ -35,7 +35,7 @@ const allFiles = async (dir, fileList = []) => {
  * @param {*} localDirectory  path of the directory containing the student's submission files
  */
 async function uploadCourseWorkSubmissionFiles(courseId, courseWorkId, submissionId, localDirectory) {
-  const cloudDirectory = path.join(
+  const cloudDirectory = path.posix.join(
     courseId,
     'courseWorks',
     courseWorkId,
@@ -47,8 +47,8 @@ async function uploadCourseWorkSubmissionFiles(courseId, courseWorkId, submissio
   return Promise.all(
     files.map(file =>
       GCS.uploadFile(
-        path.join(localDirectory, file),
-        path.join(cloudDirectory, file)
+        path.posix.join(localDirectory, file),
+        path.posix.join(cloudDirectory, file)
       )))
 }
 
@@ -59,11 +59,11 @@ async function uploadCourseWorkSubmissionFiles(courseId, courseWorkId, submissio
  * @param {{input: string; output: string}[]}  files
  */
 function uploadCourseWorkTestFiles(courseId, courseWorkId, files) {
-  const cloudDirectory = path.join(courseId, 'courseWorks', courseWorkId, 'testFiles')
+  const cloudDirectory = path.posix.join(courseId, 'courseWorks', courseWorkId, 'testFiles')
 
   const uploads = []
   files.forEach((f, i) => {
-    const uploadDir = path.join(cloudDirectory, i.toString())
+    const uploadDir = path.posix.join(cloudDirectory, i.toString())
 
     uploads.push(GCS.uploadFile(f.input, uploadDir, 'input'))
     uploads.push(GCS.uploadFile(f.output, uploadDir, 'output'))
@@ -174,7 +174,7 @@ async function downloadCourseWorkSubmissionFiles(courseId, courseWorkId, submiss
   return Promise.all(
     filenames.map(filename => GCS.downloadFile(
       filename,
-      path.join(
+      path.posix.join(
         localDestinationDir,
         path.relative(cloudDirectory, filename)
       )
@@ -194,7 +194,7 @@ async function downloadCourseWorkTestFiles(courseId, courseWorkId, submissionId,
   return Promise.all(
     filenames.map(filename => GCS.downloadFile(
       filename,
-      path.join(
+      path.posix.join(
         localDestinationDir,
         path.relative(cloudDirectory, filename)
       )
