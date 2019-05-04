@@ -40,7 +40,7 @@ const messageHandler = async message => {
   console.log(`\tData: ${message.data}`);
   console.log(`\tAttributes: ${JSON.stringify(message.attributes)}\n`); */
 
-  await Promise.all(listeners.forEach(listener => listener(message)))
+  await Promise.all(listeners.map(listener => listener(message)))
 
   // "Ack" (acknowledge receipt of) the message
   message.ack();

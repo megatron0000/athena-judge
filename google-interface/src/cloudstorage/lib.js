@@ -91,7 +91,7 @@ async function downloadFile(srcFilename, destFilename) {
       };
 
       // Downloads the file
-      bucket.file(srcFilename).download(options).then(reject)
+      bucket.file(srcFilename).download(options).then(resolve)
     })
   })
 

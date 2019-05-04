@@ -39,7 +39,7 @@ exports.getOAuth2ClientFromLocalCredentials = function getOAuth2ClientFromLocalC
  * given callback function.
  * @param {Object} credentials The authorization client credentials.
  */
-function authorize(credentials, userTokenPath) {
+async function authorize(credentials, userTokenPath) {
   const {
     client_secret,
     client_id,

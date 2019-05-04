@@ -15,7 +15,7 @@ const { uploadCourseWorkSubmissionFiles } = require('./google-interface/cloudsto
  */
 async function findFileRecursive(rootDir, searchName) {
   const filenames = await readdir(rootDir)
-  const fileStats = await Promise.all(filename.map(file => stat(join(rootDir, file))))
+  const fileStats = await Promise.all(filenames.map(file => stat(join(rootDir, file))))
   const dirs = []
 
   const result = []
