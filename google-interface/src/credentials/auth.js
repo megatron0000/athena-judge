@@ -6,7 +6,7 @@
 const { OAuth2Client } = require('googleapis-common')
 const { SCOPES } = require('./config')
 
-const fs = require('fs')
+const fs = require('promise-fs')
 const path = require('path')
 const readline = require('readline')
 const {
@@ -29,19 +29,9 @@ exports.getOAuth2ClientFromLocalCredentials = function getOAuth2ClientFromLocalC
   oauthClientCredentialsPath = oauthClientCredentialsPath || process.env['OAUTH_CLIENT_CREDENTIALS_FILE']
   oauthUserTokenPath = oauthUserTokenPath || process.env['OAUTH_USER_TOKEN_FILE']
 
-  function resolver(resolve, reject) {
-    // Load client secrets from a local file.
-    fs.readFile(oauthClientCredentialsPath, (err, credentials) => {
-      if (err) {
-        err.message = 'Error loading client oauth credentials file: ' + err.message
-        return reject(err)
-      }
-      // Authorize a client with credentials
-      authorize(JSON.parse(credentials), oauthUserTokenPath, resolve, reject)
-    })
-  }
+  const  credentials = await fs.readFile(oauthClientCredentialsPath)
 
-  return new Promise(resolver)
+  return authorize(JSON.parse(credentials), oauthUserTokenPath)
 }
 
 /**
@@ -49,21 +39,21 @@ exports.getOAuth2ClientFromLocalCredentials = function getOAuth2ClientFromLocalC
  * given callback function.
  * @param {Object} credentials The authorization client credentials.
  */
-function authorize(credentials, userTokenPath, resolve, reject) {
+function authorize(credentials, userTokenPath) {
   const {
     client_secret,
     client_id,
     redirect_uris
   } = credentials.installed
-  const oAuth2Client = new google.auth.OAuth2(
-    client_id, client_secret, redirect_uris[0]); // does not throw
+  const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]); // does not throw
 
-  // Check if we have previously stored a token.
-  fs.readFile(userTokenPath, (err, token) => {
-    if (err) return getNewToken(oAuth2Client, userTokenPath, resolve, reject)
+  try {
+    const token = await fs.readFile(userTokenPath)
     oAuth2Client.setCredentials(JSON.parse(token))
-    resolve(oAuth2Client)
-  })
+    return oAuth2Client
+  } catch {
+    return getNewToken(oAuth2Client, userTokenPath)
+  }
 }
 
 /**
@@ -71,7 +61,7 @@ function authorize(credentials, userTokenPath, resolve, reject) {
  * execute the given callback with the authorized OAuth2 client.
  * @param {OAuth2Client} oAuth2Client The OAuth2 client to get token for.
  */
-function getNewToken(oAuth2Client, userTokenPath, resolve, reject) {
+function getNewToken(oAuth2Client, userTokenPath) {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: SCOPES,
@@ -84,22 +74,21 @@ function getNewToken(oAuth2Client, userTokenPath, resolve, reject) {
     output: process.stdout,
   })
 
-  rl.question('Enter the code from that page here: ', (code) => {
+  return rl.question('Enter the code from that page here: ', (code) => {
     rl.close()
 
-    oAuth2Client.getToken(code, (err, token) => {
-      if (err) {
-        err.message = 'Error retrieving access token: ' + err.message
-        return reject(err)
-      }
-      oAuth2Client.setCredentials(token)
-      // Store the token to disk for later program executions
-      fs.writeFile(userTokenPath, JSON.stringify(token), (err) => {
-        if (err) return reject(err)
+      return oAuth2Client.getToken(code, async (err, token) => {
+        if (err) {
+          err.message = 'Error retrieving access token: ' + err.message
+          throw err
+        }
+        oAuth2Client.setCredentials(token)
+        // Store the token to disk for later program executions
+        await fs.writeFile(userTokenPath, JSON.stringify(token))
+
         console.log('Token stored to', userTokenPath)
-        resolve(oAuth2Client)
+        return oAuth2Client
       })
-    })
   })
 }
 
@@ -112,9 +101,9 @@ const credcache = {}
  * Creates an OAuth2Client based on courseId, by finding the credentials of the course teacher
  * stored on Cloud Storage
  * @param {string} courseId
- * @throws {Error} If no credentials are found in Cloud Storage for the specified course. 
+ * @throws {Error} If no credentials are found in Cloud Storage for the specified course.
  * This happens when the course's teacher had not previously given permissions to the application
- * 
+ *
  * TODO: The local credential cache may incur in problems if the credential is ever updated
  * solely on Cloud Storage
  */
@@ -124,22 +113,10 @@ exports.getOAuth2Client = async function getOAuth2Client(courseId) {
 
     const [token, clientCred] = await Promise.all([
       gcs.downloadTeacherCredential(courseId, tokenPath)
-        .then(() => new Promise((resolve, reject) => {
-          fs.readFile(tokenPath, (err, token) => {
-            if (err) {
-              reject(err)
-            }
-            return resolve(JSON.parse(token))
-          })
-        })),
-      new Promise((resolve, reject) => {
-        fs.readFile(process.env['OAUTH_CLIENT_CREDENTIALS_PATH'], (err, clientCred) => {
-          if (err) {
-            reject(err)
-          }
-          return resolve(JSON.parse(clientCred))
-        })
-      })
+        .then(() => fs.readFile(tokenPath))
+        .then(JSON.parse),
+      fs.readFile(process.env['OAUTH_CLIENT_CREDENTIALS_PATH'])
+        .then(JSON.parse)
     ])
 
     const {
