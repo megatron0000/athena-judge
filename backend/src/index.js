@@ -121,7 +121,7 @@ if (module === require.main) {
       ? 0.0
       : !testResults.length
         ? 10
-        : 10 * testResults.filter(r => r).length / testResults.length
+        : 10 * testResults.filter(r => r.pass).length / testResults.length
 
     await assignGradeToSubmission(courseId, courseWorkId, submissionId, grade)
   })
