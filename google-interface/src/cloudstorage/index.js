@@ -65,8 +65,8 @@ function uploadCourseWorkTestFiles(courseId, courseWorkId, files) {
   files.forEach((f, i) => {
     const uploadDir = path.posix.join(cloudDirectory, i.toString())
 
-    uploads.push(GCS.uploadFile(f.input, uploadDir, 'input'))
-    uploads.push(GCS.uploadFile(f.output, uploadDir, 'output'))
+    uploads.push(GCS.uploadFile(f.input, path.posix.join(uploadDir, 'input')))
+    uploads.push(GCS.uploadFile(f.output, path.posix.join(uploadDir, 'output')))
   })
 
   return Promise.all(uploads)
