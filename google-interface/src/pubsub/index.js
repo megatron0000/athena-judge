@@ -2,58 +2,48 @@
  * Listens for notifications in a specific Pub/Sub subscription
  */
 
-const { PubSub } = require('@google-cloud/pubsub');
-require('../credentials/config')
+const { PubSub } = require('@google-cloud/pubsub')
+const { getProjectId } = require('../credentials/config')
 
-// Creates a client
-const pubsub = new PubSub({
-  projectId: process.env['GOOGLE_PROJECT_ID'],
-  keyFilename: process.env['PUBSUB_LISTENER_SERVICEACCOUNT_CREDENTIALS']
-});
+// must be accessed by getSubscription()
+let subscription
 
-/**
- * TODO(developer): Uncomment the following lines to run the sample.
- */
-// const subscriptionName = 'my-sub';
-// const timeout = 60;
+async function getSubscription() {
+  if (!subscription) {
+    const projectId = await getProjectId()
 
-// References an existing subscription
-const subscription = pubsub.subscription(process.env['PUBSUB_SUBSCRIPTION']);
+    const pubsub = new PubSub({
+      projectId: projectId,
+      keyFilename: process.env['PUBSUB_LISTENER_SERVICEACCOUNT_CREDENTIALS']
+    })
+
+    subscription = pubsub.subscription(
+      'projects/' + projectId + '/subscriptions/' + process.env['PUBSUB_SUBSCRIPTION_SHORTNAME']
+    )
+  }
+
+  return subscription
+}
 
 const listeners = []
 
-
-
-exports.AttachPubSubListener = AttachPubSubListener
 /**
- *
- * @param {(notification: any) => any} cb
- */
-function AttachPubSubListener(cb) {
+*
+* @param {(notification: any) => any} cb
+*/
+exports.AttachPubSubListener = function AttachPubSubListener(cb) {
   listeners.push(cb)
 }
 
+exports.StartPubSub = async function StartPubSub() {
+  (await getSubscription()).on('message', async message => {
+    message.ack()
+    await Promise.all(listeners.map(listener => listener(message)))
+  })
+}
 
-// Create an event handler to handle messages
-const messageHandler = async message => {
-  // "Ack" (acknowledge receipt of) the message
-  message.ack();
 
-  /* console.log(`Received message ${message.id} (${new Date()}):`);
-  console.log(`\tData: ${message.data}`);
-  console.log(`\tAttributes: ${JSON.stringify(message.attributes)}\n`); */
-  await Promise.all(listeners.map(listener => listener(message)))
-};
-
-// Listen for new messages until timeout is hit
-subscription.on(`message`, messageHandler);
-
-// setTimeout(() => {
-//   subscription.removeListener('message', messageHandler);
-//   console.log(`${messageCount} message(s) received.`);
-// }, timeout * 1000);
-
-exports.StopPubSub = StopPubSub
-function StopPubSub() {
-  return subscription.close()
+exports.StopPubSub = async function StopPubSub() {
+  const subscr = await getSubscription()
+  return subscr.close()
 }

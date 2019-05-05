@@ -1,10 +1,10 @@
-const { AttachPubSubListener } = require('./google-interface/pubsub')
+const { StartPubSub, AttachPubSubListener } = require('./google-interface/pubsub')
 const { getFileMIME, MIME, downloadFile } = require('./google-interface/drive')
 const { submissionIsTurnedIn, submissionIsReturned, assignGradeToSubmission, getSubmissionDriveFileIds } = require('./google-interface/classroom')
 const request = require('request-promise-native')
 const { resolve, dirname, join } = require('path')
-const decompress = require('decompress')
 const { unlink, readdir, stat } = require('promise-fs')
+const decompress = require('decompress')
 const { uploadCourseWorkSubmissionFiles } = require('./google-interface/cloudstorage')
 
 /**
@@ -165,6 +165,11 @@ AttachPubSubListener(async notification => {
       ? 10
       : 10 * testResults.filter(r => r.pass).length / testResults.length
 
+  console.log(status)
+  console.log(testResults)
+
   await assignGradeToSubmission(courseId, courseWorkId, submissionId, grade)
 
 })
+
+StartPubSub().then(() => console.log('Listening on Pub/Sub...'))

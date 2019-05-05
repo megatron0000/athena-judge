@@ -129,25 +129,6 @@ app.post("/run", async (req, res) => {
   let socket = SocketIOClient(`http://localhost:${port}`)
   socket.on("connect", async () => {
     console.log('docker connected')
-    /* let error = null
-    let data = null
-    try {
-      error = "WriteError"
-      await writeSource(socket, source)
-      error = "CompileError"
-      await compile(socket)
-      error = "RuntimeError"
-      data = await execute(socket, input)
-      error = null
-    } catch (outputs) {
-      console.log("error:", outputs)
-      data = outputs
-      if (await killedByOOM(containerId)) {
-        error = 'OutOfMemoryError'
-      } else if (outputs[outputs.length - 2].data === 'Time Limit Exceeded') {
-        error = 'TimeLimitError'
-      }
-    } */
     let testResults = []
     let status = await downloadSourceAndTests(socket, courseId, courseWorkId, submissionId)
 
@@ -155,18 +136,17 @@ app.post("/run", async (req, res) => {
 
     if (status.ok) {
       status = await compileSource(socket)
+      console.log('compiled source')
     }
-
-    console.log('compiled source')
 
     if (status.ok) {
       const result = await runTests(socket, executionTimeout, memLimitMB, containerId)
       testResults = result.testResults
       status = result.status
-      console.log('status: ')
+      console.log('ran tests')
     }
-
-    console.log('ran tests')
+    
+    console.log('status: ', status)
 
     socket.emit('stopContainer')
     socket.close()

@@ -1,6 +1,6 @@
 /// <reference types="mocha"/>
 const { getOAuth2ClientFromLocalCredentials } = require('../src/google-interface/credentials/auth')
-const { uploadCourseWorkTestFiles, uploadTeacherCredential } = require('../src/google-interface/cloudstorage')
+const { deleteCourseWorkTestFiles, uploadCourseWorkTestFiles, uploadTeacherCredential } = require('../src/google-interface/cloudstorage')
 const { google } = require('googleapis')
 const { createReadStream } = require('fs')
 const { resolve } = require('path')
@@ -12,13 +12,61 @@ let studentDrive
 let testCourseWorkId
 const sampleTestsDir = resolve(__dirname, 'sample-files/sample-tests')
 
+const schedule = {
+  _queue: [],
+  /**
+   * 
+   * @param {(...args: any[]) => any} cb 
+   */
+  registerForLater(cb) {
+    this._queue.push(cb)
+  },
+  executeScheduled() {
+    return Promise.all(
+      this._queue.map(cb => new Promise(async (resolve, reject) => {
+        try {
+          await cb()
+          resolve(null)
+        } catch (err) {
+          Error.captureStackTrace(err, this)
+          resolve(err)
+        }
+      }))
+    )
+      .then(results => {
+        const errors = results.filter(result => result !== null)
+        if (errors.length === 0) {
+          return
+        }
+
+        const message = errors.map(err =>
+          'Error in scheduled function: \n' + err.stack + '\n'
+        ).join('\n')
+
+        throw new Error(
+          message +
+          errors.length + ' out of ' + results.length + ' executeScheduled functions generated errors. See above.'
+        )
+
+      })
+  }
+}
+
+
+/**
+ * TODO: Test more cases: main.cpp inside folders, other compressed formats, etc.
+ */
 describe('Integration', function () {
   this.timeout(120000)
 
+  afterEach(async () => {
+    await schedule.executeScheduled()
+  })
+
   before(async () => {
     const teacherAuth = await getOAuth2ClientFromLocalCredentials(
-      undefined,
-      process.env['OAUTH_USER_TOKEN_FILE']
+      process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
+      process.env['CLASSROOM_TEST_COURSE_TEACHER_OAUTH_TOKEN_FILE']
     )
     teacherClassroom = google.classroom({
       version: 'v1',
@@ -26,7 +74,7 @@ describe('Integration', function () {
     })
 
     const studentAuth = await getOAuth2ClientFromLocalCredentials(
-      undefined,
+      process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
       process.env['CLASSROOM_TEST_COURSE_STUDENT_OAUTH_TOKEN_FILE']
     )
     studentClassroom = google.classroom({
@@ -38,7 +86,10 @@ describe('Integration', function () {
       auth: studentAuth
     })
 
-    await uploadTeacherCredential(process.env['CLASSROOM_TEST_COURSE_ID'], process.env['OAUTH_USER_TOKEN_FILE'])
+    await uploadTeacherCredential(
+      process.env['CLASSROOM_TEST_COURSE_ID'],
+      process.env['CLASSROOM_TEST_COURSE_TEACHER_OAUTH_TOKEN_FILE']
+    )
 
   })
 
@@ -55,6 +106,13 @@ describe('Integration', function () {
     })
     testCourseWorkId = courseWorkObj.id
 
+    schedule.registerForLater(async () => {
+      await teacherClassroom.courses.courseWork.delete({
+        courseId: process.env['CLASSROOM_TEST_COURSE_ID'],
+        id: testCourseWorkId
+      })
+    })
+
     await uploadCourseWorkTestFiles(
       process.env['CLASSROOM_TEST_COURSE_ID'],
       courseWorkObj.id,
@@ -67,11 +125,21 @@ describe('Integration', function () {
       }]
     )
 
+    schedule.registerForLater(async () => {
+      await deleteCourseWorkTestFiles(courseWorkObj.courseId, courseWorkObj.id)
+    })
+
     const { data: driveFile } = await studentDrive.files.create({
       media: {
         mimeType: 'application/x-zip',
         body: createReadStream(resolve(__dirname, 'sample-files', 'wrong-submission', 'proj.zip'))
       }
+    })
+
+    schedule.registerForLater(async () => {
+      await studentDrive.files.delete({
+        fileId: driveFile.id
+      })
     })
 
     const { data: submissionResponse } = await studentClassroom.courses.courseWork.studentSubmissions.list({
@@ -113,15 +181,6 @@ describe('Integration', function () {
       updatedStudentSubmission.assignedGrade,
       5
     )
-
-    await teacherClassroom.courses.courseWork.delete({
-      courseId: process.env['CLASSROOM_TEST_COURSE_ID'],
-      id: testCourseWorkId
-    })
-
-    await studentDrive.files.delete({
-      fileId: driveFile.id
-    })
 
 
   })

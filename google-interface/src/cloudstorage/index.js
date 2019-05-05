@@ -3,9 +3,25 @@ const fs = require('promise-fs')
 const path = require('path')
 
 /**
- * @returns {string[]} filenames relative to the 'dir'
+ * 
+ * @param {string} dirname
+ * @returns {Promise<void>}
+ */
+function mkdirRecursive(dirname) {
+  return new Promise((resolve, reject) => {
+    //@ts-ignore
+    require('mkdir-recursive').mkdir(dirname, err => {
+      if (err && !err.message.match('EEXIST')) {
+        return reject(err)
+      }
+      return resolve()
+    })
+  })
+}
+
+/**
+ * @returns {Promise<string[]>} filenames relative to the 'dir'
  * @param {string} dir
- * @param {Promise<string[]>} fileList
  */
 const allFiles = async (dir) => {
   const dirContent = await fs.readdir(dir)
@@ -13,12 +29,15 @@ const allFiles = async (dir) => {
   const fileList = []
 
   await Promise.all(dirContent.map(async cont => {
-    const stat = await fs.stat(cont)
+    const stat = await fs.stat(path.posix.join(dir, cont))
 
     if (stat.isFile()) {
       fileList.push(cont)
     } else if (stat.isDirectory()) {
-      subDirsContent.push(allFiles(path.posix.join(dir, cont)))
+      subDirsContent.push(
+        allFiles(path.posix.join(dir, cont))
+          .then(subfiles => subfiles.map(subfile => path.posix.join(cont, subfile)))
+      )
     }
   }))
 
@@ -168,8 +187,8 @@ function downloadTeacherCredential(courseId, localDestinationPath) {
  * @param {string} localDestinationDir
  */
 async function downloadCourseWorkSubmissionFiles(courseId, courseWorkId, submissionId, localDestinationDir) {
-	// make a dir even if no file will be downloaded
-  await fs.mkdir(localDestinationDir)
+  // make a dir even if no file will be downloaded
+  await mkdirRecursive(localDestinationDir)
   const cloudDirectory = path.posix.join(
     courseId,
     'courseWorks',
@@ -191,8 +210,8 @@ async function downloadCourseWorkSubmissionFiles(courseId, courseWorkId, submiss
 }
 
 async function downloadCourseWorkTestFiles(courseId, courseWorkId, submissionId, localDestinationDir) {
-	// make a dir even if no file will be downloaded
-  await fs.mkdir(localDestinationDir)
+  // make a dir even if no file will be downloaded
+  await mkdirRecursive(localDestinationDir)
   const cloudDirectory = path.posix.join(
     courseId,
     'courseWorks',

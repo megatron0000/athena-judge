@@ -1,6 +1,7 @@
 require('../credentials/config')
 const { google } = require('googleapis')
 const { getOAuth2Client } = require('../credentials/auth')
+const {getProjectId} = require('../credentials/config')
 
 
 /**
@@ -25,7 +26,7 @@ exports.createRegistration = async function createRegistration(courseId) {
   await (await classroom(courseId)).registrations.create({
     requestBody: {
       cloudPubsubTopic: {
-        topicName: process.env['PUBSUB_TOPIC']
+        topicName: 'projects/' + (await getProjectId()) + '/topics/' + process.env['PUBSUB_TOPIC_SHORTNAME']
       },
       feed: {
         feedType: 'COURSE_WORK_CHANGES',

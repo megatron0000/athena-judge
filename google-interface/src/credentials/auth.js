@@ -17,16 +17,20 @@ const gcs = require('../cloudstorage')
 
 /**
  * Create an OAuth2Client from credentials in the local filesystem.
- * @param {string} oauthClientCredentialsPath Optional. If not supplied, it is infered from env vars
- * @param {string} oauthUserTokenPath Optional. If not supplied, it is infered from env vars
+ * @param {string} oauthClientCredentialsPath
+ * @param {string} oauthUserTokenPath
  * @returns {Promise<OAuth2Client>}
  */
 exports.getOAuth2ClientFromLocalCredentials = async function getOAuth2ClientFromLocalCredentials(
   oauthClientCredentialsPath,
   oauthUserTokenPath
 ) {
-  oauthClientCredentialsPath = oauthClientCredentialsPath || process.env['OAUTH_CLIENT_CREDENTIALS_FILE']
-  oauthUserTokenPath = oauthUserTokenPath || process.env['OAUTH_USER_TOKEN_FILE']
+  if (!oauthClientCredentialsPath) {
+    throw new Error('Did not supply oauthClientCredentialsPath')
+  }
+  if (!oauthUserTokenPath) {
+    throw new Error('Did not supply oauthUserTokenPath')
+  }
 
   const credentials = await fs.readFile(oauthClientCredentialsPath)
 
@@ -109,13 +113,13 @@ const credcache = {}
  */
 exports.getOAuth2Client = async function getOAuth2Client(courseId) {
   if (!credcache[courseId]) {
-    const tokenPath = path.resolve(__dirname, 'credcache', courseId.toString())
+    const tokenPath = path.resolve('/tmp', 'athena-judge', 'credcache', courseId.toString())
 
     const [token, clientCred] = await Promise.all([
       gcs.downloadTeacherCredential(courseId, tokenPath)
         .then(() => fs.readFile(tokenPath))
         .then(JSON.parse),
-      fs.readFile(process.env['OAUTH_CLIENT_CREDENTIALS_PATH'])
+      fs.readFile(process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'])
         .then(JSON.parse)
     ])
 

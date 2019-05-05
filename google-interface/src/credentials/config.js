@@ -1,3 +1,5 @@
+const fs = require('promise-fs')
+
 /**
  * Environment variables and auth scopes.
  * 
@@ -18,23 +20,28 @@ function configEnvironment() {
     if (envLine[0] === '#') {
       return
     }
+    
     // if is appropriately written (i.e. name=value)
     const match = envLine.match(/(.+?)=(.+)/)
     if (!match) {
       return
     }
+    
+    let name = match[1]
+    let value = match[2]
+    
+
     // if is relative directory
-    if (match[2].substr(0, 2) === './') {
-      process.env[match[1]] = path.resolve(__dirname, match[2])
+    if (value.substr(0, 2) === './') {
+      process.env[name] = path.resolve(__dirname, value)
     } else {
-      process.env[match[1]] = match[2]
+      process.env[name] = value
     }
   })
 }
 
 configEnvironment()
 
-// If modifying these scopes, delete user token credentials
 const SCOPES = [
   'https://www.googleapis.com/auth/classroom.courses',
   'https://www.googleapis.com/auth/classroom.push-notifications',
@@ -44,3 +51,13 @@ const SCOPES = [
   'https://www.googleapis.com/auth/classroom.coursework.me'
 ];
 exports.SCOPES = SCOPES
+
+/**
+ * @returns {Promise<string>}
+ */
+exports.getProjectId = async function getProjectId() {
+  const credContent = JSON.parse(
+    await fs.readFile(process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'])
+  )
+  return credContent.installed.project_id
+}

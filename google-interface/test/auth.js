@@ -13,7 +13,10 @@ describe('Authentication', function () {
 
   it('should use locally-stored credentials automatically', async () => {
 
-    const auth = await getOAuth2ClientFromLocalCredentials()
+    const auth = await getOAuth2ClientFromLocalCredentials(
+      process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
+      process.env['CLASSROOM_TEST_COURSE_TEACHER_OAUTH_TOKEN_FILE']
+    )
     const classroom = new classroom_v1.Classroom({ auth })
 
     const { data } = await classroom.courses.courseWork.create({

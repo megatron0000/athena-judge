@@ -1,12 +1,14 @@
 /**
- * Finish setupProjectFirstTime() function. Missing some configurations yet
+ * TODO: Use promise-fs to avoid synchronous IO code
  */
 
+require('./google-interface/credentials/config')
 const { google } = require('googleapis')
 const readline = require('readline')
 const { readFileSync, writeFileSync, existsSync } = require('fs')
-const { resolve, relative } = require('path')
-const { getOAuth2ClientFromLocalCredentials } = require('../google-interface/src/credentials/auth')
+const { resolve, relative, basename } = require('path')
+const { getOAuth2ClientFromLocalCredentials } = require('./google-interface/credentials/auth')
+const { getProjectId } = require('./google-interface/credentials/config')
 
 function promisifiedReadlineInterface() {
   const interface = readline.createInterface({
@@ -107,7 +109,7 @@ function addMemberToProjectRole_inplace(projectPolicies, memberName, role) {
  * for the snippet used below.
  * And https://github.com/adobe/helix-logging/blob/10f81c68f7b5672b902f00c9165a77682bf87658/test/testGoogleIAM.js
  * for tests indicating the validity of this approach
- * @param {{privateKeyData: string, [key: string]: string}} credentialDownloadedThroughClientLib 
+ * @param {{privateKeyData: string, [key: string]: any}} credentialDownloadedThroughClientLib 
  */
 function convertServiceAccountCredential(credentialDownloadedThroughClientLib) {
   return JSON.parse(
@@ -138,11 +140,15 @@ async function setupProjectFirstTime() {
 
   console.log('Create a Google Cloud Platform Project.')
   console.log(
-    'Generate an OAuth Client ID for it, download it as JSON and store it ' +
+    'Generate an OAuth2 Client ID for it, download it as JSON and store it ' +
     'on the "src/credentials" directory inside the "google-interface" directory ' +
-    '(absolute path ' + resolve(__dirname, '../google-interface/src/credentials') + ').' +
-    'Name the file however you want (like "oauth_client.json").'
+    '(absolute path ' + resolve(__dirname, '../google-interface/src/credentials') + ').'
   )
+  console.log(
+    'Name the file exactly "' + basename(process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE']) +
+    '", without the quotes, though.'
+  )
+  await prompt.question('Press Enter when you are done...')
 
   const scopes = [
     'https://www.googleapis.com/auth/cloud-platform'
@@ -150,17 +156,9 @@ async function setupProjectFirstTime() {
 
   const credentialsPath = resolve(__dirname, '../google-interface/src/credentials')
 
-  const oauthCredPath = resolve(
-    credentialsPath,
-    await prompt.question(
-      'Paste here the name you gave to the OAuth credentials file: ',
-      'oauth-client-credentials.json'
-    )
-  )
-  const oauthTokenPath = resolve(
-    credentialsPath,
-    'oauth-user-token.json'
-  )
+  const oauthCredPath = process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE']
+
+  const oauthTokenPath = process.env['OAUTH_PROJECT_ADMIN_TOKEN_FILE']
 
   const auth = await getOAuth2Client(
     oauthCredPath,
@@ -169,10 +167,10 @@ async function setupProjectFirstTime() {
     oauthTokenPath
   )
 
-  const projId = await prompt.question('Paste your project ID here (not project number or project name): ')
-  const projNumber = await prompt.question('Paste your project number here (not project ID or project name): ')
+  const projId = await getProjectId()
+  const projNumber = await prompt.question('Paste your project\'s number here (not project ID or project name): ')
 
-  console.log('Enabling APIs...')
+  console.log('\nEnabling APIs (this may take a couple of minutes)...')
 
   const serviceusage = google.serviceusage({
     version: 'v1',
@@ -212,7 +210,7 @@ async function setupProjectFirstTime() {
     })
   }
 
-  console.log('Enabled APIs')
+  console.log('Enabled APIs\n')
 
   console.log('Creating Pub/Sub handling service account...')
 
@@ -231,16 +229,8 @@ async function setupProjectFirstTime() {
     requestBody: {}
   })
 
-  const pubsubAccountName = await prompt.question(
-    'Paste a display name to be given to the service account which will control Pub/Sub ' +
-    '(no restriction on name, except that it must be less than 100 UTF-8 bytes): ',
-    'pubsub listener'
-  )
-  const pubsubAccountId = await prompt.question(
-    'Paste an account ID to be given to the service account which will control Pub/Sub ' +
-    '(6-30 characters, matching regular expression [a-z]([-a-z0-9]*[a-z0-9]): ',
-    'pubsub-listener'
-  )
+  const pubsubAccountName = process.env['PUBSUB_LISTENER_SERVICEACCOUNT_DISPLAY_NAME']
+  const pubsubAccountId = process.env['PUBSUB_LISTENER_SERVICEACCOUNT_ID']
 
   const { data: pubsubAccount } = await iam.projects.serviceAccounts.create({
     name: 'projects/' + projId,
@@ -260,28 +250,17 @@ async function setupProjectFirstTime() {
     }
   })
 
-  const pubsubAccountKeyPath = resolve(
-    credentialsPath,
-    'pubsub-listener-serviceaccount-credentials.json'
-  )
+  const pubsubAccountKeyPath = process.env['PUBSUB_LISTENER_SERVICEACCOUNT_CREDENTIALS']
 
   writeFileSync(pubsubAccountKeyPath, JSON.stringify(convertServiceAccountCredential(pubsubAccountKey)))
 
-  console.log('Created Pub/Sub handling service account')
+  console.log('Created Pub/Sub handling service account\n')
 
   console.log('Creating Cloud Storage handling service account...')
 
 
-  const storageAccountName = await prompt.question(
-    'Paste a display name to be given to the service account which will control Cloud Storage' +
-    '(no restriction on name, except that it must be less than 100 UTF-8 bytes): ',
-    'cloudstorage handler'
-  )
-  const storageAccountId = await prompt.question(
-    'Paste an account ID to be given to the service account which will control Cloud Storage ' +
-    '(6-30 characters, matching regular expression [a-z]([-a-z0-9]*[a-z0-9]): ',
-    'cloudstorage-handler'
-  )
+  const storageAccountName = process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_DISPLAY_NAME']
+  const storageAccountId = process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_ID']
 
   const { data: storageAccount } = await iam.projects.serviceAccounts.create({
     name: 'projects/' + projId,
@@ -301,27 +280,16 @@ async function setupProjectFirstTime() {
     }
   })
 
-  const storageAccountKeyPath = resolve(
-    credentialsPath,
-    'cloudstorage-handler-serviceaccount-credentials.json'
-  )
+  const storageAccountKeyPath = process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_CREDENTIALS']
 
   writeFileSync(storageAccountKeyPath, JSON.stringify(convertServiceAccountCredential(storageAccountKey)))
 
-  console.log('Created Cloud Storage handling service account')
+  console.log('Created Cloud Storage handling service account\n')
 
   console.log('Creating Pub/Sub topic and subscription...')
 
-  const topicName = 'projects/' + projId + '/topics/' + await prompt.question(
-    'Paste a name for the Pub/Sub topic to be created\n' +
-    '[must start with a letter, and contain only letters ([A-Za-z]), numbers ([0-9]), dashes (-), underscores (_), periods (.), tildes (~), plus (+) or percent signs (%). It must be between 3 and 255 characters in length, and it must not start with "goog"]: ',
-    'PenguinTopic'
-  )
-  const subscriptionName = 'projects/' + projId + '/subscriptions/' + await prompt.question(
-    'Paste a name for the Pub/Sub subscription to be created\n' +
-    '[must start with a letter, and contain only letters ([A-Za-z]), numbers ([0-9]), dashes (-), underscores (_), periods (.), tildes (~), plus (+) or percent signs (%). It must be between 3 and 255 characters in length, and it must not start with "goog"]: ',
-    'PenguinSubscription'
-  )
+  const topicName = 'projects/' + projId + '/topics/' + process.env['PUBSUB_TOPIC_SHORTNAME']
+  const subscriptionName = 'projects/' + projId + '/subscriptions/' + process.env['PUBSUB_SUBSCRIPTION_SHORTNAME']
 
   const pubsub = google.pubsub({
     version: 'v1',
@@ -340,7 +308,7 @@ async function setupProjectFirstTime() {
     }
   })
 
-  console.log('Created Pub/Sub topic and subscription')
+  console.log('Created Pub/Sub topic and subscription\n')
 
   console.log('Defining Pub/Sub and Cloud Storage service account permissions...')
 
@@ -361,17 +329,13 @@ async function setupProjectFirstTime() {
     }
   })
 
-  console.log('Defined service accounts permissions')
+  console.log('Defined service accounts permissions\n')
 
-  console.log('Creating compute engine instance (virtual machine)...')
+  console.log('Creating compute engine instance (this may take a couple of minutes)...')
 
-  const instanceName = await prompt.question(
-    'Paste here a name to be given to the instance (virtual machine). ' +
-    '[ Must be 1-63 characters long and match the regular expression [a-z]([-a-z0-9]*[a-z0-9])? ]: ',
-    'instance-1'
-  )
+  const instanceName = process.env['VM_INSTANCE_NAME']
   // const zone = "https://www.googleapis.com/compute/v1/projects/" + projId + "/zones/us-central1-a"
-  const zone = 'us-central1-a'
+  const zone = process.env['VM_ZONE']
 
   const compute = google.compute({
     version: 'v1',
@@ -463,6 +427,15 @@ async function setupProjectFirstTime() {
     })
   }
 
+  console.log('Created Compute Engine VM instance\n')
+
+  return
+
+  /**
+   * TODO: Complete the setup by configuring VM instance and deploying for
+   * the first time
+   */
+
   google.oslogin({
     version: 'v1',
     auth
@@ -474,33 +447,6 @@ async function setupProjectFirstTime() {
     instance: instanceName
   }))
 
-  const envConfigOutput = `# This is a commentary. 
-  # whitespace in lines are treated literally
-  # example: "VAR = some thing" will store key 'VAR ' and value ' some thing'
-  
-  GOOGLE_PROJECT_ID=${projId}
-  
-  OAUTH_CLIENT_CREDENTIALS_FILE=./${relative(credentialsPath, oauthCredPath)}
-  
-  OAUTH_USER_TOKEN_FILE=./${relative(credentialsPath, oauthTokenPath)}
-  
-  # Used internally by google APIs (is actually the pubsub listener)
-  GOOGLE_APPLICATION_CREDENTIALS=./${relative(credentialsPath, pubsubAccountKeyPath)}
-  
-  PUBSUB_LISTENER_SERVICEACCOUNT_CREDENTIALS=./${relative(credentialsPath, pubsubAccountKeyPath)}
-  
-  PUBSUB_TOPIC=${topicName}
-  
-  PUBSUB_SUBSCRIPTION=${subscriptionName}
-  
-  CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_CREDENTIALS=./${relative(credentialsPath, storageAccountKeyPath)}
-  
-  CLOUDSTORAGE_BUCKET_NAME=bucket-name-athena-test
-  
-  # CES-TESTE course, for now
-  CLASSROOM_TEST_COURSE_ID=31645086781`
-
-  console.log('Created Compute Engine VM instance')
 
 
 }
@@ -508,8 +454,8 @@ async function setupProjectFirstTime() {
 async function listTmpDriveFilesThatShouldBeDeleted() {
 
   const teacherAuth = await getOAuth2ClientFromLocalCredentials(
-    undefined,
-    process.env['OAUTH_USER_TOKEN_FILE']
+    process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
+    process.env['CLASSROOM_TEST_COURSE_TEACHER_OAUTH_TOKEN_FILE']
   )
   const teacherDrive = google.drive({
     version: 'v3',
@@ -517,7 +463,7 @@ async function listTmpDriveFilesThatShouldBeDeleted() {
   })
 
   const studentAuth = await getOAuth2ClientFromLocalCredentials(
-    undefined,
+    process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
     process.env['CLASSROOM_TEST_COURSE_STUDENT_OAUTH_TOKEN_FILE']
   )
   const studentDrive = google.drive({
@@ -542,6 +488,6 @@ async function listTmpDriveFilesThatShouldBeDeleted() {
 }
 
 if (require.main === module) {
-  // setupProjectFirstTime().then(() => console.log('Done. Exiting...'))
-  listTmpDriveFilesThatShouldBeDeleted().then(() => console.log('Done. Exiting...'))
+  setupProjectFirstTime().then(() => console.log('Done. Exiting...'))
+  // listTmpDriveFilesThatShouldBeDeleted().then(() => console.log('Done. Exiting...'))
 }

@@ -1,8 +1,24 @@
 const { google } = require('googleapis')
 const { getOAuth2Client } = require('../credentials/auth')
 const { createWriteStream } = require('fs')
-const { mkdirSync } = require('mkdir-recursive')
 const { dirname } = require('path')
+
+/**
+ * 
+ * @param {string} dirname
+ * @returns {Promise<void>}
+ */
+function mkdirRecursive(dirname) {
+  return new Promise((resolve, reject) => {
+    //@ts-ignore
+    require('mkdir-recursive').mkdir(dirname, err => {
+      if (err && !err.message.match('EEXIST')) {
+        return reject(err)
+      }
+      return resolve()
+    })
+  })
+}
 
 /**
  * 
@@ -21,7 +37,7 @@ async function getDrive(courseId) {
  * @returns {string}
  */
 exports.downloadFile = async function downloadFile(courseId, fileId, localDestinationPath) {
-  mkdirSync(dirname(localDestinationPath))
+  await mkdirRecursive(dirname(localDestinationPath))
   const drive = await getDrive(courseId)
   // ref: https://github.com/AfroMan94/lern2drive/blob/28dd6b7a8a4c9e3d42fcfc2b7189d96bdc3fc5d0/services/googleDrive/googleDrive.js
   const { data: stream } = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'stream' })
