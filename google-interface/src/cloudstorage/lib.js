@@ -1,8 +1,8 @@
 require('../credentials/config')
 
-const fs = require('fs')
+const fs = require('promise-fs')
 const path = require('path')
-const { mkdirSync } = require('mkdir-recursive')
+const { mkdir } = require('mkdir-recursive')
 
 // Imports the Google Cloud client library.
 const { Storage } = require('@google-cloud/storage');
@@ -21,10 +21,9 @@ const bucket = storage.bucket(process.env['CLOUDSTORAGE_BUCKET_NAME'])
 
 'use strict';
 
-async function listFiles() {
-
+function listFiles() {
   // Lists files in the bucket
-  return await bucket.getFiles();
+  return bucket.getFiles();
 
 }
 
@@ -58,10 +57,10 @@ async function listFilesByPrefix(prefix) {
   return files.map(file => file.name);
 }
 
-async function uploadFile(localFilename, destinationPath) {
+function uploadFile(localFilename, destinationPath) {
 
   // Uploads a local file to the bucket
-  await bucket.upload(localFilename, {
+  return bucket.upload(localFilename, {
     // Support for HTTP requests made with `Accept-Encoding: gzip`
     gzip: false,
     destination: destinationPath,
@@ -81,21 +80,26 @@ async function uploadFile(localFilename, destinationPath) {
 
 async function downloadFile(srcFilename, destFilename) {
 
-  mkdirSync(path.dirname(destFilename))
+  return new Promise((resolve, reject) => {
+    mkdir(path.dirname(destFilename), err => {
+      if (err) reject(err)
 
-  const options = {
-    // The path to which the file should be downloaded, e.g. "./file.txt"
-    destination: destFilename,
-    gzip: false
-  };
+      const options = {
+        // The path to which the file should be downloaded, e.g. "./file.txt"
+        destination: destFilename,
+        gzip: false
+      };
 
-  // Downloads the file
-  await bucket.file(srcFilename).download(options);
+      // Downloads the file
+      bucket.file(srcFilename).download(options).then(resolve)
+    })
+  })
+
 
   // [END storage_download_file]
 }
 
-async function deleteFile(filename) {
+function deleteFile(filename) {
 
   // Deletes the file from the bucket
   return bucket.file(filename).delete();
@@ -104,10 +108,10 @@ async function deleteFile(filename) {
 }
 
 /**
- * 
- * @param {string[]} filenames 
+ *
+ * @param {string[]} filenames
  */
-async function deleteFiles(filenames) {
+function deleteFiles(filenames) {
   return Promise.all(filenames.map(deleteFile))
 }
 

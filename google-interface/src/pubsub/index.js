@@ -26,8 +26,8 @@ const listeners = []
 
 exports.AttachPubSubListener = AttachPubSubListener
 /**
- * 
- * @param {(notification: any) => any} cb 
+ *
+ * @param {(notification: any) => any} cb
  */
 function AttachPubSubListener(cb) {
   listeners.push(cb)
@@ -35,12 +35,12 @@ function AttachPubSubListener(cb) {
 
 
 // Create an event handler to handle messages
-const messageHandler = message => {
+const messageHandler = async message => {
   /* console.log(`Received message ${message.id} (${new Date()}):`);
   console.log(`\tData: ${message.data}`);
   console.log(`\tAttributes: ${JSON.stringify(message.attributes)}\n`); */
 
-  listeners.forEach(listener => listener(message))
+  await Promise.all(listeners.map(listener => listener(message)))
 
   // "Ack" (acknowledge receipt of) the message
   message.ack();
@@ -55,6 +55,6 @@ subscription.on(`message`, messageHandler);
 // }, timeout * 1000);
 
 exports.StopPubSub = StopPubSub
-async function StopPubSub() {
+function StopPubSub() {
   return subscription.close()
 }

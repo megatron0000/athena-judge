@@ -1,30 +1,34 @@
 const GCS = require('./lib'); // GCS = Google Cloud Storage
-const fs = require('fs')
+const fs = require('promise-fs')
 const path = require('path')
 
 /**
  * @returns {string[]} filenames relative to the 'dir'
- * @param {string} dir 
- * @param {string[]} fileList 
+ * @param {string} dir
+ * @param {Promise<string[]>} fileList
  */
-const allFilesSync = (dir, fileList = []) => {
-  fs.readdirSync(dir).forEach(file => {
-    const filePath = path.join(dir, file)
+const allFiles = async (dir) => {
+  const dirContent = await fs.readdir(dir)
+  const subDirsContent = []
+  const fileList = []
 
-    if (fs.statSync(filePath).isDirectory()) {
-      allFilesSync(filePath).forEach(children => {
-        fileList.push(path.join(file, children))
-      })
-    } else {
-      fileList.push(file)
+  await Promise.all(dirContent.map(async cont => {
+    const stat = await fs.stat(cont)
+
+    if (stat.isFile()) {
+      fileList.push(cont)
+    } else if (stat.isDirectory()) {
+      subDirsContent.push(allFiles(path.posix.join(dir, cont)))
     }
-  })
-  return fileList
+  }))
+
+  const subDirsFiles = await Promise.all(subDirsContent)
+  return fileList.concat(...subDirsFiles)
 }
 
 
 /**
- * 
+ *
  * @param {*} courseId google-id
  * @param {*} courseWorkId google-id
  * @param {*} submissionId google-id
@@ -38,54 +42,53 @@ async function uploadCourseWorkSubmissionFiles(courseId, courseWorkId, submissio
     'submissions',
     submissionId
   )
-  files = allFilesSync(localDirectory)
+  const files = await allFiles(localDirectory)
 
-  await Promise.all(
-    files.map(async file => {
-      await GCS.uploadFile(
-        path.join(localDirectory, file),
+  return Promise.all(
+    files.map(file =>
+      GCS.uploadFile(
+        path.posix.join(localDirectory, file),
         path.posix.join(cloudDirectory, file)
-      )
-    })
-  )
+      )))
 }
 
 /**
- * 
+ *
  * @param {string} courseId google-id
  * @param {string} courseWorkId google-id
  * @param {{input: string; output: string}[]}  files
  */
-async function uploadCourseWorkTestFiles(courseId, courseWorkId, files) {
+function uploadCourseWorkTestFiles(courseId, courseWorkId, files) {
   const cloudDirectory = path.posix.join(courseId, 'courseWorks', courseWorkId, 'testFiles')
 
-  await Promise.all(
-    files.map(async (file, index) => {
-      await Promise.all([
-        GCS.uploadFile(file.input, path.posix.join(cloudDirectory, index.toString(), 'input')),
-        GCS.uploadFile(file.output, path.posix.join(cloudDirectory, index.toString(), 'output'))
-      ])
-    })
-  )
+  const uploads = []
+  files.forEach((f, i) => {
+    const uploadDir = path.posix.join(cloudDirectory, i.toString())
+
+    uploads.push(GCS.uploadFile(f.input, path.posix.join(uploadDir, 'input')))
+    uploads.push(GCS.uploadFile(f.output, path.posix.join(uploadDir, 'output')))
+  })
+
+  return Promise.all(uploads)
 }
 
 /**
- * 
+ *
  * @param {string} courseId google-id
  * @param {string} localCredentialPath path to local credential file
  */
-async function uploadTeacherCredential(courseId, localCredentialPath) {
+function uploadTeacherCredential(courseId, localCredentialPath) {
   const cloudPath = path.posix.join(courseId, 'teacherCredential.json')
-  await GCS.uploadFile(localCredentialPath, cloudPath)
+  return GCS.uploadFile(localCredentialPath, cloudPath)
 }
 
 /**
- * 
+ *
  * @param {string} courseId google-id
  * @param {string} courseWorkId google-id
  * @param {string} submissionId google-id
  */
-async function deleteCourseWorkSubmissionFiles(courseId, courseWorkId, submissionId) {
+function deleteCourseWorkSubmissionFiles(courseId, courseWorkId, submissionId) {
   const cloudDirectory = path.posix.join(
     courseId,
     'courseWorks',
@@ -93,14 +96,14 @@ async function deleteCourseWorkSubmissionFiles(courseId, courseWorkId, submissio
     'submissions',
     submissionId
   )
-  const submissionFiles = await GCS.listFilesByPrefix(cloudDirectory)
-  await GCS.deleteFiles(submissionFiles)
+
+  return GCS.listFilesByPrefix(cloudDirectory).then(GCS.deleteFiles)
 }
 
 /**
- * 
- * @param {string} courseId 
- * @param {string} courseWorkId 
+ *
+ * @param {string} courseId
+ * @param {string} courseWorkId
  * @param {number} testNumber 0-based index of the test
  */
 async function deleteCourseWorkTestFile(courseId, courseWorkId, testNumber) {
@@ -111,52 +114,52 @@ async function deleteCourseWorkTestFile(courseId, courseWorkId, testNumber) {
     'testFiles',
     testNumber.toString()
   )
-  const testFiles = await GCS.listFilesByPrefix(cloudDirectory)
-  await GCS.deleteFiles(testFiles)
+
+  return GCS.listFilesByPrefix(cloudDirectory).then(GCS.deleteFiles)
 }
 
 /**
- * 
- * @param {string} courseId 
- * @param {string} courseWorkId 
+ *
+ * @param {string} courseId
+ * @param {string} courseWorkId
  */
-async function deleteCourseWorkTestFiles(courseId, courseWorkId) {
+function deleteCourseWorkTestFiles(courseId, courseWorkId) {
   const cloudDirectory = path.posix.join(
     courseId,
     'courseWorks',
     courseWorkId,
     'testFiles'
   )
-  const testFiles = await GCS.listFilesByPrefix(cloudDirectory)
-  await GCS.deleteFiles(testFiles)
+
+  return GCS.listFilesByPrefix(cloudDirectory).then(GCS.deleteFiles)
 }
 
 /**
- * 
- * @param {string} courseId 
+ *
+ * @param {string} courseId
  */
-async function deleteTeacherCredential(courseId) {
-  await GCS.deleteFile(path.posix.join(courseId, 'teacherCredential.json'))
+function deleteTeacherCredential(courseId) {
+  return GCS.deleteFile(path.posix.join(courseId, 'teacherCredential.json'))
 }
 
 /**
- * 
- * @param {string} courseId 
- * @param {string} localDestinationPath 
+ *
+ * @param {string} courseId
+ * @param {string} localDestinationPath
  */
-async function downloadTeacherCredential(courseId, localDestinationPath) {
-  await GCS.downloadFile(
+function downloadTeacherCredential(courseId, localDestinationPath) {
+  return GCS.downloadFile(
     path.posix.join(courseId, 'teacherCredential.json'),
     localDestinationPath
   )
 }
 
 /**
- * 
- * @param {string} courseId 
- * @param {string} courseWorkId 
- * @param {string} submissionId 
- * @param {string} localDestinationDir 
+ *
+ * @param {string} courseId
+ * @param {string} courseWorkId
+ * @param {string} submissionId
+ * @param {string} localDestinationDir
  */
 async function downloadCourseWorkSubmissionFiles(courseId, courseWorkId, submissionId, localDestinationDir) {
   const cloudDirectory = path.posix.join(
@@ -168,10 +171,10 @@ async function downloadCourseWorkSubmissionFiles(courseId, courseWorkId, submiss
   )
   const filenames = await GCS.listFilesByPrefix(cloudDirectory)
 
-  await Promise.all(
+  return Promise.all(
     filenames.map(filename => GCS.downloadFile(
       filename,
-      path.join(
+      path.posix.join(
         localDestinationDir,
         path.relative(cloudDirectory, filename)
       )
@@ -188,10 +191,10 @@ async function downloadCourseWorkTestFiles(courseId, courseWorkId, submissionId,
   )
   const filenames = await GCS.listFilesByPrefix(cloudDirectory)
 
-  await Promise.all(
+  return Promise.all(
     filenames.map(filename => GCS.downloadFile(
       filename,
-      path.join(
+      path.posix.join(
         localDestinationDir,
         path.relative(cloudDirectory, filename)
       )
