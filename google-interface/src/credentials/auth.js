@@ -21,7 +21,7 @@ const gcs = require('../cloudstorage')
  * @param {string} oauthUserTokenPath Optional. If not supplied, it is infered from env vars
  * @returns {Promise<OAuth2Client>}
  */
-exports.getOAuth2ClientFromLocalCredentials = function getOAuth2ClientFromLocalCredentials(
+exports.getOAuth2ClientFromLocalCredentials = async function getOAuth2ClientFromLocalCredentials(
   oauthClientCredentialsPath,
   oauthUserTokenPath
 ) {
@@ -50,7 +50,7 @@ async function authorize(credentials, userTokenPath) {
     const token = await fs.readFile(userTokenPath)
     oAuth2Client.setCredentials(JSON.parse(token))
     return oAuth2Client
-  } catch {
+  } catch (err) {
     return getNewToken(oAuth2Client, userTokenPath)
   }
 }

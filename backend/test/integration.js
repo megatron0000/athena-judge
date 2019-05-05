@@ -99,9 +99,6 @@ describe('Integration', function () {
       id: submissionObj.id
     })
 
-    // const { data: driveFiles } = await studentDrive.files.list({})
-
-
     let updatedStudentSubmission
     do {
       updatedStudentSubmission = (await studentClassroom.courses.courseWork.studentSubmissions.get({

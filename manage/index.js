@@ -6,6 +6,7 @@ const { google } = require('googleapis')
 const readline = require('readline')
 const { readFileSync, writeFileSync, existsSync } = require('fs')
 const { resolve, relative } = require('path')
+const { getOAuth2ClientFromLocalCredentials } = require('../google-interface/src/credentials/auth')
 
 function promisifiedReadlineInterface() {
   const interface = readline.createInterface({
@@ -504,6 +505,43 @@ async function setupProjectFirstTime() {
 
 }
 
+async function listTmpDriveFilesThatShouldBeDeleted() {
+
+  const teacherAuth = await getOAuth2ClientFromLocalCredentials(
+    undefined,
+    process.env['OAUTH_USER_TOKEN_FILE']
+  )
+  const teacherDrive = google.drive({
+    version: 'v3',
+    auth: teacherAuth
+  })
+
+  const studentAuth = await getOAuth2ClientFromLocalCredentials(
+    undefined,
+    process.env['CLASSROOM_TEST_COURSE_STUDENT_OAUTH_TOKEN_FILE']
+  )
+  const studentDrive = google.drive({
+    version: 'v3',
+    auth: studentAuth
+  })
+
+  const { data: driveFiles } = await studentDrive.files.list({
+    q: 'name = "Untitled" and mimeType = "application/x-zip"',
+    fields: '*'
+  })
+
+  console.log(driveFiles)
+
+  /* driveFiles.files.forEach(file => new Promise(async resolve => {
+    await teacherDrive.files.delete({
+      fileId: file.id
+    })
+    // to stay under google rate-limits 
+    setTimeout(resolve, 50)
+  })) */
+}
+
 if (require.main === module) {
-  setupProjectFirstTime().then(() => console.log('Done. Exiting...'))
+  // setupProjectFirstTime().then(() => console.log('Done. Exiting...'))
+  listTmpDriveFilesThatShouldBeDeleted().then(() => console.log('Done. Exiting...'))
 }

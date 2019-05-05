@@ -11,7 +11,7 @@ const { uploadCourseWorkSubmissionFiles } = require('./google-interface/cloudsto
  *
  * @param {string} rootDir Directory under which to search for a file
  * @param {*} searchName Filename to be searched (like "main.cpp")
- * @returns {string[]} Absolute paths of all matching files found
+ * @returns {Promise<string[]>} Absolute paths of all matching files found
  */
 async function findFileRecursive(rootDir, searchName) {
   const filenames = await readdir(rootDir)
