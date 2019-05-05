@@ -6,6 +6,7 @@ const { resolve, dirname, join } = require('path')
 const { unlink, readdir, stat } = require('promise-fs')
 const decompress = require('decompress')
 const { uploadCourseWorkSubmissionFiles } = require('./google-interface/cloudstorage')
+const Emailer = require('./emailer');
 
 /**
  *
@@ -170,6 +171,8 @@ AttachPubSubListener(async notification => {
 
   await assignGradeToSubmission(courseId, courseWorkId, submissionId, grade)
 
+  const emailer = new Emailer();
+  emailer.sendStubEmail(); // TODO
 })
 
 StartPubSub().then(() => console.log('Listening on Pub/Sub...'))
