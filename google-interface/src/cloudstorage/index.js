@@ -42,6 +42,10 @@ async function uploadCourseWorkSubmissionFiles(courseId, courseWorkId, submissio
     'submissions',
     submissionId
   )
+
+  // first delete old submission. System must only store the latest submission files
+  await deleteCourseWorkSubmissionFiles(courseId, courseWorkId, submissionId)
+
   const files = await allFiles(localDirectory)
 
   return Promise.all(
@@ -49,7 +53,9 @@ async function uploadCourseWorkSubmissionFiles(courseId, courseWorkId, submissio
       GCS.uploadFile(
         path.posix.join(localDirectory, file),
         path.posix.join(cloudDirectory, file)
-      )))
+      )
+    )
+  )
 }
 
 /**
@@ -162,6 +168,8 @@ function downloadTeacherCredential(courseId, localDestinationPath) {
  * @param {string} localDestinationDir
  */
 async function downloadCourseWorkSubmissionFiles(courseId, courseWorkId, submissionId, localDestinationDir) {
+	// make a dir even if no file will be downloaded
+  await fs.mkdir(localDestinationDir)
   const cloudDirectory = path.posix.join(
     courseId,
     'courseWorks',
@@ -183,6 +191,8 @@ async function downloadCourseWorkSubmissionFiles(courseId, courseWorkId, submiss
 }
 
 async function downloadCourseWorkTestFiles(courseId, courseWorkId, submissionId, localDestinationDir) {
+	// make a dir even if no file will be downloaded
+  await fs.mkdir(localDestinationDir)
   const cloudDirectory = path.posix.join(
     courseId,
     'courseWorks',

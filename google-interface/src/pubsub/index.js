@@ -36,14 +36,13 @@ function AttachPubSubListener(cb) {
 
 // Create an event handler to handle messages
 const messageHandler = async message => {
+  // "Ack" (acknowledge receipt of) the message
+  message.ack();
+
   /* console.log(`Received message ${message.id} (${new Date()}):`);
   console.log(`\tData: ${message.data}`);
   console.log(`\tAttributes: ${JSON.stringify(message.attributes)}\n`); */
-
   await Promise.all(listeners.map(listener => listener(message)))
-
-  // "Ack" (acknowledge receipt of) the message
-  message.ack();
 };
 
 // Listen for new messages until timeout is hit

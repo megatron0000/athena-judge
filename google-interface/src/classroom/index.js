@@ -48,10 +48,16 @@ exports.assignGradeToSubmission = async function assignGradeToSubmission(courseI
     courseId,
     courseWorkId,
     id: submissionId,
-    updateMask: 'assignedGrade',
+    updateMask: 'assignedGrade,draftGrade',
     resource: {
-      assignedGrade: grade
+      assignedGrade: grade,
+      draftGrade: grade
     }
+  })
+  await (await classroom(courseId)).courses.courseWork.studentSubmissions.return({
+    courseId,
+    courseWorkId,
+    id: submissionId
   })
 }
 
@@ -81,6 +87,16 @@ exports.submissionIsTurnedIn = async function submissionIsTurnedIn(courseId, cou
   })
 
   return submissionObj.state === 'TURNED_IN'
+}
+
+exports.submissionIsReturned = async function submissionIsTurnedIn(courseId, courseWorkId, submissionId) {
+  const { data: submissionObj } = await (await classroom(courseId)).courses.courseWork.studentSubmissions.get({
+    courseId,
+    courseWorkId,
+    id: submissionId
+  })
+
+  return submissionObj.state === 'RETURNED'
 }
 
 exports.getSubmissionDriveFileIds = async function getSubmissionDriveFileIds(courseId, courseWorkId, submissionId) {

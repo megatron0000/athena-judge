@@ -13,7 +13,6 @@ const {
   google
 } = require('googleapis')
 
-const pubsub = require('@google-cloud/pubsub')
 const gcs = require('../cloudstorage')
 
 /**
@@ -29,7 +28,7 @@ exports.getOAuth2ClientFromLocalCredentials = function getOAuth2ClientFromLocalC
   oauthClientCredentialsPath = oauthClientCredentialsPath || process.env['OAUTH_CLIENT_CREDENTIALS_FILE']
   oauthUserTokenPath = oauthUserTokenPath || process.env['OAUTH_USER_TOKEN_FILE']
 
-  const  credentials = await fs.readFile(oauthClientCredentialsPath)
+  const credentials = await fs.readFile(oauthClientCredentialsPath)
 
   return authorize(JSON.parse(credentials), oauthUserTokenPath)
 }
@@ -74,21 +73,22 @@ function getNewToken(oAuth2Client, userTokenPath) {
     output: process.stdout,
   })
 
-  return rl.question('Enter the code from that page here: ', (code) => {
-    rl.close()
-
-      return oAuth2Client.getToken(code, async (err, token) => {
+  return new Promise((resolve, reject) => {
+    rl.question('Enter the code from that page here: ', (code) => {
+      rl.close()
+      oAuth2Client.getToken(code, async (err, token) => {
         if (err) {
           err.message = 'Error retrieving access token: ' + err.message
-          throw err
+          return reject(err)
         }
         oAuth2Client.setCredentials(token)
         // Store the token to disk for later program executions
         await fs.writeFile(userTokenPath, JSON.stringify(token))
 
         console.log('Token stored to', userTokenPath)
-        return oAuth2Client
+        return resolve(oAuth2Client)
       })
+    })
   })
 }
 

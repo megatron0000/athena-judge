@@ -4,7 +4,8 @@ backend/static/
 backend/uploads/
 frontend/dist/bundle.js
 npm-debug.log
-**/credentials/*.json
+**/credentials/**/*.json
 get-docker.sh
 .vscode/
 **/credcache/**
+manage/backup
