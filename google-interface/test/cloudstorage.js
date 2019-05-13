@@ -171,4 +171,32 @@ describe('Cloud Storage', function () {
 
   })
 
+  it('should keep only the last student submission', async () => {
+    await GCS.uploadCourseWorkSubmissionFiles(
+      testCourseId,
+      testCourseWorkIds[0],
+      testSubmissionIds[0],
+      path.resolve(__dirname, 'sample-files')
+    )
+
+    await GCS.uploadCourseWorkSubmissionFiles(
+      testCourseId,
+      testCourseWorkIds[0],
+      testSubmissionIds[0],
+      path.resolve(__dirname, 'sample-files', 'empty-dir')
+    )
+
+    assert.equal(
+      (await storage.listFilesByPrefix(path.posix.join(
+        testCourseId,
+        'courseWorks',
+        testCourseWorkIds[0],
+        'submissions',
+        testSubmissionIds[0]
+      ))).length,
+      0
+    )
+
+  })
+
 })

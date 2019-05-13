@@ -20,16 +20,16 @@ function configEnvironment() {
     if (envLine[0] === '#') {
       return
     }
-    
+
     // if is appropriately written (i.e. name=value)
     const match = envLine.match(/(.+?)=(.+)/)
     if (!match) {
       return
     }
-    
+
     let name = match[1]
     let value = match[2]
-    
+
 
     // if is relative directory
     if (value.substr(0, 2) === './') {
@@ -53,11 +53,20 @@ const SCOPES = [
 exports.SCOPES = SCOPES
 
 /**
+ * Must be accessed via getProjectId()
+ */
+let _projIdCache
+
+/**
  * @returns {Promise<string>}
  */
 exports.getProjectId = async function getProjectId() {
-  const credContent = JSON.parse(
-    await fs.readFile(process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'])
-  )
-  return credContent.installed.project_id
+  if (!_projIdCache) {
+    const credContent = JSON.parse(
+      await fs.readFile(process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'])
+    )
+    _projIdCache = credContent.installed.project_id
+  }
+
+  return _projIdCache
 }
