@@ -8,7 +8,7 @@ const { google } = require('googleapis')
 const readline = require('readline')
 const { readFileSync, writeFileSync, existsSync } = require('fs')
 const { readFile } = require('promise-fs')
-const { resolve, basename } = require('path')
+const { resolve, basename, dirname } = require('path')
 const { getOAuth2ClientFromLocalCredentials } = require('./google-interface/credentials/auth')
 const { getProjectId } = require('./google-interface/credentials/config')
 const { spawn, exec } = require('child_process')
@@ -140,37 +140,46 @@ const INTERNAL = {
   },
 
   /**
+   * Invokes spawn() (from child_process module), piping stdout and stderr.
    * @returns {Promise<string>} On success, resolves with the stdout. On failure, rejects with the stderr
    */
-  runCommandOverSSH(commandString, privateKeyPath, username, hostnameOrIP) {
+  runPiped(command, args) {
     return new Promise((resolve, reject) => {
 
       let completeStdout = ''
       let completeStderr = ''
 
-      const child = spawn('ssh', [
-        '-i', privateKeyPath, '-o', 'StrictHostKeyChecking=no',
-        username + '@' + hostnameOrIP, commandString
-      ])
+      // use shell to allow substitutions and other preprocessing facilities
+      const child = spawn(command, args, { shell: true })
 
       child.stdout.on('data', data => {
         completeStdout += data.toString()
-        console.log(data.toString().split('\n').map(line => 'VM STDOUT: ' + line).join('\n'))
+        console.log(data.toString().split('\n').map(line => 'CHILD_PROCESS STDOUT: ' + line).join('\n'))
       })
 
       child.stderr.on('data', data => {
         completeStderr += data.toString()
-        console.log(data.toString().split('\n').map(line => 'VM STDERR: ' + line).join('\n'))
+        console.log(data.toString().split('\n').map(line => 'CHILD_PROCESS STDERR: ' + line).join('\n'))
       })
 
       child.on('close', code => {
-        console.log(`VM SSH command process exited with code ${code}`)
+        console.log(`child_process exited with code ${code}`)
         if (code) {
           return reject(completeStderr)
         }
         resolve(completeStdout)
       })
     })
+  },
+
+  /**
+   * @returns {Promise<string>} On success, resolves with the stdout. On failure, rejects with the stderr
+   */
+  runCommandOverSSH(commandString, privateKeyPath, username, hostnameOrIP) {
+    return INTERNAL.runPiped('ssh', [
+      '-i', privateKeyPath, '-o', 'StrictHostKeyChecking=no',
+      username + '@' + hostnameOrIP, commandString
+    ])
   },
 
   /**
@@ -195,6 +204,68 @@ const INTERNAL = {
         }
       )
     })
+  },
+  /**
+   * Setup information needed to connect (over SSH) to a Compute Engine instance.
+   */
+  async setupInstanceConnection() {
+    const auth = google.auth.fromJSON(JSON.parse(readFileSync(
+      process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_CREDENTIALS'],
+      'utf8'
+    )))
+    // @ts-ignore
+    auth.scopes = ['https://www.googleapis.com/auth/cloud-platform']
+
+    const compute = google.compute({
+      version: 'v1',
+      auth
+    })
+
+    const projId = await getProjectId()
+    const instanceName = process.env['VM_INSTANCE_NAME']
+    const zone = process.env['VM_ZONE']
+
+    const { data: instanceObj } = await compute.instances.get({
+      project: projId,
+      zone,
+      instance: instanceName
+    })
+
+    const instanceIP = INTERNAL.getInstanceIP(instanceObj)
+
+    const vmAccountEmail = JSON.parse(readFileSync(
+      process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_CREDENTIALS'],
+      'utf8'
+    )).client_email
+
+    const oslogin = google.oslogin({
+      version: 'v1',
+      auth
+    })
+
+    const sshKeys = await INTERNAL.createSSHKey()
+
+    const { data: vmLoginProfile } = await oslogin.users.importSshPublicKey({
+      // @ts-ignore
+      parent: 'users/' + vmAccountEmail,
+      projectId: projId,
+      requestBody: {
+        key: sshKeys.publicKey,
+        expirationTimeUsec: 1000 * (300000 + Date.now()) // Date.now() gives milliseconds. Set 300 seconds expiration
+      }
+    })
+
+    const vmUsername = vmLoginProfile.loginProfile.posixAccounts[0].username
+
+    return {
+      vmUsername,
+      sshKeys,
+      instanceIP,
+      instanceName,
+      zone,
+      projId
+    }
+
   }
 
 }
@@ -217,7 +288,10 @@ async function setupProjectFirstTime() {
     'Name the file exactly "' + basename(process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE']) +
     '", without the quotes, though.'
   )
-  await prompt.question('Press Enter when you are done...')
+  await prompt.question(
+    'Press Enter when you are done... (later, if asked to authorize this app, ' +
+    'use the same Google Account with which you created the Google Platform Project)'
+  )
 
   const scopes = [
     'https://www.googleapis.com/auth/cloud-platform'
@@ -604,58 +678,22 @@ async function setupProjectFirstTime() {
     await new Promise(resolve => setTimeout(resolve, 5000))
   }
 
-  console.log('Setup complete for VM instance')
+  console.log('Code deployed and setup OK for VM instance\n')
+
+  console.log('Uploading local credentials to remote VM instance...')
+
+  await uploadCredentials()
+
+  console.log('Uploaded local credentials\n')
 
 }
 
+/**
+ * Example: cmdString="ls /" will list all content of the root directory of the remote VM instance
+ */
 exports.runCommandOnVM = async function runCommandOnVM(cmdString) {
-  const auth = google.auth.fromJSON(JSON.parse(readFileSync(
-    process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_CREDENTIALS'],
-    'utf8'
-  )))
-  // @ts-ignore
-  auth.scopes = ['https://www.googleapis.com/auth/cloud-platform']
 
-  const compute = google.compute({
-    version: 'v1',
-    auth
-  })
-
-  const projId = await getProjectId()
-  const instanceName = process.env['VM_INSTANCE_NAME']
-  const zone = process.env['VM_ZONE']
-
-  const { data: instanceObj } = await compute.instances.get({
-    project: projId,
-    zone,
-    instance: instanceName
-  })
-
-  const instanceIP = INTERNAL.getInstanceIP(instanceObj)
-
-  const vmAccountEmail = JSON.parse(readFileSync(
-    process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_CREDENTIALS'],
-    'utf8'
-  )).client_email
-
-  const oslogin = google.oslogin({
-    version: 'v1',
-    auth
-  })
-
-  const sshKeys = await INTERNAL.createSSHKey()
-
-  const { data: vmLoginProfile } = await oslogin.users.importSshPublicKey({
-    // @ts-ignore
-    parent: 'users/' + vmAccountEmail,
-    projectId: projId,
-    requestBody: {
-      key: sshKeys.publicKey,
-      expirationTimeUsec: 1000 * (300000 + Date.now()) // Date.now() gives milliseconds. Set 300 seconds expiration
-    }
-  })
-
-  const vmUsername = vmLoginProfile.loginProfile.posixAccounts[0].username
+  const { sshKeys, vmUsername, instanceIP } = await INTERNAL.setupInstanceConnection()
 
   await INTERNAL.runCommandOverSSH(
     cmdString,
@@ -705,6 +743,26 @@ async function listTmpDriveFilesThatShouldBeDeleted() {
     // to stay under google rate-limits 
     setTimeout(resolve, 50)
   })) */
+}
+
+
+exports.uploadCredentials = uploadCredentials
+/**
+ * Upload local credential files to the VM instance running on Compute Engine,
+ * overwriting credentials already contained in it, if any
+ */
+async function uploadCredentials() {
+
+  const { vmUsername, instanceIP, sshKeys } = await INTERNAL.setupInstanceConnection()
+
+  return INTERNAL.runPiped('scp', [
+    '-i',
+    sshKeys.privateKeyPath,
+    '-o',
+    'StrictHostKeyChecking=no',
+    resolve(dirname(process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE']), '*.json'),
+    vmUsername + '@' + instanceIP + ':athena-latest/google-interface/src/credentials'
+  ])
 }
 
 if (require.main === module) {
