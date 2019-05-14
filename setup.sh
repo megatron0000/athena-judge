@@ -13,14 +13,15 @@ cd ../runner
 npm install
 cd ..
 
-# install PostgreSQL
-sudo apt-get install postgresql postgresql-contrib -y
+############# PostgreSQL no longer used (since Google deals with all database needs)
+# # install PostgreSQL
+# sudo apt-get install postgresql postgresql-contrib -y
 
-# create user 'athena' with password 'athena'
-sudo -u postgres psql -c "CREATE USER athena WITH PASSWORD 'athena'"
+# # create user 'athena' with password 'athena'
+# sudo -u postgres psql -c "CREATE USER athena WITH PASSWORD 'athena'"
 
-# create database 'athena' with owner 'athena'
-sudo -u postgres psql -c "CREATE DATABASE athena WITH OWNER='athena'"
+# # create database 'athena' with owner 'athena'
+# sudo -u postgres psql -c "CREATE DATABASE athena WITH OWNER='athena'"
 
 # install Docker
 sudo apt-get install curl -y
