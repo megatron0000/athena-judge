@@ -5,6 +5,9 @@ sudo npm install -g n
 sudo n 8.11.2
 
 # install NPM package dependecies
+cd google-interface/
+npm install
+cd ../backend
 cd backend
 npm install
 cd ../frontend
