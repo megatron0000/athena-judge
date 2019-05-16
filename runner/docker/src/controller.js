@@ -6,7 +6,7 @@ const { cloudstorage } = require('./google-interface')
 
 const PORT = 3002
 
-const server = SocketIO(3002, { serveClient: false })
+const server = SocketIO(PORT, { serveClient: false })
 
 function randomString() {
   return Math.random().toString(36).substring(2, 15)

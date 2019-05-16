@@ -1,9 +1,8 @@
 import Express from "express"
 import Cors from "cors"
 import SocketIOClient from "socket.io-client"
-import ChildProcess from "child_process"
-import Path from "path"
 import { setPortFree, startContainer, killedByOOM } from './containers'
+import { exec } from 'child_process'
 
 const PORT = 3001
 
@@ -17,67 +16,6 @@ app.use(Express.urlencoded({ extended: true }))
 app.get("/", (req, res) => {
   res.json({ data: "OK" })
 })
-
-/* function exec(command, options = {}) {
-  return new Promise((resolve, reject) => {
-    ChildProcess.exec(command, options, (err, stdout, stderr) => {
-      if (err) return reject(err)
-      resolve({ stdout, stderr })
-    })
-  })
-}
-
-function writeSource(socket, source) {
-  return new Promise((resolve, reject) => {
-    socket.emit("writeFile", { filename: "/app/program.cpp", contents: source }, (err) => {
-      if (err) return reject(err)
-      resolve()
-    })
-  })
-}
-
-function compile(socket) {
-  return new Promise((resolve, reject) => {
-    socket.emit("exec", { command: "g++", args: ["/app/program.cpp", "-o", "/app/program.o"] }, (data) => {
-      let { execId } = data
-      let output = []
-      socket.on(execId, (data2) => {
-        let { event, data } = data2
-        output.push(data2)
-        if (event === "exit") {
-          if (data === 0) {
-            resolve(output)
-          } else {
-            reject(output)
-          }
-          socket.off(execId)
-        }
-      })
-    })
-  })
-}
-
-function execute(socket, input) {
-  return new Promise((resolve, reject) => {
-    socket.emit("exec", { command: "/app/program.o", args: [], input: input, timeoutMs: 10000 }, (data) => {
-      let { execId } = data
-      let output = []
-      socket.on(execId, (data2) => {
-        let { event, data } = data2
-        output.push(data2)
-        if (event === "exit") {
-          if (data === 0) {
-            resolve(output)
-          } else {
-            reject(output)
-          }
-          socket.off(execId)
-        }
-      })
-    })
-  })
-}
-*/
 
 async function downloadSourceAndTests(socket, courseId, courseWorkId, submissionId) {
   return new Promise((resolve, reject) => {
@@ -122,10 +60,13 @@ async function runTests(socket, executionTimeout, memLimitMB, containerId) {
 
 app.post("/run", async (req, res) => {
   console.log('/run activated')
+
   const { courseId, courseWorkId, submissionId, executionTimeout, memLimitMB } = req.body
-  let { port, containerId } = await startContainer()
+  const { port, containerId } = await startContainer()
+
   console.log('port: ', port)
   console.log('containerId: ', containerId)
+
   let socket = SocketIOClient(`http://localhost:${port}`)
   socket.on("connect", async () => {
     console.log('docker connected')
@@ -145,7 +86,7 @@ app.post("/run", async (req, res) => {
       status = result.status
       console.log('ran tests')
     }
-    
+
     console.log('status: ', status)
 
     socket.emit('stopContainer')
@@ -154,6 +95,13 @@ app.post("/run", async (req, res) => {
     res.json({ testResults, status })
 
   })
+})
+
+/**
+ * Cleanup docker containers and exit
+ */
+app.post('/exit', () => {
+  exec('docker stop $(docker ps -q)', () => process.exit(0))
 })
 
 app.listen(PORT, () => {
