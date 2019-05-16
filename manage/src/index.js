@@ -691,7 +691,7 @@ async function setupProjectFirstTime() {
 /**
  * Example: cmdString="ls /" will list all content of the root directory of the remote VM instance
  */
-exports.runCommandOnVM = async function runCommandOnVM(cmdString) {
+async function runCommandOnVM(cmdString) {
 
   const { sshKeys, vmUsername, instanceIP } = await INTERNAL.setupInstanceConnection()
 
@@ -708,6 +708,18 @@ exports.runCommandOnVM = async function runCommandOnVM(cmdString) {
 
 }
 
+/**
+ * Stops backend listener and runner
+ * 
+ * TODO: After implementing App Engine, stop it as well
+ * 
+ * TODO: Create a common .env so as to avoid hard-coding port numbers
+ */
+async function stopVMProcesses() {
+  await runCommandOnVM(
+    'echo "exit" > /dev/tcp/localhost/3000 ;' // stop backend, which will tell runner to stop as well
+  )
+}
 
 async function listTmpDriveFilesThatShouldBeDeleted() {
 
@@ -746,7 +758,6 @@ async function listTmpDriveFilesThatShouldBeDeleted() {
 }
 
 
-exports.uploadCredentials = uploadCredentials
 /**
  * Upload local credential files to the VM instance running on Compute Engine,
  * overwriting credentials already contained in it, if any
@@ -768,4 +779,8 @@ async function uploadCredentials() {
 if (require.main === module) {
   setupProjectFirstTime().then(() => console.log('Done. Exiting...'))
   // listTmpDriveFilesThatShouldBeDeleted().then(() => console.log('Done. Exiting...'))
+}
+
+module.exports = {
+  setupProjectFirstTime
 }
