@@ -15,7 +15,7 @@ const PORT = 3000
 const portListener = createServer(socket => {
 
   socket.on('data', async data => {
-    const dataString = data.toString()
+    const dataString = data.toString().trim()
 
     if (dataString === 'exit') {
       await request({

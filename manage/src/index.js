@@ -143,14 +143,14 @@ const INTERNAL = {
    * Invokes spawn() (from child_process module), piping stdout and stderr.
    * @returns {Promise<string>} On success, resolves with the stdout. On failure, rejects with the stderr
    */
-  runPiped(command, args) {
+  runPiped(command, args, withShell = true) {
     return new Promise((resolve, reject) => {
 
       let completeStdout = ''
       let completeStderr = ''
 
       // use shell to allow substitutions and other preprocessing facilities
-      const child = spawn(command, args, { shell: true })
+      const child = spawn(command, args, { shell: withShell })
 
       child.stdout.on('data', data => {
         completeStdout += data.toString()
@@ -175,11 +175,11 @@ const INTERNAL = {
   /**
    * @returns {Promise<string>} On success, resolves with the stdout. On failure, rejects with the stderr
    */
-  runCommandOverSSH(commandString, privateKeyPath, username, hostnameOrIP) {
+  runCommandOverSSH(commandString, privateKeyPath, username, hostnameOrIP, withShell = false) {
     return INTERNAL.runPiped('ssh', [
       '-i', privateKeyPath, '-o', 'StrictHostKeyChecking=no',
       username + '@' + hostnameOrIP, commandString
-    ])
+    ], withShell)
   },
 
   /**
@@ -691,7 +691,7 @@ async function setupProjectFirstTime() {
 /**
  * Example: cmdString="ls /" will list all content of the root directory of the remote VM instance
  */
-async function runCommandOnVM(cmdString) {
+async function runCommandOnVM(cmdString, withShell = false) {
 
   const { sshKeys, vmUsername, instanceIP } = await INTERNAL.setupInstanceConnection()
 
@@ -699,7 +699,8 @@ async function runCommandOnVM(cmdString) {
     cmdString,
     sshKeys.privateKeyPath,
     vmUsername,
-    instanceIP
+    instanceIP,
+    withShell
   )
 
   // oslogin.users.sshPublicKeys.delete({
@@ -717,7 +718,7 @@ async function runCommandOnVM(cmdString) {
  */
 async function stopVMProcesses() {
   await runCommandOnVM(
-    'echo "exit" > /dev/tcp/localhost/3000 ;' // stop backend, which will tell runner to stop as well
+    'echo "exit" > /dev/tcp/localhost/3000 ;' // stop backend, which will tell runner to stop as well,
   )
 }
 
@@ -782,5 +783,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  setupProjectFirstTime
+  setupProjectFirstTime,
+  stopVMProcesses,
+  runCommandOnVM
 }
