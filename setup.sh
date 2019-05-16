@@ -2,7 +2,7 @@
 sudo apt-get update
 sudo apt-get install npm -y
 sudo npm install -g n
-sudo n latest
+sudo n 8.11.2
 
 # install NPM package dependecies
 cd backend
