@@ -6,6 +6,29 @@ const { resolve, dirname, join } = require('path')
 const { unlink, readdir, stat } = require('promise-fs')
 const decompress = require('decompress')
 const { uploadCourseWorkSubmissionFiles } = require('./google-interface/cloudstorage')
+const { createServer } = require('net')
+
+/**
+ * Listen on a port for receiving exit commands
+ */
+const PORT = 3000
+const portListener = createServer(socket => {
+
+  socket.on('data', async data => {
+    const dataString = data.toString()
+
+    if (dataString === 'exit') {
+      await request({
+        ...default_options,
+        uri: 'http://localhost:3001/exit'
+      })
+      process.exit(0)
+    }
+  })
+
+})
+
+portListener.listen(PORT)
 
 /**
  *
