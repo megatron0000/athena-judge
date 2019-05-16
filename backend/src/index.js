@@ -60,7 +60,7 @@ const run_endpoint = 'http://localhost:3001/run'
 const default_options = {
   method: 'POST',
   uri: run_endpoint,
-  body: null,
+  body: {},
   json: true
 }
 
