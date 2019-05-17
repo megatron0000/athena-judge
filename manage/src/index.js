@@ -164,6 +164,7 @@ const INTERNAL = {
 
       child.on('close', code => {
         console.log(`child_process exited with code ${code}`)
+        child.unref()
         if (code) {
           return reject(completeStderr)
         }
@@ -720,7 +721,7 @@ async function runCommandOnVM(cmdString, withShell = false) {
 async function stopVMProcesses() {
   await runCommandOnVM(
     'echo "exit" > /dev/tcp/localhost/3000 ;' // stop backend, which will tell runner to stop as well
-  ).catch()
+  ).catch(() => { })
 }
 
 /**
@@ -785,7 +786,7 @@ async function deployToVM(branchName = 'master') {
 
     allOK = testsPassed
 
-  } catch(err) {
+  } catch (err) {
     allOK = false
   }
 
@@ -869,9 +870,33 @@ async function uploadCredentials(remoteDestDir) {
   ])
 }
 
+async function getVMIpAddress() {
+  const { instanceIP } = await INTERNAL.setupInstanceConnection()
+  return instanceIP
+}
+
 if (require.main === module) {
-  setupProjectFirstTime().then(() => console.log('Done. Exiting...'))
-  // listTmpDriveFilesThatShouldBeDeleted().then(() => console.log('Done. Exiting...'))
+  const command = process.argv[2]
+  if (!command) {
+    console.error('Need a command argument')
+    return process.exit(1)
+  }
+
+  switch (command) {
+    case 'instance-ip':
+      getVMIpAddress().then(IP => console.log(IP))
+      break
+    case 'setup-first-time':
+      setupProjectFirstTime().then(() => console.log('\nProject setup complete. Exiting...'))
+      break
+    case 'deploy':
+      const branchName = process.argv[3] || 'master'
+      deployToVM(branchName).then(() => console.log('Done. Exiting...'))
+      break
+    default:
+      console.error('Unrecognized command')
+      process.exit(1)
+  }
 }
 
 module.exports = {
