@@ -8,7 +8,6 @@ sudo n 8.11.2
 cd google-interface/
 npm install
 cd ../backend
-cd backend
 npm install
 cd ../frontend
 npm install
