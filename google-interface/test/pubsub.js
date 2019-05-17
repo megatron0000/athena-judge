@@ -1,3 +1,5 @@
+import { getProjectId } from '../src/credentials/config';
+
 let assert = require('assert');
 let request = require('request-promise-native');
 
@@ -23,6 +25,20 @@ describe('Pub/Sub', function () {
 
     const classroom = new classroom_v1.Classroom({ auth })
 
+    await classroom.registrations.create({
+      requestBody: {
+        cloudPubsubTopic: {
+          topicName: 'projects/' + (await getProjectId()) + '/topics/' + process.env['PUBSUB_TOPIC_SHORTNAME']
+        },
+        feed: {
+          feedType: 'COURSE_WORK_CHANGES',
+          courseWorkChangesInfo: {
+            courseId: process.env['CLASSROOM_TEST_COURSE_ID']
+          }
+        }
+      }
+    })
+
     const { data } = await classroom.courses.courseWork.create({
       courseId: process.env['CLASSROOM_TEST_COURSE_ID'],
       requestBody: {
@@ -33,7 +49,8 @@ describe('Pub/Sub', function () {
     })
 
     return new Promise((resolve, reject) => {
-      AttachPubSubListener(async () => {
+      AttachPubSubListener(async (notification, ack) => {
+        ack()
         await classroom.courses.courseWork.delete({
           id: data.id,
           courseId: process.env['CLASSROOM_TEST_COURSE_ID']

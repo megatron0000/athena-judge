@@ -1,6 +1,7 @@
 /// <reference types="mocha"/>
 const { getOAuth2ClientFromLocalCredentials } = require('../src/google-interface/credentials/auth')
 const { deleteCourseWorkTestFiles, uploadCourseWorkTestFiles, uploadTeacherCredential } = require('../src/google-interface/cloudstorage')
+const { createRegistration } = require('../src/google-interface/classroom')
 const { google } = require('googleapis')
 const { createReadStream } = require('fs')
 const { resolve } = require('path')
@@ -90,6 +91,8 @@ describe('Integration', function () {
       process.env['CLASSROOM_TEST_COURSE_ID'],
       process.env['CLASSROOM_TEST_COURSE_TEACHER_OAUTH_TOKEN_FILE']
     )
+
+    await createRegistration(process.env['CLASSROOM_TEST_COURSE_ID'])
 
   })
 
