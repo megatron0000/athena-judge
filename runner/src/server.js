@@ -99,6 +99,8 @@ app.post("/run", async (req, res) => {
 
 /**
  * Cleanup docker containers and exit
+ * 
+ * TODO: Test if "docker stop" properly works
  */
 app.post('/exit', (req, res) => {
   res.status(200).end()

@@ -96,7 +96,7 @@ const codeCorrectionLock = {
   }
 }
 
-AttachPubSubListener(async notification => {
+AttachPubSubListener(async (notification, ack) => {
   notification = JSON.parse(notification.data.toString('utf8'))
   console.log(notification)
   const { collection } = notification
@@ -105,6 +105,20 @@ AttachPubSubListener(async notification => {
   }
 
   const { courseId, courseWorkId, id: submissionId } = notification.resourceId
+
+  // If we are in production and receive a notification for the test course, we know
+  // a test is being run, so we do not acknowledge the notification
+  if (courseId === process.env['CLASSROOM_TEST_COURSE_ID'] && process.env['NODE_ENV'].match('prod')) {
+    return
+
+  }
+  // If we are NOT in production and receive a notification for anything other than the test course,
+  // we are not entitled to answer it (since the production system should), so we avoid acknowledging the notification
+  else if (courseId !== process.env['CLASSROOM_TEST_COURSE_ID'] && !process.env['NODE_ENV'].match('prod')) {
+    return
+  }
+
+  ack()
 
   if (await submissionIsReturned(courseId, courseWorkId, submissionId)) {
     codeCorrectionLock.set({ courseId, courseWorkId, submissionId, state: codeCorrectionLock.STATE.RETURNED })
