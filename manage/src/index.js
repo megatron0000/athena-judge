@@ -179,7 +179,7 @@ const INTERNAL = {
   runCommandOverSSH(commandString, privateKeyPath, username, hostnameOrIP, withShell = false) {
     return INTERNAL.runPiped('ssh', [
       '-i', privateKeyPath, '-o', 'StrictHostKeyChecking=no',
-      username + '@' + hostnameOrIP, commandString
+      username + '@' + hostnameOrIP, 'set -v; ' + commandString
     ], withShell)
   },
 
