@@ -682,14 +682,15 @@ async function setupProjectFirstTime() {
 
   console.log('Uploading local credentials to remote VM instance...')
 
-  await uploadCredentials()
+  await uploadCredentials('athena-latest/google-interface/src/credentials')
 
   console.log('Uploaded local credentials\n')
 
 }
 
 /**
- * Example: cmdString="ls /" will list all content of the root directory of the remote VM instance
+ * Example: cmdString="ls /" will list all content of the root directory of the remote VM instance.
+ * By default, the working directory will be the home dir of the remote user
  */
 async function runCommandOnVM(cmdString, withShell = false) {
 
@@ -718,8 +719,97 @@ async function runCommandOnVM(cmdString, withShell = false) {
  */
 async function stopVMProcesses() {
   await runCommandOnVM(
-    'echo "exit" > /dev/tcp/localhost/3000 ;' // stop backend, which will tell runner to stop as well,
+    'echo "exit" > /dev/tcp/localhost/3000 ;' // stop backend, which will tell runner to stop as well
+  ).catch()
+}
+
+/**
+ * Runs all tests on the remote VM instance, piping the output (so it is visible if
+ * errors occur).
+ * 
+ * @param {string} remoteProjectDir Relative to the remote user home directory. In production,
+ * it is "athena-latest"
+ * @returns {Promise<boolean>} Whether all tests passed or not
+ */
+async function runTestsOnVM(remoteProjectDir) {
+  await runCommandOnVM(
+    'cd ' + remoteProjectDir + ' ;' +
+    ''
   )
+}
+
+/**
+ * - stop running VM processes
+ * - git clone to another temporary dir
+ * - deploy credentials to it (therefore: TODO: refactor uploadCredentials())
+ * - run tests
+ * - if ok, rename the directory to make it official (athena-latest) and delete the old one. Run the new code
+ * - else, just delete the temp dir. Rerun the original code. Report back the error
+ */
+async function deployToVM(branchName = 'master') {
+  await stopVMProcesses()
+
+  let allOK = false
+
+  try {
+    await runCommandOnVM(
+      // remove old tmp dir, if present
+      'rm -r athena-tmp-deploy || echo "bypass error" ;' +
+      // fetch newest code
+      'git clone ' + process.env['PROJECT_GITHUB_HREF'] + ' athena-tmp-deploy ;' +
+      'git checkout ' + branchName + ' ;' +
+      // install npm dependencies
+      'cd athena-tmp-deploy ;' +
+      'cd google-interface/ ;' +
+      'npm install ;' +
+      'cd ../backend ;' +
+      'npm install ;' +
+      'cd ../frontend ;' +
+      'npm install ;' +
+      'cd ../runner ;' +
+      'npm install ;' +
+      // build docker container (it will overwrite the production container-image, so we should reset it later)
+      'cd docker ;' +
+      'npm run build ;' +
+      'cd ../../ ;' +
+      // copy credentials
+      'cp ../athena-latest/google-interface/src/credentials/*.json ./google-interface/src/credentials/' +
+      // run application processes
+      'cd backend/ && nohup npm run dev ;' +
+      'cd ../runner && nohup npm run dev ;'
+    )
+
+    const testsPassed = await runTestsOnVM('')
+
+    await stopVMProcesses()
+
+    allOK = testsPassed
+
+  } catch(err) {
+    allOK = false
+  }
+
+
+  if (!allOK) {
+    // rebuild docker image; rerun production application processes
+    await runCommandOnVM(
+      'rm -r athena-tmp-deploy || echo "bypass error" ;' +
+      'cd athena-latest/runner/docker && npm run build ;' +
+      'cd ../../ ;' +
+      'cd backend/ && nohup npm run prod ;' +
+      'cd ../runner && nohup npm run prod ;'
+    )
+  } else {
+    // make athena-tmp-deploy directory the production one
+    await runCommandOnVM(
+      'rm -r athena-latest ;' +
+      'mv athena-tmp-deploy athena-latest ;' +
+      'cd athena-latest ;' +
+      'cd backend/ && nohup npm run prod ;' +
+      'cd ../runner && nohup npm run prod ;'
+    )
+  }
+
 }
 
 async function listTmpDriveFilesThatShouldBeDeleted() {
@@ -762,8 +852,10 @@ async function listTmpDriveFilesThatShouldBeDeleted() {
 /**
  * Upload local credential files to the VM instance running on Compute Engine,
  * overwriting credentials already contained in it, if any
+ * 
+ * @param {string} remoteDestDir Directory relative to the home of the remote user
  */
-async function uploadCredentials() {
+async function uploadCredentials(remoteDestDir) {
 
   const { vmUsername, instanceIP, sshKeys } = await INTERNAL.setupInstanceConnection()
 
@@ -773,7 +865,7 @@ async function uploadCredentials() {
     '-o',
     'StrictHostKeyChecking=no',
     resolve(dirname(process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE']), '*.json'),
-    vmUsername + '@' + instanceIP + ':athena-latest/google-interface/src/credentials'
+    vmUsername + '@' + instanceIP + ':' + remoteDestDir
   ])
 }
 
