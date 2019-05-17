@@ -61,7 +61,8 @@ const default_options = {
   method: 'POST',
   uri: run_endpoint,
   body: {},
-  json: true
+  json: true,
+  timeout: 60000
 }
 
 
@@ -101,7 +102,7 @@ AttachPubSubListener(async (notification, ack) => {
   console.log(notification)
   const { collection } = notification
   if (collection !== 'courses.courseWork.studentSubmissions') {
-    return
+    return ack()
   }
 
   const { courseId, courseWorkId, id: submissionId } = notification.resourceId
