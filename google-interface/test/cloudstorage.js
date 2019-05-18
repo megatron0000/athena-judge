@@ -183,7 +183,7 @@ describe('Cloud Storage', function () {
       testCourseId,
       testCourseWorkIds[0],
       testSubmissionIds[0],
-      path.resolve(__dirname, 'sample-files', 'empty-dir')
+      path.resolve(__dirname, 'sample-files', 'subfiles')
     )
 
     assert.equal(
@@ -194,7 +194,7 @@ describe('Cloud Storage', function () {
         'submissions',
         testSubmissionIds[0]
       ))).length,
-      0
+      1
     )
 
   })
