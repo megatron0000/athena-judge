@@ -179,7 +179,7 @@ const INTERNAL = {
   runCommandOverSSH(commandString, privateKeyPath, username, hostnameOrIP, withShell = false) {
     return INTERNAL.runPiped('ssh', [
       '-i', privateKeyPath, '-o', 'StrictHostKeyChecking=no',
-      username + '@' + hostnameOrIP, 'set -v; ' + commandString
+      username + '@' + hostnameOrIP, 'set -x; ' + commandString
     ], withShell)
   },
 
@@ -258,6 +258,25 @@ const INTERNAL = {
 
     const vmUsername = vmLoginProfile.loginProfile.posixAccounts[0].username
 
+    // wait for key to be recognized by Google before returning to the caller
+    while (
+      await INTERNAL.runCommandOverSSH(
+        'echo "Waiting SSH key establishment" ;',
+        sshKeys.privateKeyPath,
+        vmUsername,
+        instanceIP
+      )
+        .then(stdout => false)
+        .catch(stderr => {
+          if (stderr.match('Connection refused') || stderr.match('Permission denied')) {
+            return true
+          }
+          throw new Error('SSH command failed.')
+        })
+    ) {
+      await new Promise(resolve => setTimeout(resolve, 5000))
+    }
+
     return {
       vmUsername,
       sshKeys,
@@ -273,10 +292,11 @@ const INTERNAL = {
 
 
 /**
- * Called on the first project setup.
- * Activates all necessary google services
+ * Call on the first project setup.
+ * Activates all necessary google services.
+ * @param {string} gitBranchName The deployed version of the code is taken from this branch
  */
-async function setupProjectFirstTime() {
+async function setupProjectFirstTime(gitBranchName = 'master') {
   const prompt = INTERNAL.promisifiedReadlineInterface()
 
   console.log('Create a Google Cloud Platform Project through Google UI. Name it however you like.')
@@ -297,8 +317,6 @@ async function setupProjectFirstTime() {
   const scopes = [
     'https://www.googleapis.com/auth/cloud-platform'
   ]
-
-  const credentialsPath = resolve(__dirname, '../google-interface/src/credentials')
 
   const oauthCredPath = process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE']
 
@@ -512,7 +530,34 @@ async function setupProjectFirstTime() {
 
   console.log('Defined service accounts permissions\n')
 
-  console.log('Creating compute engine instance (this may take a couple of minutes)...')
+  console.log('Creating compute engine instance and setting up (this may take a couple of minutes)...')
+
+  await createAndSetupVM(gitBranchName)
+
+  console.log('Code deployed and setup OK for VM instance\n')
+
+}
+
+/**
+ * Creates a Compute Engine Instance and deploys code to it (from the project github repo).
+ * @param {string} gitBranchName The branch from which to take the code that will be deployed to the VM
+ */
+async function createAndSetupVM(gitBranchName = 'master') {
+
+  const prompt = INTERNAL.promisifiedReadlineInterface()
+  const scopes = [
+    'https://www.googleapis.com/auth/cloud-platform'
+  ]
+  const oauthCredPath = process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE']
+  const oauthTokenPath = process.env['OAUTH_PROJECT_ADMIN_TOKEN_FILE']
+  const projId = await getProjectId()
+
+  const auth = await INTERNAL.getOAuth2Client(
+    oauthCredPath,
+    scopes,
+    prompt,
+    oauthTokenPath
+  )
 
   const instanceName = process.env['VM_INSTANCE_NAME']
   const zone = process.env['VM_ZONE']
@@ -523,7 +568,7 @@ async function setupProjectFirstTime() {
   })
 
   // @ts-ignore
-  operation = await compute.instances.insert({
+  let operation = await compute.instances.insert({
     project: projId,
     zone,
     requestBody: {
@@ -616,17 +661,15 @@ async function setupProjectFirstTime() {
 
   console.log('Created Compute Engine VM instance\n')
 
-  /**
-   * TODO: Complete the setup by configuring VM instance and deploying for
-   * the first time
-   */
-
   console.log('Deploying code and running setup in VM instance...')
 
-  const vmAccountAuth = google.auth.fromJSON(JSON.parse(readFileSync(
+  const vmAccountLocalCredJSON = JSON.parse(readFileSync(
     process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_CREDENTIALS'],
     'utf8'
-  )))
+  ))
+  const vmAccountAuth = google.auth.fromJSON(vmAccountLocalCredJSON)
+  const vmAccountEmail = vmAccountLocalCredJSON.client_email
+
   // @ts-ignore
   vmAccountAuth.scopes = ['https://www.googleapis.com/auth/cloud-platform']
   const oslogin = google.oslogin({
@@ -646,7 +689,7 @@ async function setupProjectFirstTime() {
 
   const { data: vmLoginProfile } = await oslogin.users.importSshPublicKey({
     // @ts-ignore
-    parent: 'users/' + vmAccount.email,
+    parent: 'users/' + vmAccountEmail,
     projectId: projId,
     requestBody: {
       key: sshKeys.publicKey,
@@ -660,9 +703,10 @@ async function setupProjectFirstTime() {
   while (
     await INTERNAL.runCommandOverSSH(
       'sudo apt-get update;' +
-      'sudo apt-get install git -y;' +
+      'sudo apt-get install git-core -y;' +
       'git clone ' + process.env['PROJECT_GITHUB_HREF'] + ' athena-latest;' +
       'cd athena-latest;' +
+      'git checkout ' + gitBranchName + ' ;' +
       'bash setup.sh;',
       sshKeys.privateKeyPath,
       vmUsername,
@@ -679,13 +723,7 @@ async function setupProjectFirstTime() {
     await new Promise(resolve => setTimeout(resolve, 5000))
   }
 
-  console.log('Code deployed and setup OK for VM instance\n')
-
-  console.log('Uploading local credentials to remote VM instance...')
-
   await uploadCredentials('athena-latest/google-interface/src/credentials')
-
-  console.log('Uploaded local credentials\n')
 
 }
 
@@ -727,16 +765,34 @@ async function stopVMProcesses() {
 /**
  * Runs all tests on the remote VM instance, piping the output (so it is visible if
  * errors occur).
+ * Assumes all application processes are already running on the instance.
  * 
  * @param {string} remoteProjectDir Relative to the remote user home directory. In production,
  * it is "athena-latest"
  * @returns {Promise<boolean>} Whether all tests passed or not
  */
 async function runTestsOnVM(remoteProjectDir) {
+  let allTestsPassed = true
+
   await runCommandOnVM(
     'cd ' + remoteProjectDir + ' ;' +
-    ''
-  )
+    'cd google-interface/ ;' +
+    'npm run test ;'
+  ).catch(() => allTestsPassed = false)
+
+  await runCommandOnVM(
+    'cd ' + remoteProjectDir + ' ;' +
+    'cd runner/ ;' +
+    'npm run test ;'
+  ).catch(() => allTestsPassed = false)
+
+  await runCommandOnVM(
+    'cd ' + remoteProjectDir + ' ;' +
+    'cd backend/ ;' +
+    'npm run test ;'
+  ).catch(() => allTestsPassed = false)
+
+  return allTestsPassed
 }
 
 /**
@@ -758,9 +814,9 @@ async function deployToVM(branchName = 'master') {
       'rm -r athena-tmp-deploy || echo "bypass error" ;' +
       // fetch newest code
       'git clone ' + process.env['PROJECT_GITHUB_HREF'] + ' athena-tmp-deploy ;' +
+      'cd athena-tmp-deploy ;' +
       'git checkout ' + branchName + ' ;' +
       // install npm dependencies
-      'cd athena-tmp-deploy ;' +
       'cd google-interface/ ;' +
       'npm install ;' +
       'cd ../backend ;' +
@@ -774,13 +830,13 @@ async function deployToVM(branchName = 'master') {
       'npm run build ;' +
       'cd ../../ ;' +
       // copy credentials
-      'cp ../athena-latest/google-interface/src/credentials/*.json ./google-interface/src/credentials/' +
+      'cp ../athena-latest/google-interface/src/credentials/*.json ./google-interface/src/credentials/ ;' +
       // run application processes
-      'cd backend/ && nohup npm run dev ;' +
-      'cd ../runner && nohup npm run dev ;'
+      'cd backend/ && screen -dm npm run dev ;' +
+      'cd ../runner && screen -dm npm run dev ;'
     )
 
-    const testsPassed = await runTestsOnVM('')
+    const testsPassed = await runTestsOnVM('athena-tmp-deploy')
 
     await stopVMProcesses()
 
@@ -797,8 +853,8 @@ async function deployToVM(branchName = 'master') {
       'rm -r athena-tmp-deploy || echo "bypass error" ;' +
       'cd athena-latest/runner/docker && npm run build ;' +
       'cd ../../ ;' +
-      'cd backend/ && nohup npm run prod ;' +
-      'cd ../runner && nohup npm run prod ;'
+      'cd backend/ && screen -dm npm run prod ;' +
+      'cd ../runner && screen -dm npm run prod ;'
     )
   } else {
     // make athena-tmp-deploy directory the production one
@@ -806,8 +862,8 @@ async function deployToVM(branchName = 'master') {
       'rm -r athena-latest ;' +
       'mv athena-tmp-deploy athena-latest ;' +
       'cd athena-latest ;' +
-      'cd backend/ && nohup npm run prod ;' +
-      'cd ../runner && nohup npm run prod ;'
+      'cd backend/ && screen -dm npm run prod ;' +
+      'cd ../runner && screen -dm npm run prod ;'
     )
   }
 
@@ -876,13 +932,15 @@ async function getVMIpAddress() {
 }
 
 if (require.main === module) {
-  const command = process.argv[2]
-  if (!command) {
+  const args = {}
+  
+  args.command = process.argv[2]
+  if (!args.command) {
     console.error('Need a command argument')
-    return process.exit(1)
+    process.exit(1)
   }
 
-  switch (command) {
+  switch (args.command) {
     case 'instance-ip':
       getVMIpAddress().then(IP => console.log(IP))
       break
@@ -890,8 +948,15 @@ if (require.main === module) {
       setupProjectFirstTime().then(() => console.log('\nProject setup complete. Exiting...'))
       break
     case 'deploy':
-      const branchName = process.argv[3] || 'master'
-      deployToVM(branchName).then(() => console.log('Done. Exiting...'))
+      args.branchName = process.argv[3] || 'master'
+      deployToVM(args.branchName).then(() => console.log('Done. Exiting...'))
+      break
+    case 'upload-credentials':
+      uploadCredentials('athena-latest').then(() => console.log('Done. Exiting...'))
+      break
+    case 'create-vm':
+      args.branchName = process.argv[3] || 'master'
+      createAndSetupVM(args.branchName).then(() => console.log('Done. Exiting...'))
       break
     default:
       console.error('Unrecognized command')
@@ -902,5 +967,6 @@ if (require.main === module) {
 module.exports = {
   setupProjectFirstTime,
   stopVMProcesses,
-  runCommandOnVM
+  runCommandOnVM,
+  uploadCredentials
 }
