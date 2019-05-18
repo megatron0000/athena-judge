@@ -4,6 +4,9 @@ sudo apt-get install npm -y
 sudo npm install -g n
 sudo n 8.11.2
 
+# install 'screen' for running detached commands 
+sudo apt-get install screen -y
+
 # install NPM package dependecies
 cd google-interface/
 npm install
