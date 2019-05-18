@@ -791,8 +791,8 @@ async function runTestsOnVM(remoteProjectDir) {
   // run application processes
   await runCommandOnVM(
     'cd ' + remoteProjectDir + ' ;' +
-    'cd backend/ && screen -Logfile backend.log -dmL npm run dev ;' +
-    'cd ../runner && screen -Logfile runner.log -dmL npm run dev ;'
+    'cd backend/ && screen -Logfile /tmp/backend.log -dmL npm run dev ;' +
+    'cd ../runner && screen -Logfile /tmp/runner.log -dmL npm run dev ;'
   )
 
   await runCommandOnVM(
@@ -867,8 +867,8 @@ async function deployToVM(branchName = 'master') {
       'rm -r athena-tmp-deploy || echo "bypass error" ;' +
       'cd athena-latest/runner/docker && npm run build ;' +
       'cd ../../ ;' +
-      'cd backend/ && screen -Logfile backend.log -dmL npm run prod ;' +
-      'cd ../runner && screen -Logfile runner.log -dmL npm run prod ;'
+      'cd backend/ && screen -Logfile /tmp/backend.log -dmL npm run prod ;' +
+      'cd ../runner && screen -Logfile /tmp/runner.log -dmL npm run prod ;'
     )
     log.red('Deploying failed. The application was restarted with the previous stable codebase')
   } else {
@@ -877,8 +877,8 @@ async function deployToVM(branchName = 'master') {
       'rm -r athena-latest ;' +
       'mv athena-tmp-deploy athena-latest ;' +
       'cd athena-latest ;' +
-      'cd backend/ && screen -Logfile backend.log -dmL npm run prod ;' +
-      'cd ../runner && screen -Logfile runner.log -dmL npm run prod ;'
+      'cd backend/ && screen -Logfile /tmp/backend.log -dmL npm run prod ;' +
+      'cd ../runner && screen -Logfile /tmp/runner.log -dmL npm run prod ;'
     )
     log.green('Deploying succeded ! The application was started with the new codebase')
   }
