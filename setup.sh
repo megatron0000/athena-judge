@@ -1,3 +1,6 @@
+# Log every command
+set -x
+
 # install Node.js and NPM
 sudo apt-get update
 sudo apt-get install npm -y

@@ -11,7 +11,7 @@ const { readFile } = require('promise-fs')
 const { resolve, basename, dirname } = require('path')
 const { getOAuth2ClientFromLocalCredentials } = require('./google-interface/credentials/auth')
 const { getProjectId } = require('./google-interface/credentials/config')
-const { spawn, exec } = require('child_process')
+const { spawn } = require('child_process')
 
 /**
  * Functions used internally. Should not be called for scripting
@@ -188,23 +188,16 @@ const INTERNAL = {
    * private key
    * @returns {Promise<{publicKey: string, privateKeyPath: string}>}
    */
-  createSSHKey() {
+  async createSSHKey() {
     const privateKeyPath = '/tmp/key-' + new Date().toISOString()
-    return new Promise((resolve, reject) => {
-      exec(
-        'ssh-keygen -t rsa -N "" -f ' + privateKeyPath + ' -C ""',
-        async (err, stdout, stderr) => {
-          if (err || stderr) {
-            return reject(err || stderr)
-          }
-          const publicKey = (await readFile(privateKeyPath + '.pub', 'utf8')).trim()
-          return resolve({
-            publicKey,
-            privateKeyPath
-          })
-        }
-      )
-    })
+    await INTERNAL.runPiped('bash', [
+      '-c', 'ssh-keygen -t rsa -N "" -C "" -f ' + privateKeyPath
+    ], false)
+    const publicKey = (await readFile(privateKeyPath + '.pub', 'utf8')).trim()
+    return {
+      publicKey,
+      privateKeyPath
+    }
   },
   /**
    * Setup information needed to connect (over SSH) to a Compute Engine instance.
@@ -530,12 +523,8 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
 
   console.log('Defined service accounts permissions\n')
 
-  console.log('Creating compute engine instance and setting up (this may take a couple of minutes)...')
-
   await createAndSetupVM(gitBranchName)
-
-  console.log('Code deployed and setup OK for VM instance\n')
-
+  
 }
 
 /**
@@ -543,6 +532,8 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
  * @param {string} gitBranchName The branch from which to take the code that will be deployed to the VM
  */
 async function createAndSetupVM(gitBranchName = 'master') {
+  
+  console.log('Creating compute engine instance and setting up (this may take a couple of minutes)...')
 
   const prompt = INTERNAL.promisifiedReadlineInterface()
   const scopes = [
@@ -723,7 +714,13 @@ async function createAndSetupVM(gitBranchName = 'master') {
     await new Promise(resolve => setTimeout(resolve, 5000))
   }
 
+  console.log('Code deployed and setup OK for VM instance\n')
+
+  console.log('Uploading local credentials to VM...')
+
   await uploadCredentials('athena-latest/google-interface/src/credentials')
+
+  console.log('Uploaded local credentials to VM\n')
 
 }
 
@@ -933,7 +930,7 @@ async function getVMIpAddress() {
 
 if (require.main === module) {
   const args = {}
-  
+
   args.command = process.argv[2]
   if (!args.command) {
     console.error('Need a command argument')
