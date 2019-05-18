@@ -12,6 +12,8 @@ const { resolve, basename, dirname } = require('path')
 const { getOAuth2ClientFromLocalCredentials } = require('./google-interface/credentials/auth')
 const { getProjectId } = require('./google-interface/credentials/config')
 const { spawn } = require('child_process')
+// https://www.npmjs.com/package/ololog
+// https://github.com/xpl/ansicolor#supported-styles
 const log = require('ololog')
 
 
@@ -151,6 +153,7 @@ const INTERNAL = {
       let completeStdout = ''
       let completeStderr = ''
 
+      log.yellow('launching child process')
       // use shell to allow substitutions and other preprocessing facilities
       const child = spawn(command, args, { shell: withShell })
 
@@ -169,7 +172,7 @@ const INTERNAL = {
       })
 
       child.on('close', code => {
-        log.green(`child_process exited with code ${code}`)
+        log.yellow(`child process exited with code ${code}`)
         child.unref()
         if (code) {
           return reject(completeStderr)
@@ -195,7 +198,7 @@ const INTERNAL = {
    * @returns {Promise<{publicKey: string, privateKeyPath: string}>}
    */
   async createSSHKey() {
-    const privateKeyPath = '/tmp/key-' + new Date().toISOString()
+    const privateKeyPath = '/tmp/athena-judge/key-' + new Date().toISOString()
     await INTERNAL.runPiped('bash', [
       '-c', 'ssh-keygen -t rsa -N "" -C "" -f ' + privateKeyPath
     ], false, true)
@@ -988,6 +991,7 @@ if (require.main === module) {
       log.red('Unrecognized command')
       process.exit(1)
   }
+
 }
 
 module.exports = {
