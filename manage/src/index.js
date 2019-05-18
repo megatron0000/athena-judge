@@ -704,7 +704,7 @@ async function createAndSetupVM(gitBranchName = 'master') {
       'sudo apt-get install git-core -y;' +
       'git clone ' + process.env['PROJECT_GITHUB_HREF'] + ' athena-latest;' +
       'cd athena-latest;' +
-      'git checkout ' + gitBranchName + ' ;'
+      'git checkout ' + gitBranchName + ' ;',
       sshKeys.privateKeyPath,
       vmUsername,
       instanceIP
