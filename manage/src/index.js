@@ -12,7 +12,7 @@ const { resolve, basename, dirname } = require('path')
 const { getOAuth2ClientFromLocalCredentials } = require('./google-interface/credentials/auth')
 const { getProjectId } = require('./google-interface/credentials/config')
 const { spawn } = require('child_process')
-const log = require ('ololog')
+const log = require('ololog')
 
 
 /**
@@ -145,7 +145,7 @@ const INTERNAL = {
    * Invokes spawn() (from child_process module), piping stdout and stderr.
    * @returns {Promise<string>} On success, resolves with the stdout. On failure, rejects with the stderr
    */
-  runPiped(command, args, withShell = true) {
+  runPiped(command, args, withShell = true, hideConsoleLogs = false) {
     return new Promise((resolve, reject) => {
 
       let completeStdout = ''
@@ -156,12 +156,16 @@ const INTERNAL = {
 
       child.stdout.on('data', data => {
         completeStdout += data.toString()
-        log.cyan(data.toString().split('\n').map(line => 'CHILD_PROCESS STDOUT: ' + line).join('\n'))
+        if (!hideConsoleLogs) {
+          log.cyan(data.toString().split('\n').map(line => 'CHILD_PROCESS STDOUT: ' + line).join('\n'))
+        }
       })
 
       child.stderr.on('data', data => {
         completeStderr += data.toString()
-        log.red(data.toString().split('\n').map(line => 'CHILD_PROCESS STDERR: ' + line).join('\n'))
+        if (!hideConsoleLogs) {
+          log.red(data.toString().split('\n').map(line => 'CHILD_PROCESS STDERR: ' + line).join('\n'))
+        }
       })
 
       child.on('close', code => {
@@ -180,7 +184,7 @@ const INTERNAL = {
    */
   runCommandOverSSH(commandString, privateKeyPath, username, hostnameOrIP, withShell = false) {
     return INTERNAL.runPiped('ssh', [
-      '-i', privateKeyPath, '-o', 'StrictHostKeyChecking=no',
+      '-i', privateKeyPath, '-q', '-o', 'StrictHostKeyChecking no',
       username + '@' + hostnameOrIP, 'set -x; ' + commandString
     ], withShell)
   },
@@ -194,7 +198,7 @@ const INTERNAL = {
     const privateKeyPath = '/tmp/key-' + new Date().toISOString()
     await INTERNAL.runPiped('bash', [
       '-c', 'ssh-keygen -t rsa -N "" -C "" -f ' + privateKeyPath
-    ], false)
+    ], false, true)
     const publicKey = (await readFile(privateKeyPath + '.pub', 'utf8')).trim()
     return {
       publicKey,
@@ -526,7 +530,7 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
   log.green('Defined service accounts permissions\n')
 
   await createAndSetupVM(gitBranchName)
-  
+
 }
 
 /**
@@ -534,7 +538,7 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
  * @param {string} gitBranchName The branch from which to take the code that will be deployed to the VM
  */
 async function createAndSetupVM(gitBranchName = 'master') {
-  
+
   log.green('Creating compute engine instance and setting up (this may take a couple of minutes)...')
 
   const prompt = INTERNAL.promisifiedReadlineInterface()
@@ -765,13 +769,17 @@ async function stopVMProcesses() {
 /**
  * Runs all tests on the remote VM instance, piping the output (so it is visible if
  * errors occur).
- * Assumes all application processes are already running on the instance.
+ * 
+ * Does not leave side effects (i.e. stops all application processes it started)
  * 
  * @param {string} remoteProjectDir Relative to the remote user home directory. In production,
  * it is "athena-latest"
  * @returns {Promise<boolean>} Whether all tests passed or not
  */
 async function runTestsOnVM(remoteProjectDir) {
+
+  await stopVMProcesses()
+
   let allTestsPassed = true
 
   await runCommandOnVM(
@@ -779,6 +787,13 @@ async function runTestsOnVM(remoteProjectDir) {
     'cd google-interface/ ;' +
     'npm run test ;'
   ).catch(() => allTestsPassed = false)
+
+  // run application processes
+  await runCommandOnVM(
+    'cd ' + remoteProjectDir + ' ;' +
+    'cd backend/ && screen -Logfile backend.log -dmL npm run dev ;' +
+    'cd ../runner && screen -Logfile runner.log -dmL npm run dev ;'
+  )
 
   await runCommandOnVM(
     'cd ' + remoteProjectDir + ' ;' +
@@ -791,6 +806,8 @@ async function runTestsOnVM(remoteProjectDir) {
     'cd backend/ ;' +
     'npm run test ;'
   ).catch(() => allTestsPassed = false)
+
+  await stopVMProcesses()
 
   return allTestsPassed
 }
@@ -832,15 +849,10 @@ async function deployToVM(branchName = 'master') {
       'npm run build ;' +
       'cd ../../ ;' +
       // copy credentials
-      'cp ../athena-latest/google-interface/src/credentials/*.json ./google-interface/src/credentials/ ;' +
-      // run application processes
-      'cd backend/ && screen -dm npm run dev ;' +
-      'cd ../runner && screen -dm npm run dev ;'
+      'cp ../athena-latest/google-interface/src/credentials/*.json ./google-interface/src/credentials/ ;'
     )
 
     const testsPassed = await runTestsOnVM('athena-tmp-deploy')
-
-    await stopVMProcesses()
 
     allOK = testsPassed
 
@@ -855,18 +867,20 @@ async function deployToVM(branchName = 'master') {
       'rm -r athena-tmp-deploy || echo "bypass error" ;' +
       'cd athena-latest/runner/docker && npm run build ;' +
       'cd ../../ ;' +
-      'cd backend/ && screen -dm npm run prod ;' +
-      'cd ../runner && screen -dm npm run prod ;'
+      'cd backend/ && screen -Logfile backend.log -dmL npm run prod ;' +
+      'cd ../runner && screen -Logfile runner.log -dmL npm run prod ;'
     )
+    log.red('Deploying failed. The application was restarted with the previous stable codebase')
   } else {
     // make athena-tmp-deploy directory the production one
     await runCommandOnVM(
       'rm -r athena-latest ;' +
       'mv athena-tmp-deploy athena-latest ;' +
       'cd athena-latest ;' +
-      'cd backend/ && screen -dm npm run prod ;' +
-      'cd ../runner && screen -dm npm run prod ;'
+      'cd backend/ && screen -Logfile backend.log -dmL npm run prod ;' +
+      'cd ../runner && screen -Logfile runner.log -dmL npm run prod ;'
     )
+    log.green('Deploying succeded ! The application was started with the new codebase')
   }
 
 }
