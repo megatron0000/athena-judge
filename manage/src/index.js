@@ -658,7 +658,7 @@ async function createAndSetupVM(gitBranchName = 'master') {
 
   log.green('Created Compute Engine VM instance\n')
 
-  log.green('Deploying code and running setup in VM instance...')
+  log.green('Deploying code to VM instance...')
 
   const vmAccountLocalCredJSON = JSON.parse(readFileSync(
     process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_CREDENTIALS'],
@@ -704,8 +704,7 @@ async function createAndSetupVM(gitBranchName = 'master') {
       'sudo apt-get install git-core -y;' +
       'git clone ' + process.env['PROJECT_GITHUB_HREF'] + ' athena-latest;' +
       'cd athena-latest;' +
-      'git checkout ' + gitBranchName + ' ;' +
-      'bash setup.sh;',
+      'git checkout ' + gitBranchName + ' ;'
       sshKeys.privateKeyPath,
       vmUsername,
       instanceIP
@@ -721,13 +720,22 @@ async function createAndSetupVM(gitBranchName = 'master') {
     await new Promise(resolve => setTimeout(resolve, 5000))
   }
 
-  log.green('Code deployed and setup OK for VM instance\n')
+  log.green('Code deployed to VM instance\n')
 
   log.green('Uploading local credentials to VM...')
 
   await uploadCredentials('athena-latest/google-interface/src/credentials')
 
   log.green('Uploaded local credentials to VM\n')
+
+  log.green('Running setup in VM instance...')
+
+  await runCommandOnVM(
+    'cd athena-latest;' +
+    'bash setup.sh;'
+  )
+
+  log.green('Setup has been succesfully run in VM\n')
 
 }
 
@@ -844,12 +852,14 @@ async function deployToVM(branchName = 'master') {
       'npm install ;' +
       'cd ../runner ;' +
       'npm install ;' +
-      // build docker container (it will overwrite the production container-image, so we should reset it later)
-      'cd docker ;' +
-      'npm run build ;' +
-      'cd ../../ ;' +
       // copy credentials
-      'cp ../athena-latest/google-interface/src/credentials/*.json ./google-interface/src/credentials/ ;'
+      'cd ../ ;' +
+      'cp ../athena-latest/google-interface/src/credentials/*.json ./google-interface/src/credentials/ ;' +
+      // build docker container (it will overwrite the production container-image, so we should reset it later)
+      // the container is built only AFTER having uploaded credentials, because it needs them
+      // TODO: The container should not have secrets !!!! This exposes them to code being run inside !!!
+      'cd runner/docker ;' +
+      'npm run build ;'
     )
 
     const testsPassed = await runTestsOnVM('athena-tmp-deploy')
