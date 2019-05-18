@@ -183,7 +183,7 @@ describe('Cloud Storage', function () {
       testCourseId,
       testCourseWorkIds[0],
       testSubmissionIds[0],
-      path.resolve(__dirname, 'sample-files', 'subfiles')
+      path.resolve(__dirname, 'more-sample-files')
     )
 
     assert.equal(
