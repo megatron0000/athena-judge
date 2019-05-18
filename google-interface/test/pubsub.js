@@ -1,9 +1,8 @@
-import { getProjectId } from '../src/credentials/config';
 
 let assert = require('assert');
 let request = require('request-promise-native');
 
-require('../src/credentials/config');
+const { getProjectId } = require('../src/credentials/config')
 
 
 const { getOAuth2ClientFromLocalCredentials } = require('../src/credentials/auth')

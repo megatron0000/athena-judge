@@ -12,6 +12,8 @@ const { resolve, basename, dirname } = require('path')
 const { getOAuth2ClientFromLocalCredentials } = require('./google-interface/credentials/auth')
 const { getProjectId } = require('./google-interface/credentials/config')
 const { spawn } = require('child_process')
+const log = require ('ololog')
+
 
 /**
  * Functions used internally. Should not be called for scripting
@@ -72,7 +74,7 @@ const INTERNAL = {
         scope: scopes,
       })
 
-      console.log('Authorize this app by visiting this url:', authUrl)
+      log.green('Authorize this app by visiting this url:', authUrl)
       const code = await readlineInterface.question('Enter the code from that page here: ')
 
       try {
@@ -154,16 +156,16 @@ const INTERNAL = {
 
       child.stdout.on('data', data => {
         completeStdout += data.toString()
-        console.log(data.toString().split('\n').map(line => 'CHILD_PROCESS STDOUT: ' + line).join('\n'))
+        log.cyan(data.toString().split('\n').map(line => 'CHILD_PROCESS STDOUT: ' + line).join('\n'))
       })
 
       child.stderr.on('data', data => {
         completeStderr += data.toString()
-        console.log(data.toString().split('\n').map(line => 'CHILD_PROCESS STDERR: ' + line).join('\n'))
+        log.red(data.toString().split('\n').map(line => 'CHILD_PROCESS STDERR: ' + line).join('\n'))
       })
 
       child.on('close', code => {
-        console.log(`child_process exited with code ${code}`)
+        log.green(`child_process exited with code ${code}`)
         child.unref()
         if (code) {
           return reject(completeStderr)
@@ -292,13 +294,13 @@ const INTERNAL = {
 async function setupProjectFirstTime(gitBranchName = 'master') {
   const prompt = INTERNAL.promisifiedReadlineInterface()
 
-  console.log('Create a Google Cloud Platform Project through Google UI. Name it however you like.')
-  console.log(
+  log.green('Create a Google Cloud Platform Project through Google UI. Name it however you like.')
+  log.green(
     'Generate an OAuth2 Client ID for it, download it as JSON and store it ' +
     'on the "src/credentials" directory inside the "google-interface" directory ' +
     '(absolute path ' + resolve(__dirname, '../google-interface/src/credentials') + ').'
   )
-  console.log(
+  log.green(
     'Name the file exactly "' + basename(process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE']) +
     '", without the quotes, though.'
   )
@@ -325,7 +327,7 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
   const projId = await getProjectId()
   const projNumber = await prompt.question('Paste your project\'s number here (not project ID or project name): ')
 
-  console.log('\nEnabling APIs (this may take a couple of minutes)...')
+  log.green('\nEnabling APIs (this may take a couple of minutes)...')
 
   const serviceusage = google.serviceusage({
     version: 'v1',
@@ -365,9 +367,9 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
     })
   }
 
-  console.log('Enabled APIs\n')
+  log.green('Enabled APIs\n')
 
-  console.log('Creating Pub/Sub handling service account...')
+  log.green('Creating Pub/Sub handling service account...')
 
   const resourceManager = google.cloudresourcemanager({
     version: 'v1',
@@ -410,9 +412,9 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
   // @ts-ignore
   writeFileSync(pubsubAccountKeyPath, JSON.stringify(INTERNAL.convertServiceAccountCredential(pubsubAccountKey)))
 
-  console.log('Created Pub/Sub handling service account\n')
+  log.green('Created Pub/Sub handling service account\n')
 
-  console.log('Creating Cloud Storage handling service account...')
+  log.green('Creating Cloud Storage handling service account...')
 
 
   const storageAccountName = process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_DISPLAY_NAME']
@@ -440,9 +442,9 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
 
   writeFileSync(storageAccountKeyPath, JSON.stringify(INTERNAL.convertServiceAccountCredential(storageAccountKey)))
 
-  console.log('Created Cloud Storage handling service account\n')
+  log.green('Created Cloud Storage handling service account\n')
 
-  console.log('Creating VM instance connector service account...')
+  log.green('Creating VM instance connector service account...')
 
   const vmAccountName = process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_DISPLAY_NAME']
   const vmAccountId = process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_ID']
@@ -470,9 +472,9 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
   // @ts-ignore
   writeFileSync(vmAccountKeyPath, JSON.stringify(INTERNAL.convertServiceAccountCredential(vmAccountKey)))
 
-  console.log('Created VM instance connector service account\n')
+  log.green('Created VM instance connector service account\n')
 
-  console.log('Creating Pub/Sub topic and subscription...')
+  log.green('Creating Pub/Sub topic and subscription...')
 
   const topicName = 'projects/' + projId + '/topics/' + process.env['PUBSUB_TOPIC_SHORTNAME']
   const subscriptionName = 'projects/' + projId + '/subscriptions/' + process.env['PUBSUB_SUBSCRIPTION_SHORTNAME']
@@ -494,9 +496,9 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
     }
   })
 
-  console.log('Created Pub/Sub topic and subscription\n')
+  log.green('Created Pub/Sub topic and subscription\n')
 
-  console.log('Defining Pub/Sub, Cloud Storage and Compute Engine service account permissions...')
+  log.green('Defining Pub/Sub, Cloud Storage and Compute Engine service account permissions...')
 
   INTERNAL.addMemberToProjectRole_inplace(
     projPolicies,
@@ -521,7 +523,7 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
     }
   })
 
-  console.log('Defined service accounts permissions\n')
+  log.green('Defined service accounts permissions\n')
 
   await createAndSetupVM(gitBranchName)
   
@@ -533,7 +535,7 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
  */
 async function createAndSetupVM(gitBranchName = 'master') {
   
-  console.log('Creating compute engine instance and setting up (this may take a couple of minutes)...')
+  log.green('Creating compute engine instance and setting up (this may take a couple of minutes)...')
 
   const prompt = INTERNAL.promisifiedReadlineInterface()
   const scopes = [
@@ -650,9 +652,9 @@ async function createAndSetupVM(gitBranchName = 'master') {
     })
   }
 
-  console.log('Created Compute Engine VM instance\n')
+  log.green('Created Compute Engine VM instance\n')
 
-  console.log('Deploying code and running setup in VM instance...')
+  log.green('Deploying code and running setup in VM instance...')
 
   const vmAccountLocalCredJSON = JSON.parse(readFileSync(
     process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_CREDENTIALS'],
@@ -694,6 +696,7 @@ async function createAndSetupVM(gitBranchName = 'master') {
   while (
     await INTERNAL.runCommandOverSSH(
       'sudo apt-get update;' +
+      'sudo apt-get upgrade -y;' +
       'sudo apt-get install git-core -y;' +
       'git clone ' + process.env['PROJECT_GITHUB_HREF'] + ' athena-latest;' +
       'cd athena-latest;' +
@@ -714,13 +717,13 @@ async function createAndSetupVM(gitBranchName = 'master') {
     await new Promise(resolve => setTimeout(resolve, 5000))
   }
 
-  console.log('Code deployed and setup OK for VM instance\n')
+  log.green('Code deployed and setup OK for VM instance\n')
 
-  console.log('Uploading local credentials to VM...')
+  log.green('Uploading local credentials to VM...')
 
   await uploadCredentials('athena-latest/google-interface/src/credentials')
 
-  console.log('Uploaded local credentials to VM\n')
+  log.green('Uploaded local credentials to VM\n')
 
 }
 
@@ -801,7 +804,9 @@ async function runTestsOnVM(remoteProjectDir) {
  * - else, just delete the temp dir. Rerun the original code. Report back the error
  */
 async function deployToVM(branchName = 'master') {
+  log.green('Stopping application processes previously in execution (if any)')
   await stopVMProcesses()
+  log.green('Applications processes stopped')
 
   let allOK = false
 
@@ -891,7 +896,7 @@ async function listTmpDriveFilesThatShouldBeDeleted() {
     fields: '*'
   })
 
-  console.log(driveFiles)
+  log.green(driveFiles)
 
   /* driveFiles.files.forEach(file => new Promise(async resolve => {
     await teacherDrive.files.delete({
@@ -933,30 +938,30 @@ if (require.main === module) {
 
   args.command = process.argv[2]
   if (!args.command) {
-    console.error('Need a command argument')
+    log.red('Need a command argument')
     process.exit(1)
   }
 
   switch (args.command) {
     case 'instance-ip':
-      getVMIpAddress().then(IP => console.log(IP))
+      getVMIpAddress().then(IP => log.green(IP))
       break
     case 'setup-first-time':
-      setupProjectFirstTime().then(() => console.log('\nProject setup complete. Exiting...'))
+      setupProjectFirstTime().then(() => log.green('\nProject setup complete. Exiting...'))
       break
     case 'deploy':
       args.branchName = process.argv[3] || 'master'
-      deployToVM(args.branchName).then(() => console.log('Done. Exiting...'))
+      deployToVM(args.branchName).then(() => log.green('Done. Exiting...'))
       break
     case 'upload-credentials':
-      uploadCredentials('athena-latest').then(() => console.log('Done. Exiting...'))
+      uploadCredentials('athena-latest').then(() => log.green('Done. Exiting...'))
       break
     case 'create-vm':
       args.branchName = process.argv[3] || 'master'
-      createAndSetupVM(args.branchName).then(() => console.log('Done. Exiting...'))
+      createAndSetupVM(args.branchName).then(() => log.green('Done. Exiting...'))
       break
     default:
-      console.error('Unrecognized command')
+      log.red('Unrecognized command')
       process.exit(1)
   }
 }
