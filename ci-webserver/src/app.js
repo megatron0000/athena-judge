@@ -36,13 +36,14 @@ app.post(
      * 
      * @type {string[]}
      */
-    const commits = pushEvent.commits
+    const commitIds = pushEvent.commits.map(commit => commit.id)
 
     const accessToken = await getGithubAccessToken()
 
-    commits.forEach(async commit => {
+    commitIds.forEach(async commitId => {
+      console.log('received push notification')
       await request.post(
-        'https://api.github.com/repos/' + accessToken.user + '/' + accessToken.repo + '/statuses/' + commit,
+        'https://api.github.com/repos/' + accessToken.user + '/' + accessToken.repo + '/statuses/' + commitId,
         {
           auth: {
             user: accessToken.user,
@@ -53,7 +54,8 @@ app.post(
             target_url: 'https://ces29-athena.appspot.com/',
             description: 'Testing CI server',
             context: 'default'
-          }
+          },
+          json: true
         }
       )
 
