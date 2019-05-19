@@ -41,13 +41,15 @@ app.post(
     const accessToken = await getGithubAccessToken()
 
     commitIds.forEach(async commitId => {
-      console.log('received push notification')
       await request.post(
         'https://api.github.com/repos/' + accessToken.user + '/' + accessToken.repo + '/statuses/' + commitId,
         {
           auth: {
             user: accessToken.user,
             password: accessToken.token
+          },
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/29.0.1521.3 Safari/537.36'
           },
           body: {
             state: 'failure',
