@@ -1014,6 +1014,7 @@ if (require.main === module) {
       break
 
     case 'deploy':
+      console.log(process.argv)
       args.branchNameOrCommitId = process.argv[3] || 'master'
       args.deploy = process.argv[4] === 'test-only' ? false : true
       deployToVM(args.branchNameOrCommitId, args.deploy)

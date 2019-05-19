@@ -38,6 +38,8 @@ app.post(
      */
     const commitIds = pushEvent.commits.map(commit => commit.id)
 
+    console.log('Received test-run request for commit ids ' + commitIds.join(', '))
+
     commitIds.forEach(commitId => Promise.all([
       assignCommitStatus(commitId, 'pending', 'CI server test results pending', undefined),
       scheduleTestRun(commitId).then(testSpec => {

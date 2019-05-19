@@ -108,7 +108,7 @@ function scheduleTestRun(commitId) {
 function runTestNow(testSpec) {
   return new Promise(promiseResolve => {
 
-    exec('node ' + resolve(__dirname, 'manage/index.js') + ' deploy test-only > ' + testSpec.logFile + ' 2>&1', {
+    exec('node ' + resolve(__dirname, 'manage/index.js') + ' deploy ' + testSpec.commitId + ' test-only > ' + testSpec.logFile + ' 2>&1', {
       // 20 minutes timeout
       timeout: 1000 * 60 * 20,
       killSignal: 'SIGKILL',
