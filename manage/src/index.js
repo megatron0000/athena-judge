@@ -6,7 +6,7 @@
 require('./google-interface/credentials/config')
 const { google } = require('googleapis')
 const readline = require('readline')
-const { readFileSync, writeFileSync, existsSync } = require('fs')
+const { readFileSync, writeFileSync, existsSync, mkdirSync } = require('fs')
 const { readFile } = require('promise-fs')
 const { resolve, basename, dirname } = require('path')
 const { getOAuth2ClientFromLocalCredentials } = require('./google-interface/credentials/auth')
@@ -201,6 +201,9 @@ const INTERNAL = {
    * @returns {Promise<{publicKey: string, privateKeyPath: string}>}
    */
   async createSSHKey() {
+    if (!existsSync('/tmp/athena-judge')) {
+      mkdirSync('/tmp/athena-judge')
+    }
     const privateKeyPath = '/tmp/athena-judge/key-' + new Date().toISOString()
     await INTERNAL.runPiped('bash', [
       '-c', 'ssh-keygen -t rsa -N "" -C "" -f ' + privateKeyPath
@@ -840,6 +843,8 @@ async function runTestsOnVM(remoteProjectDir) {
  * @param {string} branchNameOrCommitId A branch name or a commit ID for running 'git checkout' to fetch code
  * @param {boolean} deploy Whether to really deploy after making tests. If false, the deployment to production 
  * is not done and, instead, the code is reversed to the last stable version
+ * 
+ * @returns {Promise<boolean>} true iff tests passed
  */
 async function deployToVM(branchNameOrCommitId = 'master', deploy = true) {
   log.green('Stopping application processes previously in execution (if any)')
@@ -911,6 +916,8 @@ async function deployToVM(branchNameOrCommitId = 'master', deploy = true) {
     )
     log.green('Deploying succeded ! The application was started with the new codebase')
   }
+
+  return allOK
 
 }
 
@@ -1009,9 +1016,16 @@ if (require.main === module) {
     case 'deploy':
       args.branchNameOrCommitId = process.argv[3] || 'master'
       args.deploy = process.argv[4] === 'test-only' ? false : true
-      deployToVM(args.branchNameOrCommitId, args.deploy).then(() => log.green('Done. Exiting...'))
+      deployToVM(args.branchNameOrCommitId, args.deploy)
+        .then(passed => {
+          if (passed) {
+            return
+          }
+          throw new Error()
+        })
+        .catch(() => process.exit(1))
       break
-      
+
     case 'upload-credentials':
       uploadCredentials('athena-latest').then(() => log.green('Done. Exiting...'))
       break
