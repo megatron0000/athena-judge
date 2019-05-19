@@ -784,6 +784,9 @@ async function stopVMProcesses() {
  * Runs all tests on the remote VM instance, piping the output (so it is visible if
  * errors occur).
  * 
+ * Assumes the 'remoteProjectDir' contains a valid copy of the codebase, the one to be
+ * executed and tested.
+ * 
  * Does not leave side effects (i.e. stops all application processes it started)
  * 
  * @param {string} remoteProjectDir Relative to the remote user home directory. In production,
@@ -829,12 +832,16 @@ async function runTestsOnVM(remoteProjectDir) {
 /**
  * - stop running VM processes
  * - git clone to another temporary dir
- * - deploy credentials to it (therefore: TODO: refactor uploadCredentials())
+ * - deploy credentials to it
  * - run tests
- * - if ok, rename the directory to make it official (athena-latest) and delete the old one. Run the new code
- * - else, just delete the temp dir. Rerun the original code. Report back the error
+ * - if ok and deploy=true, rename the directory to make it official (athena-latest) and delete the old one. Run the new code
+ * - else, just delete the temp dir. Rerun the original code. Report back the error, if any
+ * 
+ * @param {string} branchNameOrCommitId A branch name or a commit ID for running 'git checkout' to fetch code
+ * @param {boolean} deploy Whether to really deploy after making tests. If false, the deployment to production 
+ * is not done and, instead, the code is reversed to the last stable version
  */
-async function deployToVM(branchName = 'master') {
+async function deployToVM(branchNameOrCommitId = 'master', deploy = true) {
   log.green('Stopping application processes previously in execution (if any)')
   await stopVMProcesses()
   log.green('Applications processes stopped')
@@ -848,7 +855,7 @@ async function deployToVM(branchName = 'master') {
       // fetch newest code
       'git clone ' + process.env['PROJECT_GITHUB_HREF'] + ' athena-tmp-deploy ;' +
       'cd athena-tmp-deploy ;' +
-      'git checkout ' + branchName + ' ;' +
+      'git checkout ' + branchNameOrCommitId + ' ;' +
       // install npm dependencies
       'cd google-interface/ ;' +
       'npm install ;' +
@@ -877,7 +884,7 @@ async function deployToVM(branchName = 'master') {
   }
 
 
-  if (!allOK) {
+  if (!allOK || !deploy) {
     // rebuild docker image; rerun production application processes
     await runCommandOnVM(
       'rm -r athena-tmp-deploy || echo "bypass error" ;' +
@@ -886,7 +893,13 @@ async function deployToVM(branchName = 'master') {
       'cd backend/ && screen -Logfile /tmp/backend.log -dmL npm run prod ;' +
       'cd ../runner && screen -Logfile /tmp/runner.log -dmL npm run prod ;'
     )
-    log.red('Deploying failed. The application was restarted with the previous stable codebase')
+
+    if (!allOK) {
+      log.red('Deploying failed. The application was restarted with the previous stable codebase')
+    } else {
+      log.green('All tests passed ! However, deploy was called with deploy=false, hence the production ' +
+        'code has been resumed to the last stable version instead of deploying the new version')
+    }
   } else {
     // make athena-tmp-deploy directory the production one
     await runCommandOnVM(
@@ -988,26 +1001,34 @@ if (require.main === module) {
     case 'instance-ip':
       getVMIpAddress().then(IP => log.green(IP))
       break
+
     case 'setup-first-time':
       setupProjectFirstTime().then(() => log.green('\nProject setup complete. Exiting...'))
       break
+
     case 'deploy':
-      args.branchName = process.argv[3] || 'master'
-      deployToVM(args.branchName).then(() => log.green('Done. Exiting...'))
+      args.branchNameOrCommitId = process.argv[3] || 'master'
+      args.deploy = process.argv[4] === 'test-only' ? false : true
+      deployToVM(args.branchNameOrCommitId, args.deploy).then(() => log.green('Done. Exiting...'))
       break
+      
     case 'upload-credentials':
       uploadCredentials('athena-latest').then(() => log.green('Done. Exiting...'))
       break
+
     case 'create-vm':
       args.branchName = process.argv[3] || 'master'
       createAndSetupVM(args.branchName).then(() => log.green('Done. Exiting...'))
       break
+
     case 'create-pubsub-test-registration':
       createTestCourseRegistration().then(() => log.green('Done. Exiting...'))
       break
+
     default:
       log.red('Unrecognized command')
       process.exit(1)
+
   }
 
 }
@@ -1016,5 +1037,6 @@ module.exports = {
   setupProjectFirstTime,
   stopVMProcesses,
   runCommandOnVM,
-  uploadCredentials
+  uploadCredentials,
+  deployToVM
 }
