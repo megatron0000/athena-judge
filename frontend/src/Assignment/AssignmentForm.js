@@ -92,6 +92,11 @@ export default class AssignmentForm extends React.Component {
 
         <div style={{ height: 20 }}></div>
         <Typography variant="caption">
+          ATENÇÃO: Padrão de pares entradas e saídas 
+        </Typography>
+
+        <div style={{ height: 20 }}></div>
+        <Typography variant="caption">
           Entradas dos testes públicos
         </Typography>
         <MultipleTextFileUploadArea
