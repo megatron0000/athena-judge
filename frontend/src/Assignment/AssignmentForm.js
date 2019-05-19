@@ -49,6 +49,14 @@ export default class AssignmentForm extends React.Component {
     this.setState({ publicTestsOutput: files });
   }
 
+  handlePrivateTestsInputChange = (files) => {
+    this.setState({ privateTestsInput: files });
+  }
+
+  handlePrivateTestsOutputChange = (files) => {
+    this.setState({ privateTestsOutput: files });
+  }
+
   handleOpenDialogCreateAssign = () => {
     this.setState({ dialogCreateAssignmentOpen: true });
   };
