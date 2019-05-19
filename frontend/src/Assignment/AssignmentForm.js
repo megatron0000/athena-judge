@@ -95,7 +95,7 @@ export default class AssignmentForm extends React.Component {
           Entradas dos testes públicos
         </Typography>
         <MultipleTextFileUploadArea
-          onChange={this.handlePrivateTestsInputChange}
+          onChange={this.handlePublicTestsInputChange}
           style={{ paddingTop: 10 }}
         />
 
@@ -104,7 +104,7 @@ export default class AssignmentForm extends React.Component {
           Saída dos testes públicos
         </Typography>
         <MultipleTextFileUploadArea
-          onChange={this.handlePrivateTestsOutputChange}
+          onChange={this.handlePublicTestsOutputChange}
           style={{ paddingTop: 10 }}
         />
 
@@ -113,7 +113,7 @@ export default class AssignmentForm extends React.Component {
           Entradas dos testes privados
         </Typography>
         <MultipleTextFileUploadArea
-          onChange={this.handlePublicTestsInputChange}
+          onChange={this.handlePrivateTestsInputChange}
           style={{ paddingTop: 10 }}
         />
 
@@ -122,7 +122,7 @@ export default class AssignmentForm extends React.Component {
           Saída dos testes privados
         </Typography>
         <MultipleTextFileUploadArea
-          onChange={this.handlePublicTestsOutputChange}
+          onChange={this.handlePrivateTestsOutputChange}
           style={{ paddingTop: 10 }}
         />
 
