@@ -70,3 +70,17 @@ exports.getProjectId = async function getProjectId() {
 
   return _projIdCache
 }
+
+/**
+ * Must be accessed via getGithubAccessToken()
+ * @type {{token: string, user: string, repo: string}}
+ */
+let _githubAccessTokenCache
+
+exports.getGithubAccessToken = async function getGithubAccessToken() {
+  if (!_githubAccessTokenCache) {
+    _githubAccessTokenCache = JSON.parse(await fs.readFile(process.env['GITHUB_ACCESS_TOKEN']))
+  }
+
+  return _githubAccessTokenCache
+}
