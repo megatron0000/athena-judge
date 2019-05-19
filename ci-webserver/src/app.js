@@ -1,16 +1,14 @@
 const express = require('express')
 const bodyParser = require('body-parser')
-const request = require('request-promise-native')
-const { readFileSync } = require('fs')
-const { resolve } = require('path')
-const { getGithubAccessToken } = require('./google-interface').config
+const { scheduleTestRun, getMostRecentIssueDate } = require('./build-queue')
+const { assignCommitStatus } = require('./github-status')
 
 const app = express()
 
 app.get('/', (req, res) => {
   res
     .status(200)
-    .send('Hello, world!')
+    .send('Hello, world!\n')
     .end()
 })
 
@@ -30,40 +28,31 @@ app.post(
     res.status(200).end()
   },
   async (req, res) => {
+    // acknowledge receipt. Later process the commits
+    res.status(200).end()
+
     const pushEvent = req.body
     /**
-     * may be empty (for instance, when the push is for a tag, instead of for a commit)
-     * 
+     * May be empty (for instance, when the push is for a tag, instead of for a commit)
      * @type {string[]}
      */
     const commitIds = pushEvent.commits.map(commit => commit.id)
 
-    const accessToken = await getGithubAccessToken()
-
-    commitIds.forEach(async commitId => {
-      await request.post(
-        'https://api.github.com/repos/' + accessToken.user + '/' + accessToken.repo + '/statuses/' + commitId,
-        {
-          auth: {
-            user: accessToken.user,
-            password: accessToken.token
-          },
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/29.0.1521.3 Safari/537.36'
-          },
-          body: {
-            state: 'failure',
-            target_url: 'https://ces29-athena.appspot.com/',
-            description: 'Testing CI server',
-            context: 'default'
-          },
-          json: true
+    commitIds.forEach(commitId => Promise.all([
+      assignCommitStatus(commitId, 'pending', 'CI server test results pending', undefined),
+      scheduleTestRun(commitId).then(testSpec => {
+        console.log('Executed commit ' + testSpec.commitId + ' tests')
+        if (testSpec.issuedAt.valueOf() >= getMostRecentIssueDate(commitId).valueOf()) {
+          assignCommitStatus(
+            commitId,
+            testSpec.passed ? 'success' : 'failure',
+            'Automated tests ' + (testSpec.passed ? 'passed' : 'did NOT pass'),
+            testSpec.logFile
+          )
         }
-      )
-
-    })
-
-    res.status(200).end()
+      })
+    ]))
+    
   }
 )
 
