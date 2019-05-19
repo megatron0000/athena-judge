@@ -41,7 +41,9 @@ export default class AssignmentForm extends React.Component {
     this.setState({ dueDate: e.target.value });
   }
 
-  handlePublicTestsInputChange = (files) => {
+  handlePublicTestsInputChange = (files, weight) => {
+    console.log(files);
+    console.log(weight);
     this.setState({ publicTestsInput: files });
   }
 
