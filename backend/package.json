@@ -6,7 +6,7 @@
   "scripts": {
     "test": "mocha",
     "dev_v0": "nodemon src/v0/server.js --exec babel-node --plugins transform-es2015-modules-commonjs",
-    "prod_v0": "babel src -d dist --plugins transform-es2015-modules-commonjs && node dist/v0/server.js",
+    "prod_v0": "babel src -d dist --plugins transform-es2015-modules-commonjs && node src/v0/server.js",
     "start": "NODE_ENV=prod node src/index.js",
     "dev": "NODE_ENV=test node src/index.js",
     "prod": "NODE_ENV=production node src/index.js"

@@ -1,0 +1,39 @@
+{
+  "name": "ci-webserver",
+  "description": "Continuous Integration server for athena-judge",
+  "version": "0.0.1",
+  "private": true,
+  "license": "ISC",
+  "author": "",
+  "engines": {
+    "node": ">=8.13.0"
+  },
+  "scripts": {
+    "deploy": "gcloud app deploy",
+    "start": "node src/app.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.16.3",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.7",
+    "@google-cloud/pubsub": "^0.28.1",
+    "@google-cloud/storage": "^2.5.0",
+    "googleapis": "^39.2.0",
+    "mkdir-recursive": "^0.4.0",
+    "promise-fs": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/mocha": "^5.2.6",
+    "@google-cloud/nodejs-repo-tools": "^3.3.0"
+  },
+  "cloud-repo-tools": {
+    "test": {
+      "app": {
+        "msg": "Hello, world!"
+      }
+    },
+    "requiresKeyFile": true,
+    "requiresProjectId": true
+  }
+}
