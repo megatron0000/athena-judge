@@ -12,10 +12,13 @@ const { resolve, basename, dirname } = require('path')
 const { getOAuth2ClientFromLocalCredentials } = require('./google-interface/credentials/auth')
 const { getProjectId } = require('./google-interface/credentials/config')
 const { spawn } = require('child_process')
+
 // https://www.npmjs.com/package/ololog
 // https://github.com/xpl/ansicolor#supported-styles
 const log = require('ololog')
 
+const { uploadTeacherCredential } = require('./google-interface/cloudstorage')
+const { createRegistration } = require('./google-interface/classroom')
 
 /**
  * Functions used internally. Should not be called for scripting
@@ -960,6 +963,18 @@ async function getVMIpAddress() {
   return instanceIP
 }
 
+/**
+ * Creates Pub/Sub Registration for Classroom test course
+ */
+async function createTestCourseRegistration() {
+  await uploadTeacherCredential(
+    process.env['CLASSROOM_TEST_COURSE_ID'],
+    process.env['CLASSROOM_TEST_COURSE_TEACHER_OAUTH_TOKEN_FILE']
+  )
+
+  await createRegistration(process.env['CLASSROOM_TEST_COURSE_ID'])
+}
+
 if (require.main === module) {
   const args = {}
 
@@ -986,6 +1001,9 @@ if (require.main === module) {
     case 'create-vm':
       args.branchName = process.argv[3] || 'master'
       createAndSetupVM(args.branchName).then(() => log.green('Done. Exiting...'))
+      break
+    case 'create-pubsub-test-registration':
+      createTestCourseRegistration().then(() => log.green('Done. Exiting...'))
       break
     default:
       log.red('Unrecognized command')
