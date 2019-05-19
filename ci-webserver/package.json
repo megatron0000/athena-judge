@@ -9,7 +9,7 @@
     "node": ">=8.13.0"
   },
   "scripts": {
-    "deploy": "gcloud app deploy",
+    "deploy": "bash deploy.sh",
     "start": "node src/app.js"
   },
   "dependencies": {
@@ -21,7 +21,9 @@
     "@google-cloud/storage": "^2.5.0",
     "googleapis": "^39.2.0",
     "mkdir-recursive": "^0.4.0",
-    "promise-fs": "^2.1.0"
+    "promise-fs": "^2.1.0",
+    "ololog": "^1.1.126",
+    "readline": "1.3.0"
   },
   "devDependencies": {
     "@types/mocha": "^5.2.6",

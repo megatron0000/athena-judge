@@ -8,4 +8,4 @@ npm-debug.log
 get-docker.sh
 .vscode/
 **/credcache/**
-manage/backup
+**/backup*.zip
