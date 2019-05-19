@@ -95,13 +95,31 @@ export default class AssignmentForm extends React.Component {
           Entradas dos testes públicos
         </Typography>
         <MultipleTextFileUploadArea
-          onChange={this.handlePublicTestsInputChange}
+          onChange={this.handlePrivateTestsInputChange}
           style={{ paddingTop: 10 }}
         />
 
         <div style={{ height: 20 }}></div>
         <Typography variant="caption">
           Saída dos testes públicos
+        </Typography>
+        <MultipleTextFileUploadArea
+          onChange={this.handlePrivateTestsOutputChange}
+          style={{ paddingTop: 10 }}
+        />
+
+        <div style={{ height: 20 }}></div>
+        <Typography variant="caption">
+          Entradas dos testes privados
+        </Typography>
+        <MultipleTextFileUploadArea
+          onChange={this.handlePublicTestsInputChange}
+          style={{ paddingTop: 10 }}
+        />
+
+        <div style={{ height: 20 }}></div>
+        <Typography variant="caption">
+          Saída dos testes privados
         </Typography>
         <MultipleTextFileUploadArea
           onChange={this.handlePublicTestsOutputChange}
