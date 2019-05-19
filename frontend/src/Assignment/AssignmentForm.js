@@ -83,8 +83,11 @@ export default class AssignmentForm extends React.Component {
         />
 
         <div style={{ height: 20 }}></div>
-        <Typography variant="caption">
-          ATENÇÃO: Existem um padrão para os pares de entradas e saídas!
+        <Typography variant="button">
+          ATENÇÃO: 
+        </Typography>
+        <Typography variant="caption">        
+          Existe um padrão para os pares de entradas e saídas!
           Para enviar pares de entrada e saída, nomeie os arquivos 
           de testes com a padronização de nomes da seguinte maneira:
           input_fileName.txt para arquivos de entrada e 
