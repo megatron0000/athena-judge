@@ -48,7 +48,11 @@ const SCOPES = [
   'https://www.googleapis.com/auth/classroom.rosters',
   'https://www.googleapis.com/auth/classroom.coursework.students',
   'https://www.googleapis.com/auth/drive',
-  'https://www.googleapis.com/auth/classroom.coursework.me'
+  'https://www.googleapis.com/auth/classroom.coursework.me',
+  'https://mail.google.com/',
+  'https://www.googleapis.com/auth/gmail.modify',
+  'https://www.googleapis.com/auth/gmail.compose',
+  'https://www.googleapis.com/auth/gmail.send'
 ];
 exports.SCOPES = SCOPES
 
