@@ -22,7 +22,7 @@ export default class AssignmentPage extends React.Component {
   }
 
   componentDidMount() {
-    // this.showList();
+    this.showList();
   }
 
   showList = () => {
@@ -152,7 +152,8 @@ export default class AssignmentPage extends React.Component {
             ref={(ref) => { this.refAssignList = ref; }}            
             isProfessor={this.props.isProfessor}
           /> }
-        { <AssignmentForm
+        { this.state.show === "create" &&
+          <AssignmentForm
             onBack={this.showListNoUpdate}
             onSubmit={this.handleCreateAssignment}
           /> }

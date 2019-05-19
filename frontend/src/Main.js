@@ -9,7 +9,7 @@ export default class Main extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      show: "CourseView",
+      show: "CourseList",
       loading: false,
       courseId: null,
     };

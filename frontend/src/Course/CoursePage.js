@@ -99,9 +99,9 @@ export default class CoursePage extends React.Component {
   }
 
   componentDidMount() {
-    // this.getCourseData();
-    // this.getStudents();
-    // this.getProfessors();
+    this.getCourseData();
+    this.getStudents();
+    this.getProfessors();
   }
 
   handleOpenDialogPromote = (student) => {
