@@ -23,8 +23,8 @@ export default class AssignmentForm extends React.Component {
       title: this.props.title,
       description: this.props.description,
       dueDate: this.props.dueDate,
-      publicTestsInput: [],
-      publicTestsOutput: [],
+      publicTests: [],
+      privateTests: [],
       dialogCreateAssignmentOpen: false,
     }
   }
@@ -41,20 +41,12 @@ export default class AssignmentForm extends React.Component {
     this.setState({ dueDate: e.target.value });
   }
 
-  handlePublicTestsInputChange = (files) => {
-    this.setState({ publicTestsInput: files });
+  handlePublicTestsChange = (files) => {
+    this.setState({ publicTests: files });
   }
 
-  handlePublicTestsOutputChange = (files) => {
-    this.setState({ publicTestsOutput: files });
-  }
-
-  handlePrivateTestsInputChange = (files) => {
-    this.setState({ privateTestsInput: files });
-  }
-
-  handlePrivateTestsOutputChange = (files) => {
-    this.setState({ privateTestsOutput: files });
+  handlePrivateTestsChange = (files) => {
+    this.setState({ privateTests: files });
   }
 
   handleOpenDialogCreateAssign = () => {
@@ -97,37 +89,19 @@ export default class AssignmentForm extends React.Component {
 
         <div style={{ height: 20 }}></div>
         <Typography variant="caption">
-          Entradas dos testes públicos
+          Testes públicos
         </Typography>
         <MultipleTextFileUploadArea
-          onChange={this.handlePublicTestsInputChange}
+          onChange={this.handlePublicTestsChange}
           style={{ paddingTop: 10 }}
         />
 
         <div style={{ height: 20 }}></div>
         <Typography variant="caption">
-          Saída dos testes públicos
+          Testes privados
         </Typography>
         <MultipleTextFileUploadArea
-          onChange={this.handlePublicTestsOutputChange}
-          style={{ paddingTop: 10 }}
-        />
-
-        <div style={{ height: 20 }}></div>
-        <Typography variant="caption">
-          Entradas dos testes privados
-        </Typography>
-        <MultipleTextFileUploadArea
-          onChange={this.handlePrivateTestsInputChange}
-          style={{ paddingTop: 10 }}
-        />
-
-        <div style={{ height: 20 }}></div>
-        <Typography variant="caption">
-          Saída dos testes privados
-        </Typography>
-        <MultipleTextFileUploadArea
-          onChange={this.handlePrivateTestsOutputChange}
+          onChange={this.handlePrivateTestsChange}
           style={{ paddingTop: 10 }}
         />
 
