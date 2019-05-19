@@ -32,7 +32,7 @@ async function assignCommitStatus(commitId, status, description, logFile) {
           public: true,
           files: {
             'test-results.txt': {
-              content: await readFile(logFile, 'uf8')
+              content: await readFile(logFile, 'utf8')
             }
           }
         },
