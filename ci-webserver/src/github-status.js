@@ -1,6 +1,8 @@
 const request = require('request-promise-native')
 const { getGithubAccessToken } = require('./manage/google-interface/credentials/config')
 const { readFile } = require('promise-fs')
+const AnsiToHtml = require('ansi-to-html')
+
 
 
 /**
@@ -16,7 +18,7 @@ async function assignCommitStatus(commitId, status, description, logFile) {
 
   let gistUrl = undefined
   if (logFile) {
-    ({ url: gistUrl } = await request.post(
+    const response = await request.post(
       'https://api.github.com/gists',
       {
         auth: {
@@ -31,16 +33,20 @@ async function assignCommitStatus(commitId, status, description, logFile) {
           description: "Athena Judge CI Server automated test logs",
           public: true,
           files: {
-            'test-results.txt': {
-              content: await readFile(logFile, 'utf8')
+            'test-results.html': {
+              content: (await readFile(logFile, 'utf8'))
+                .split('\n')
+                .map(line => new AnsiToHtml().toHtml(line)).join('<br>')
             }
           }
         },
         json: true
       }
-    ))
+    )
+
+    gistUrl = 'https://gistcdn.githack.com' +
+      response.files['test-results.html'].raw_url.slice('https://gist.githubusercontent.com'.length)
   }
-  console.log('gist url: ' + gistUrl)
 
   await request.post(
     'https://api.github.com/repos/' + accessToken.user + '/' + accessToken.repo + '/statuses/' + commitId,
