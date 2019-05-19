@@ -5,6 +5,7 @@ import Toolbar from "@material-ui/core/Toolbar";
 import IconButton from "@material-ui/core/IconButton";
 import Typography from "@material-ui/core/Typography";
 import HomeIcon from "@material-ui/icons/Home";
+// import ArrowBackIcon from "@material-ui/icons/ArrowBack";
 
 import AuthButton from "./AuthButton";
 
@@ -12,6 +13,9 @@ export default function TopBar(props) {
   return (
     <AppBar position="fixed">
       <Toolbar>
+      {/* <IconButton color="inherit" style={{ marginLeft: -12, marginRight: 20 }} onClick={props.onArrowBackClick}>
+      <ArrowBackIcon />
+        </IconButton> */}
         <IconButton color="inherit" style={{ marginLeft: -12, marginRight: 20 }} onClick={props.onHomeClick}>
           <HomeIcon />
         </IconButton>
