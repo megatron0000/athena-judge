@@ -91,7 +91,8 @@ export default class AssignmentForm extends React.Component {
           Para enviar pares de entrada e saída, nomeie os arquivos 
           de testes com a padronização de nomes da seguinte maneira:
           input_fileName.txt para arquivos de entrada e 
-          output_fileName.txt para arquivos de saída.
+          output_fileName.txt para arquivos de saída. 
+          Note também que os arquivos devem ser .txt
         </Typography>
 
         <div style={{ height: 10 }}></div>
