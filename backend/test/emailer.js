@@ -1,4 +1,4 @@
-const { sendAckResponseEmail } = require('../src/emailer/index.js')
+const { sendAckResponseEmail, sendErrorEmail } = require('../src/emailer/index.js')
 const { getOAuth2ClientFromLocalCredentials } = require('../src/google-interface/credentials/auth')
 
 describe('Send Email', () => {
@@ -12,4 +12,16 @@ describe('Send Email', () => {
         sendAckResponseEmail(teacherAuth, { name: "Eric Moreira", email: "ericpqueiroz@gmail.com"})
     })
 
+})
+
+describe('Send Error Email', () => {
+
+    it('should send error email correctly for the student', async () => {
+        const teacherAuth = await getOAuth2ClientFromLocalCredentials(
+            process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
+            process.env['CLASSROOM_TEST_COURSE_TEACHER_OAUTH_TOKEN_FILE']
+        )
+      
+        sendAckResponseEmail(teacherAuth, { name: "Eric Moreira", email: "ericpqueiroz@gmail.com"})   
+    })
 })

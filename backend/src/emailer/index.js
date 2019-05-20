@@ -3,7 +3,8 @@ const nodemailer = require("nodemailer");
 export const sendAckResponseEmail = async (teacherAuth, student) => {
     sendEmail(teacherAuth, { 
         subject: "Sua submissão foi recebida com sucesso",
-        text: `
+        text: 
+        `
             <html>
                 <head></head>
                 <body>
@@ -21,6 +22,24 @@ export const sendAckResponseEmail = async (teacherAuth, student) => {
             </html>
         `
     }, [ student.email ])
+}
+
+const sendErrorEmail = async (teacherAuth, student, error) => {
+    sendEmail(teacherAuth, {
+        subject: "Ocorreu um erro ao compilar sua submissão!",
+        text: 
+        `
+            <html>
+                <head></head>
+                <body>
+                    <p>Olá, aluno(a) ${student.name}! <br /><br /> Sua submissão foi recebida, porém o seguinte erro ocorreu
+                    ao tentar executar seu código: ${error}.</b></p>
+
+                    <p>Atenciosamente, <br /> Professor(a). </p>
+                </body>
+            </html>
+        `
+    })
 }
 
 const sendEmail = async (oauth, emailContent, destList) => {

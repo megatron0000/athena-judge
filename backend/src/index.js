@@ -172,7 +172,7 @@ AttachPubSubListener(async notification => {
   await assignGradeToSubmission(courseId, courseWorkId, submissionId, grade)
 
   const emailer = new Emailer();
-  emailer.sendStubEmail(); // TODO
+  emailer.sendEmail(); // TODO
 })
 
 StartPubSub().then(() => console.log('Listening on Pub/Sub...'))
