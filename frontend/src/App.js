@@ -23,6 +23,7 @@ export default class App extends React.Component {
         name: user.name,
         photo: user.photo,
         email: user.email,
+        id_token: user.id_token,
       });
     }
   }
@@ -68,7 +69,7 @@ export default class App extends React.Component {
         >
           {
             (this.state.user != null) ?
-            <Main 
+            <Main
               ref={(ref) => { this.main = ref; } }
               user={this.state.user}
             />
