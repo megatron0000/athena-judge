@@ -4,7 +4,7 @@
   "description": "",
   "main": "src/server.js",
   "scripts": {
-    "test": "mocha",
+    "test": "mocha -r esm",
     "dev_v0": "nodemon src/v0/server.js --exec babel-node --plugins transform-es2015-modules-commonjs",
     "prod_v0": "babel src -d dist --plugins transform-es2015-modules-commonjs && node dist/v0/server.js"
   },
@@ -30,6 +30,7 @@
     "babel-cli": "6.26.0",
     "babel-core": "6.26.3",
     "babel-plugin-transform-es2015-modules-commonjs": "6.26.2",
+    "esm": "^3.2.25",
     "mocha": "^6.1.4",
     "nodemon": "1.17.3"
   }
