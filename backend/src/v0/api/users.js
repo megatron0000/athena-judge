@@ -13,43 +13,73 @@ router.get("/", async (req, res, next) => {
 });
 
 router.get("/:gid", async (req, res, next) => {
-  try {
-    let row = await DB.users.findOne({ where: { gid: req.params.gid } });
-    res.json({ data: row });
-  } catch (err) {
-    next(err);
+  const {OAuth2Client} = require('google-auth-library');
+  const client = new OAuth2Client(req.body.gid);
+  async function verify() {
+    const ticket = await client.verifyIdToken({
+        idToken: req.body.id_token,
+        audience: req.body.gid,  // Specify the CLIENT_ID of the app that accesses the backend
+        // Or, if multiple clients access the backend:
+        //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
+    });
+    const payload = ticket.getPayload();
+    const gid = payload['sub'];
+    try {
+      let row = await DB.users.findOne({ where: { gid: gid } });
+      res.json({ data: row });
+    } catch (err) {
+      next(err);
+    }
   }
+  verify().catch(console.error);
 });
 
 router.put("/:gid", async (req, res, next) => {
-  /*
-  @vb: race condition. sequelize's upsert would be better since it its atomic, but
-  i couldn't get it to work.
-  */
-  try {
-    let user = await DB.users.findOne({
-      where: { gid: req.params.gid }
+  const {OAuth2Client} = require('google-auth-library');
+  const client = new OAuth2Client(req.body.gid);
+  async function verify() {
+    const ticket = await client.verifyIdToken({
+        idToken: req.body.id_token,
+        audience: req.body.gid,  // Specify the CLIENT_ID of the app that accesses the backend
+        // Or, if multiple clients access the backend:
+        //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
     });
-    if (user == null) {
-      await DB.users.create({
-        gid: req.params.gid,
-        name: req.body.name,
-        photo: req.body.photo,
-        email: req.body.email,
+    const payload = ticket.getPayload();
+    const gid = payload['sub'];
+    const name = payload['name'];
+    const photo = payload['picture'];
+    const email = payload['email'];
+    
+    /*
+    @vb: race condition. sequelize's upsert would be better since it its atomic, but
+    i couldn't get it to work.
+    */
+    try {
+      let user = await DB.users.findOne({
+        where: { gid: gid }
       });
-    } else {
-      await DB.users.update({
-        name: req.body.name,
-        photo: req.body.photo,
-        email: req.body.email,
-      }, {
-        where: { gid: req.params.gid }
-      });
+      if (user == null) {
+        await DB.users.create({
+          gid: gid,
+          name: name,
+          photo: photo,
+          email: email,
+        });
+      } else {
+        await DB.users.update({
+          name: name,
+          photo: photo,
+          email: email,
+        }, {
+          where: { gid: gid }
+        });
+      }
+      res.json({ data: null });
+    } catch (err) {
+      next(err);
     }
-    res.json({ data: null });
-  } catch (err) {
-    next(err);
   }
+  verify().catch(console.error);
 });
 
 export default router;
