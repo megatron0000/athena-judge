@@ -5,6 +5,10 @@ const { assignCommitStatus } = require('./github-status')
 
 const app = express()
 
+/**
+ * TODO: List status of all commits being tested on the / route
+ * (i.e. if they are waiting on line or being tested right now)
+ */
 app.get('/', (req, res) => {
   res
     .status(200)
