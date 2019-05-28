@@ -156,7 +156,7 @@ const INTERNAL = {
       let completeStdout = ''
       let completeStderr = ''
 
-      log.yellow('launching child process')
+      log.yellow('launching child process for command "' + command + '" with args', args)
       // use shell to allow substitutions and other preprocessing facilities
       const child = spawn(command, args, { shell: withShell, cwd })
 
@@ -1017,7 +1017,7 @@ async function deployContinuousIntegrationServer() {
 
   log.green('Deploying Continuous Integration code to App Engine...')
 
-  await INTERNAL.runPiped('npm', ['run deploy'], true, false, resolve(__dirname, '../../ci-webserver'))
+  await INTERNAL.runPiped('npm', ['run', 'deploy'], true, false, resolve(__dirname, '../../ci-webserver'))
 
   log.green('Deployed CI server too App Engine\n')
 }
