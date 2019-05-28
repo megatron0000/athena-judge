@@ -9,3 +9,5 @@ get-docker.sh
 .vscode/
 **/credcache/**
 **/backup*.zip
+gcloud.tar.gz
+google-cloud-sdk/

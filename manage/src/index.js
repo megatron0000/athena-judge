@@ -7,10 +7,10 @@ require('./google-interface/credentials/config')
 const { google } = require('googleapis')
 const readline = require('readline')
 const { readFileSync, writeFileSync, existsSync, mkdirSync } = require('fs')
-const { readFile } = require('promise-fs')
+const { readFile, exists, mkdir, writeFile } = require('promise-fs')
 const { resolve, basename, dirname } = require('path')
 const { getOAuth2ClientFromLocalCredentials } = require('./google-interface/credentials/auth')
-const { getProjectId } = require('./google-interface/credentials/config')
+const { getProjectId, getGithubRepoHref, SCOPES } = require('./google-interface/credentials/config')
 const { spawn } = require('child_process')
 
 // https://www.npmjs.com/package/ololog
@@ -56,7 +56,7 @@ const INTERNAL = {
     }
   },
 
-  async getOAuth2Client(oauthCredPath, scopes, readlineInterface, tokenDestinationPath) {
+  async getOAuth2ClientInteractive(oauthCredPath, scopes, readlineInterface, tokenDestinationPath) {
     let oauthCred
     try {
       oauthCred = JSON.parse(readFileSync(oauthCredPath, 'utf8'))
@@ -150,7 +150,7 @@ const INTERNAL = {
    * Invokes spawn() (from child_process module), piping stdout and stderr.
    * @returns {Promise<string>} On success, resolves with the stdout. On failure, rejects with the stderr
    */
-  runPiped(command, args, withShell = true, hideConsoleLogs = false) {
+  runPiped(command, args, withShell = true, hideConsoleLogs = false, cwd = process.cwd()) {
     return new Promise((resolve, reject) => {
 
       let completeStdout = ''
@@ -158,7 +158,7 @@ const INTERNAL = {
 
       log.yellow('launching child process')
       // use shell to allow substitutions and other preprocessing facilities
-      const child = spawn(command, args, { shell: withShell })
+      const child = spawn(command, args, { shell: withShell, cwd })
 
       child.stdout.on('data', data => {
         completeStdout += data.toString()
@@ -267,6 +267,7 @@ const INTERNAL = {
     const vmUsername = vmLoginProfile.loginProfile.posixAccounts[0].username
 
     // wait for key to be recognized by Google before returning to the caller
+    let trycount = 1
     while (
       await INTERNAL.runCommandOverSSH(
         'echo "Waiting SSH key establishment" ;',
@@ -276,10 +277,12 @@ const INTERNAL = {
       )
         .then(stdout => false)
         .catch(stderr => {
-          if (stderr.match('Connection refused') || stderr.match('Permission denied')) {
+          if (trycount < 24) {
+            trycount++
+            log.green('Trying again (' + trycount + '/24 times')
             return true
           }
-          throw new Error('SSH command failed.')
+          throw new Error('SSH command failed. Tried 24 times (2 minutes)')
         })
     ) {
       await new Promise(resolve => setTimeout(resolve, 5000))
@@ -294,6 +297,79 @@ const INTERNAL = {
       projId
     }
 
+  },
+  /**
+   * Downloads the linux version of gcloud. For other environments, see
+   * https://cloud.google.com/sdk/docs/downloads-versioned-archives.
+   * 
+   * Also appends the PATH and uses a service-account to authenticate gcloud
+   */
+  async downloadUncompressInstallGCloud() {
+    const appPath = resolve(__dirname, '../../')
+    const gcloudDownloadUrl = 'https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-247.0.0-linux-x86_64.tar.gz'
+    await INTERNAL.runPiped('wget', [gcloudDownloadUrl, '-O', 'gcloud.tar.gz'], true, false, appPath)
+    await INTERNAL.runPiped('tar', ['-xf', 'gcloud.tar.gz'], true, false, appPath)
+    await INTERNAL.runPiped(
+      'bash',
+      ['google-cloud-sdk/install.sh', '--usage-reporting=false', '--quiet', '--path-update=true'],
+      true,
+      false,
+      appPath
+    )
+    process.env['PATH'] = resolve(appPath, 'google-cloud-sdk/bin') + ':' + process.env['PATH']
+    await INTERNAL.runPiped('gcloud', ['config', 'set', 'project', await getProjectId()], true, false, appPath)
+    await INTERNAL.runPiped('gcloud', [
+      'auth',
+      'activate-service-account',
+      '--key-file',
+      process.env['APPENGINE_HANDLER_SERVICEACCOUNT_CREDENTIALS']
+    ], true, false)
+  },
+  /**
+   * @returns {Promise<string>} Email of the created account
+   */
+  async createServiceAccount(displayName, id, outputKeyPath) {
+    const prompt = INTERNAL.promisifiedReadlineInterface()
+    const scopes = [
+      'https://www.googleapis.com/auth/cloud-platform'
+    ]
+    const oauthCredPath = process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE']
+    const oauthTokenPath = process.env['OAUTH_PROJECT_ADMIN_TOKEN_FILE']
+    const projId = await getProjectId()
+    const auth = await INTERNAL.getOAuth2ClientInteractive(
+      oauthCredPath,
+      scopes,
+      prompt,
+      oauthTokenPath
+    )
+
+    const iam = google.iam({
+      version: 'v1',
+      auth
+    })
+
+    const { data: account } = await iam.projects.serviceAccounts.create({
+      name: 'projects/' + projId,
+      requestBody: {
+        accountId: id,
+        serviceAccount: {
+          displayName
+        }
+      }
+    })
+
+    const { data: accountKey } = await iam.projects.serviceAccounts.keys.create({
+      name: 'projects/' + projId + '/serviceAccounts/' + account.email,
+      requestBody: {
+        privateKeyType: 'TYPE_GOOGLE_CREDENTIALS_FILE',
+        keyAlgorithm: 'KEY_ALG_RSA_2048'
+      }
+    })
+
+    //@ts-ignore
+    writeFileSync(outputKeyPath, JSON.stringify(INTERNAL.convertServiceAccountCredential(accountKey)))
+
+    return account.email
   }
 
 }
@@ -330,7 +406,7 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
 
   const oauthTokenPath = process.env['OAUTH_PROJECT_ADMIN_TOKEN_FILE']
 
-  const auth = await INTERNAL.getOAuth2Client(
+  const auth = await INTERNAL.getOAuth2ClientInteractive(
     oauthCredPath,
     scopes,
     prompt,
@@ -340,7 +416,29 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
   const projId = await getProjectId()
   const projNumber = await prompt.question('Paste your project\'s number here (not project ID or project name): ')
 
-  log.green('\nEnabling APIs (this may take a couple of minutes)...')
+  log.green(
+    'Using Github site (specifically, the https://github.com/settings/tokens page)' +
+    ', create a Personal Access Token and give it two access scopes: "repo:status" and "gist". ' +
+    'Take note of the generated token\'s number. ' +
+    'Note: this must be done by the owner of the repo for the project on github.'
+  )
+
+  const githubTokenNumber = await prompt.question('Paste your Github access token number here: ')
+  const githubRepo = await prompt.question(
+    'Paste the Github repository name for the project (the repo you own). ' +
+    'We want the short name, not the full url. For example, "athena-judge". Type the repo name here: '
+  )
+  const githubUsername = await prompt.question(
+    'Type your github username here: '
+  )
+
+  await writeFile(process.env['GITHUB_ACCESS_TOKEN'], JSON.stringify({
+    user: githubUsername,
+    repo: githubRepo,
+    token: githubTokenNumber
+  }))
+
+  log.green('\nEnabling Google APIs (this may take a couple of minutes)...')
 
   const serviceusage = google.serviceusage({
     version: 'v1',
@@ -357,7 +455,8 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
         'storage-component.googleapis.com',
         'storage-api.googleapis.com',
         'iam.googleapis.com',
-        'cloudresourcemanager.googleapis.com'
+        'cloudresourcemanager.googleapis.com',
+        'appengine.googleapis.com'
       ]
     }
   })
@@ -384,108 +483,43 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
 
   log.green('Creating Pub/Sub handling service account...')
 
-  const resourceManager = google.cloudresourcemanager({
-    version: 'v1',
-    auth
-  })
-
-  const iam = google.iam({
-    version: 'v1',
-    auth
-  })
-
-  const { data: projPolicies } = await resourceManager.projects.getIamPolicy({
-    resource: projId,
-    requestBody: {}
-  })
-
-  const pubsubAccountName = process.env['PUBSUB_LISTENER_SERVICEACCOUNT_DISPLAY_NAME']
-  const pubsubAccountId = process.env['PUBSUB_LISTENER_SERVICEACCOUNT_ID']
-
-  const { data: pubsubAccount } = await iam.projects.serviceAccounts.create({
-    name: 'projects/' + projId,
-    requestBody: {
-      accountId: pubsubAccountId,
-      serviceAccount: {
-        displayName: pubsubAccountName
-      }
-    }
-  })
-
-  const { data: pubsubAccountKey } = await iam.projects.serviceAccounts.keys.create({
-    name: 'projects/' + projId + '/serviceAccounts/' + pubsubAccount.email,
-    requestBody: {
-      privateKeyType: 'TYPE_GOOGLE_CREDENTIALS_FILE',
-      keyAlgorithm: 'KEY_ALG_RSA_2048'
-    }
-  })
-
-  const pubsubAccountKeyPath = process.env['PUBSUB_LISTENER_SERVICEACCOUNT_CREDENTIALS']
-
-  // @ts-ignore
-  writeFileSync(pubsubAccountKeyPath, JSON.stringify(INTERNAL.convertServiceAccountCredential(pubsubAccountKey)))
+  const pubsubAccountEmail = await INTERNAL.createServiceAccount(
+    process.env['PUBSUB_LISTENER_SERVICEACCOUNT_DISPLAY_NAME'],
+    process.env['PUBSUB_LISTENER_SERVICEACCOUNT_ID'],
+    process.env['PUBSUB_LISTENER_SERVICEACCOUNT_CREDENTIALS']
+  )
 
   log.green('Created Pub/Sub handling service account\n')
 
   log.green('Creating Cloud Storage handling service account...')
 
-
-  const storageAccountName = process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_DISPLAY_NAME']
-  const storageAccountId = process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_ID']
-
-  const { data: storageAccount } = await iam.projects.serviceAccounts.create({
-    name: 'projects/' + projId,
-    requestBody: {
-      accountId: storageAccountId,
-      serviceAccount: {
-        displayName: storageAccountName
-      }
-    }
-  })
-
-  const { data: storageAccountKey } = await iam.projects.serviceAccounts.keys.create({
-    name: 'projects/' + projId + '/serviceAccounts/' + storageAccount.email,
-    requestBody: {
-      privateKeyType: 'TYPE_GOOGLE_CREDENTIALS_FILE',
-      keyAlgorithm: 'KEY_ALG_RSA_2048'
-    }
-  })
-
-  const storageAccountKeyPath = process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_CREDENTIALS']
-
-  writeFileSync(storageAccountKeyPath, JSON.stringify(INTERNAL.convertServiceAccountCredential(storageAccountKey)))
+  const storageAccountEmail = await INTERNAL.createServiceAccount(
+    process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_DISPLAY_NAME'],
+    process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_ID'],
+    process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_CREDENTIALS']
+  )
 
   log.green('Created Cloud Storage handling service account\n')
 
   log.green('Creating VM instance connector service account...')
 
-  const vmAccountName = process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_DISPLAY_NAME']
-  const vmAccountId = process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_ID']
-
-  const { data: vmAccount } = await iam.projects.serviceAccounts.create({
-    name: 'projects/' + projId,
-    requestBody: {
-      accountId: vmAccountId,
-      serviceAccount: {
-        displayName: vmAccountName
-      }
-    }
-  })
-
-  const { data: vmAccountKey } = await iam.projects.serviceAccounts.keys.create({
-    name: 'projects/' + projId + '/serviceAccounts/' + vmAccount.email,
-    requestBody: {
-      privateKeyType: 'TYPE_GOOGLE_CREDENTIALS_FILE',
-      keyAlgorithm: 'KEY_ALG_RSA_2048'
-    }
-  })
-
-  const vmAccountKeyPath = process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_CREDENTIALS']
-
-  // @ts-ignore
-  writeFileSync(vmAccountKeyPath, JSON.stringify(INTERNAL.convertServiceAccountCredential(vmAccountKey)))
+  const vmAccountEmail = await INTERNAL.createServiceAccount(
+    process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_DISPLAY_NAME'],
+    process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_ID'],
+    process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_CREDENTIALS']
+  )
 
   log.green('Created VM instance connector service account\n')
+
+  log.green('Creating AppEngine handler service account...')
+
+  const appEngineAccountEmail = await INTERNAL.createServiceAccount(
+    process.env['APPENGINE_HANDLER_SERVICEACCOUNT_DISPLAY_NAME'],
+    process.env['APPENGINE_HANDLER_SERVICEACCOUNT_ID'],
+    process.env['APPENGINE_HANDLER_SERVICEACCOUNT_CREDENTIALS']
+  )
+
+  log.green('Created AppEngine handler service account\n')
 
   log.green('Creating Pub/Sub topic and subscription...')
 
@@ -511,7 +545,17 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
 
   log.green('Created Pub/Sub topic and subscription\n')
 
-  log.green('Defining Pub/Sub, Cloud Storage and Compute Engine service account permissions...')
+  log.green('Defining Pub/Sub, Cloud Storage, Compute Engine and App Engine service accounts\' permissions...')
+
+  const resourceManager = google.cloudresourcemanager({
+    version: 'v1',
+    auth
+  })
+
+  const { data: projPolicies } = await resourceManager.projects.getIamPolicy({
+    resource: projId,
+    requestBody: {}
+  })
 
   INTERNAL.addMemberToProjectRole_inplace(
     projPolicies,
@@ -519,15 +563,22 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
     'roles/pubsub.publisher'
   )
 
-  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + pubsubAccount.email, 'roles/pubsub.admin')
+  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + pubsubAccountEmail, 'roles/pubsub.admin')
 
-  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + storageAccount.email, 'roles/storage.admin')
+  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + storageAccountEmail, 'roles/storage.admin')
 
-  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + vmAccount.email, 'roles/compute.osAdminLogin')
+  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + vmAccountEmail, 'roles/compute.osAdminLogin')
 
-  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + vmAccount.email, 'roles/compute.admin')
+  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + vmAccountEmail, 'roles/compute.admin')
 
-  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + vmAccount.email, 'roles/iam.serviceAccountUser')
+  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + vmAccountEmail, 'roles/iam.serviceAccountUser')
+
+  /**
+   * Owner !!! This is necessary for the service account
+   * to have permission to create the App Engine application
+   * (though deploying does not require the 'owner' role)
+   */
+  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + appEngineAccountEmail, 'roles/owner')
 
   await resourceManager.projects.setIamPolicy({
     resource: projId,
@@ -536,9 +587,23 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
     }
   })
 
-  log.green('Defined service accounts permissions\n')
+  log.green('Defined service accounts\' permissions\n')
 
   await createAndSetupVM(gitBranchName)
+
+  log.green('Installing gcloud command line tools...')
+
+  await INTERNAL.downloadUncompressInstallGCloud()
+
+  log.green('Installed gcloud\n')
+
+  log.green('Creating App Engine application for the project...')
+
+  await INTERNAL.runPiped('gcloud', ['app', 'create', '-q', '--region', 'us-central'], true, false)
+
+  log.green('Create App Engine application')
+
+  await deployContinuousIntegrationServer()
 
 }
 
@@ -558,7 +623,7 @@ async function createAndSetupVM(gitBranchName = 'master') {
   const oauthTokenPath = process.env['OAUTH_PROJECT_ADMIN_TOKEN_FILE']
   const projId = await getProjectId()
 
-  const auth = await INTERNAL.getOAuth2Client(
+  const auth = await INTERNAL.getOAuth2ClientInteractive(
     oauthCredPath,
     scopes,
     prompt,
@@ -658,7 +723,7 @@ async function createAndSetupVM(gitBranchName = 'master') {
           operation: operation.data.name
         })
         if (operation.data.error) {
-          return reject(new Error('Failed to enable APIs'))
+          return reject(new Error('Failed to create VM instance'))
         }
         return resolve()
       }, 5000)
@@ -669,65 +734,14 @@ async function createAndSetupVM(gitBranchName = 'master') {
 
   log.green('Deploying code to VM instance...')
 
-  const vmAccountLocalCredJSON = JSON.parse(readFileSync(
-    process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_CREDENTIALS'],
-    'utf8'
-  ))
-  const vmAccountAuth = google.auth.fromJSON(vmAccountLocalCredJSON)
-  const vmAccountEmail = vmAccountLocalCredJSON.client_email
-
-  // @ts-ignore
-  vmAccountAuth.scopes = ['https://www.googleapis.com/auth/cloud-platform']
-  const oslogin = google.oslogin({
-    version: 'v1',
-    auth: vmAccountAuth
-  })
-
-  const { data: instanceObj } = await compute.instances.get({
-    project: projId,
-    zone,
-    instance: instanceName
-  })
-
-  const instanceIP = INTERNAL.getInstanceIP(instanceObj)
-
-  const sshKeys = await INTERNAL.createSSHKey()
-
-  const { data: vmLoginProfile } = await oslogin.users.importSshPublicKey({
-    // @ts-ignore
-    parent: 'users/' + vmAccountEmail,
-    projectId: projId,
-    requestBody: {
-      key: sshKeys.publicKey,
-      expirationTimeUsec: 1000 * (300000 + Date.now()) // Date.now() gives milliseconds. Set 300 seconds expiration
-    }
-  })
-
-  const vmUsername = vmLoginProfile.loginProfile.posixAccounts[0].username
-
-  // keep trying to run command. This is because the VM instance takes some time to wake up
-  while (
-    await INTERNAL.runCommandOverSSH(
-      'sudo apt-get update;' +
-      'sudo apt-get upgrade -y;' +
-      'sudo apt-get install git-core -y;' +
-      'git clone ' + process.env['PROJECT_GITHUB_HREF'] + ' athena-latest;' +
-      'cd athena-latest;' +
-      'git checkout ' + gitBranchName + ' ;',
-      sshKeys.privateKeyPath,
-      vmUsername,
-      instanceIP
-    )
-      .then(stdout => false)
-      .catch(stderr => {
-        if (stderr.match('Connection refused') || stderr.match('Permission denied')) {
-          return true
-        }
-        throw new Error('SSH command failed.')
-      })
-  ) {
-    await new Promise(resolve => setTimeout(resolve, 5000))
-  }
+  await runCommandOnVM(
+    'sudo apt-get update;' +
+    'sudo apt-get upgrade -y;' +
+    'sudo apt-get install git-core -y;' +
+    'git clone ' + (await getGithubRepoHref()) + ' athena-latest;' +
+    'cd athena-latest;' +
+    'git checkout ' + gitBranchName + ' ;'
+  )
 
   log.green('Code deployed to VM instance\n')
 
@@ -858,7 +872,7 @@ async function deployToVM(branchNameOrCommitId = 'master', deploy = true) {
       // remove old tmp dir, if present
       'rm -r athena-tmp-deploy || echo "bypass error" ;' +
       // fetch newest code
-      'git clone ' + process.env['PROJECT_GITHUB_HREF'] + ' athena-tmp-deploy ;' +
+      'git clone ' + (await getGithubRepoHref()) + ' athena-tmp-deploy ;' +
       'cd athena-tmp-deploy ;' +
       'git checkout ' + branchNameOrCommitId + ' ;' +
       // install npm dependencies
@@ -995,6 +1009,19 @@ async function createTestCourseRegistration() {
   await createRegistration(process.env['CLASSROOM_TEST_COURSE_ID'])
 }
 
+/**
+ * Deploys code from 'ci-webserver' folder to Google, employing the deploy script from the
+ * package itself
+ */
+async function deployContinuousIntegrationServer() {
+
+  log.green('Deploying Continuous Integration code to App Engine...')
+
+  await INTERNAL.runPiped('npm', ['run deploy'], true, false, resolve(__dirname, '../../ci-webserver'))
+
+  log.green('Deployed CI server too App Engine\n')
+}
+
 if (require.main === module) {
   const args = {}
 
@@ -1040,6 +1067,18 @@ if (require.main === module) {
       createTestCourseRegistration().then(() => log.green('Done. Exiting...'))
       break
 
+    case 'update-ciwebserver':
+      deployContinuousIntegrationServer().then(() => log.green('Done. Exiting...'))
+      break
+
+    case 'authorize-as-teacher':
+      INTERNAL.getOAuth2ClientInteractive(
+        process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
+        SCOPES,
+        INTERNAL.promisifiedReadlineInterface(),
+        process.env['CLASSROOM_TEST_COURSE_TEACHER_OAUTH_TOKEN_FILE']
+      ).then(() => log.green('Done. Exiting...'))
+
     default:
       log.red('Unrecognized command')
       process.exit(1)
@@ -1053,5 +1092,7 @@ module.exports = {
   stopVMProcesses,
   runCommandOnVM,
   uploadCredentials,
-  deployToVM
+  deployToVM,
+  deployContinuousIntegrationServer,
+  INTERNAL
 }

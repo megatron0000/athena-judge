@@ -54,7 +54,6 @@ const SCOPES = [
   'https://www.googleapis.com/auth/gmail.compose',
   'https://www.googleapis.com/auth/gmail.send'
 ];
-exports.SCOPES = SCOPES
 
 /**
  * Must be accessed via getProjectId()
@@ -64,7 +63,7 @@ let _projIdCache
 /**
  * @returns {Promise<string>}
  */
-exports.getProjectId = async function getProjectId() {
+async function getProjectId() {
   if (!_projIdCache) {
     const credContent = JSON.parse(
       await fs.readFile(process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'])
@@ -81,10 +80,22 @@ exports.getProjectId = async function getProjectId() {
  */
 let _githubAccessTokenCache
 
-exports.getGithubAccessToken = async function getGithubAccessToken() {
+async function getGithubAccessToken() {
   if (!_githubAccessTokenCache) {
     _githubAccessTokenCache = JSON.parse(await fs.readFile(process.env['GITHUB_ACCESS_TOKEN']))
   }
 
   return _githubAccessTokenCache
+}
+
+async function getGithubRepoHref() {
+  const token = await  getGithubAccessToken()
+  return 'https://github.com/' + token.user + '/' + token.repo
+}
+
+module.exports = {
+  SCOPES,
+  getProjectId,
+  getGithubAccessToken,
+  getGithubRepoHref
 }
