@@ -156,9 +156,12 @@ const INTERNAL = {
       let completeStdout = ''
       let completeStderr = ''
 
-      log.yellow('launching child process for command "' + command + '" with args', args)
+      if (!hideConsoleLogs) {
+        log.yellow('launching child process for command "' + command + '" with args', args)
+      }
+
       // use shell to allow substitutions and other preprocessing facilities
-      const child = spawn(command, args, { shell: withShell, cwd })
+      const child = spawn(command, args, { shell: withShell && '/bin/bash', cwd })
 
       child.stdout.on('data', data => {
         completeStdout += data.toString()
@@ -175,7 +178,11 @@ const INTERNAL = {
       })
 
       child.on('close', code => {
-        log.yellow(`child process exited with code ${code}`)
+
+        if (!hideConsoleLogs) {
+          log.yellow(`child process exited with code ${code}`)
+        }
+
         child.unref()
         if (code) {
           return reject(completeStderr)
@@ -188,11 +195,11 @@ const INTERNAL = {
   /**
    * @returns {Promise<string>} On success, resolves with the stdout. On failure, rejects with the stderr
    */
-  runCommandOverSSH(commandString, privateKeyPath, username, hostnameOrIP, withShell = false, hideConsoleLogs = false) {
+  runCommandOverSSH(commandString, privateKeyPath, username, hostnameOrIP, hideConsoleLogs = false) {
     return INTERNAL.runPiped('ssh', [
       '-i', privateKeyPath, '-q', '-o', 'StrictHostKeyChecking no',
       username + '@' + hostnameOrIP, 'set -x; ' + commandString
-    ], withShell, hideConsoleLogs)
+    ], false, hideConsoleLogs)
   },
 
   /**
@@ -219,20 +226,20 @@ const INTERNAL = {
    */
   async acquireVMLock() {
     try {
-      await runCommandOnVM('mkdir /tmp/athena-judge-lockdir', false, true)
+      await runCommandOnVM('mkdir /tmp/athena-judge-lockdir', true)
     } catch (err) {
       log.red('Failed to acquire VM lock. Already locked')
       return false
     }
 
-    log.green('Success in acquiring VM log')
+    log.green('Success in acquiring VM lock')
     return true
   },
   async releaseVMLock() {
     try {
-      await runCommandOnVM('rmdir /tmp/athena-judge-lockdir', false, true)
+      await runCommandOnVM('rmdir /tmp/athena-judge-lockdir', true)
       log.green('Release VM lock')
-    } catch (err) { 
+    } catch (err) {
       log.red('Failed to release VM lock')
     }
   },
@@ -296,7 +303,6 @@ const INTERNAL = {
         sshKeys.privateKeyPath,
         vmUsername,
         instanceIP,
-        undefined,
         true
       )
         .then(stdout => false)
@@ -792,7 +798,7 @@ async function createAndSetupVM(gitBranchName = 'master') {
  * 
  * @returns {Promise<string>} stdout of the command
  */
-async function runCommandOnVM(cmdString, withShell = false, hideConsoleLogs = false) {
+async function runCommandOnVM(cmdString, hideConsoleLogs = false) {
 
   const { sshKeys, vmUsername, instanceIP } = await INTERNAL.setupInstanceConnection()
 
@@ -801,7 +807,6 @@ async function runCommandOnVM(cmdString, withShell = false, hideConsoleLogs = fa
     sshKeys.privateKeyPath,
     vmUsername,
     instanceIP,
-    withShell,
     hideConsoleLogs
   )
 
@@ -822,10 +827,9 @@ async function stopVMProcesses() {
   await runCommandOnVM(
     'echo "exit" > /dev/tcp/localhost/3000 ;' + // stop backend, which will tell runner to stop as well
     'sleep 10;' + // wait 10 seconds for processes to stop
-    'sudo fuser -k 3000/tcp ;' +
-    'sudo fuser -k 3001/tcp ;' +
-    '( docker stop $(docker ps -q) 1>/dev/null 2>&1 || exit 0 );',
-    true
+    'if [[ $(sudo fuser 3000/tcp) != "" ]]; then sudo fuser -k 3000/tcp ; fi;' +
+    'if [[ $(sudo fuser 3001/tcp) != "" ]]; then sudo fuser -k 3001/tcp ; fi;' +
+    '( docker stop $(docker ps -q) 1>/dev/null 2>&1 || exit 0 );'
   ).catch(() => { })
 
 
@@ -900,7 +904,7 @@ async function runTestsOnVM(remoteProjectDir) {
 async function deployToVM(branchNameOrCommitId = 'master', deploy = true) {
 
   if (! await INTERNAL.acquireVMLock()) {
-    log.green('The VM is in use by another process, you should try again later')
+    return log.green('The VM is in use by another process, you should try again later')
   }
 
   log.green('Stopping application processes previously in execution (if any)')
@@ -1060,7 +1064,7 @@ async function createTestCourseRegistration() {
 async function deployContinuousIntegrationServer() {
 
   if (! await INTERNAL.acquireVMLock()) {
-    log.green('The VM is in use by another process, you should try again later')
+    return log.green('The VM is in use by another process, you should try again later')
   }
 
   log.green('Deploying Continuous Integration code to App Engine...')
@@ -1080,7 +1084,7 @@ async function deployContinuousIntegrationServer() {
  */
 async function testVMLock() {
   try {
-    await runCommandOnVM('[ -d /tmp/athena-judge-lockdir ] || exit 1', undefined, true)
+    await runCommandOnVM('[ -d /tmp/athena-judge-lockdir ] || exit 1', true)
   } catch (err) {
     log.green('Test: VM is not locked')
     return false
@@ -1160,5 +1164,6 @@ module.exports = {
   uploadCredentials,
   deployToVM,
   deployContinuousIntegrationServer,
-  testVMLock
+  testVMLock,
+  stopVMProcesses
 }
