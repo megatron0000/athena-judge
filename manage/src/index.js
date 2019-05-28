@@ -400,6 +400,58 @@ const INTERNAL = {
     writeFileSync(outputKeyPath, JSON.stringify(INTERNAL.convertServiceAccountCredential(accountKey)))
 
     return account.email
+  },
+
+  /**
+ * Runs all tests on the remote VM instance, piping the output (so it is visible if
+ * errors occur).
+ * 
+ * Assumes the 'remoteProjectDir' contains a valid copy of the codebase, the one to be
+ * executed and tested.
+ * 
+ * Does not leave side effects (i.e. stops all application processes it started)
+ * 
+ * Assumes the VM is not locked (does not acquire the lock by itself, since deployToVM
+ * already does this, and recursive locks are not supported)
+ * 
+ * @param {string} remoteProjectDir Relative to the remote user home directory. In production,
+ * it is "athena-latest"
+ * @returns {Promise<boolean>} Whether all tests passed or not
+ */
+  async runTestsOnVM(remoteProjectDir) {
+
+    await stopVMProcesses()
+
+    let allTestsPassed = true
+
+    await runCommandOnVM(
+      'cd ' + remoteProjectDir + ' ;' +
+      'cd google-interface/ ;' +
+      'npm run test ;'
+    ).catch(() => allTestsPassed = false)
+
+    // run application processes
+    await runCommandOnVM(
+      'cd ' + remoteProjectDir + ' ;' +
+      'cd backend/ && screen -Logfile /tmp/backend-test.log -dmL npm run dev ;' +
+      'cd ../runner && screen -Logfile /tmp/runner-test.log -dmL npm run dev ;'
+    )
+
+    await runCommandOnVM(
+      'cd ' + remoteProjectDir + ' ;' +
+      'cd runner/ ;' +
+      'npm run test ;'
+    ).catch(() => allTestsPassed = false)
+
+    await runCommandOnVM(
+      'cd ' + remoteProjectDir + ' ;' +
+      'cd backend/ ;' +
+      'npm run test ;'
+    ).catch(() => allTestsPassed = false)
+
+    await stopVMProcesses()
+
+    return allTestsPassed
   }
 
 }
@@ -835,57 +887,7 @@ async function stopVMProcesses() {
 
 }
 
-/**
- * Runs all tests on the remote VM instance, piping the output (so it is visible if
- * errors occur).
- * 
- * Assumes the 'remoteProjectDir' contains a valid copy of the codebase, the one to be
- * executed and tested.
- * 
- * Does not leave side effects (i.e. stops all application processes it started)
- * 
- * Assumes the VM is not locked (does not acquire the lock by itself, since deployToVM
- * already does this, and recursive locks are not supported)
- * 
- * @param {string} remoteProjectDir Relative to the remote user home directory. In production,
- * it is "athena-latest"
- * @returns {Promise<boolean>} Whether all tests passed or not
- */
-async function runTestsOnVM(remoteProjectDir) {
 
-  await stopVMProcesses()
-
-  let allTestsPassed = true
-
-  await runCommandOnVM(
-    'cd ' + remoteProjectDir + ' ;' +
-    'cd google-interface/ ;' +
-    'npm run test ;'
-  ).catch(() => allTestsPassed = false)
-
-  // run application processes
-  await runCommandOnVM(
-    'cd ' + remoteProjectDir + ' ;' +
-    'cd backend/ && screen -Logfile /tmp/backend-test.log -dmL npm run dev ;' +
-    'cd ../runner && screen -Logfile /tmp/runner-test.log -dmL npm run dev ;'
-  )
-
-  await runCommandOnVM(
-    'cd ' + remoteProjectDir + ' ;' +
-    'cd runner/ ;' +
-    'npm run test ;'
-  ).catch(() => allTestsPassed = false)
-
-  await runCommandOnVM(
-    'cd ' + remoteProjectDir + ' ;' +
-    'cd backend/ ;' +
-    'npm run test ;'
-  ).catch(() => allTestsPassed = false)
-
-  await stopVMProcesses()
-
-  return allTestsPassed
-}
 
 /**
  * - stop running VM processes
@@ -916,7 +918,7 @@ async function deployToVM(branchNameOrCommitId = 'master', deploy = true) {
   try {
     await runCommandOnVM(
       // remove old tmp dir, if present
-      'rm -r athena-tmp-deploy || echo "bypass error" ;' +
+      '(rm -r athena-tmp-deploy || exit 0) ;' +
       // fetch newest code
       'git clone ' + (await getGithubRepoHref()) + ' athena-tmp-deploy ;' +
       'cd athena-tmp-deploy ;' +
@@ -940,7 +942,7 @@ async function deployToVM(branchNameOrCommitId = 'master', deploy = true) {
       'npm run build ;'
     )
 
-    const testsPassed = await runTestsOnVM('athena-tmp-deploy')
+    const testsPassed = await INTERNAL.runTestsOnVM('athena-tmp-deploy')
 
     allOK = testsPassed
 
@@ -952,7 +954,7 @@ async function deployToVM(branchNameOrCommitId = 'master', deploy = true) {
   if (!allOK || !deploy) {
     // rebuild docker image; rerun production application processes
     await runCommandOnVM(
-      'rm -r athena-tmp-deploy || echo "bypass error" ;' +
+      '(rm -r athena-tmp-deploy || exit 0);' +
       'cd athena-latest/runner/docker && npm run build ;' +
       'cd ../../ ;' +
       'cd backend/ && screen -Logfile /tmp/backend.log -dmL npm run prod ;' +

@@ -73,21 +73,33 @@ server.on('connection', client => {
       return callback(ctx.status)
     }
 
-    ChildProcess.exec(`g++ ${ctx.localSrcDir}/main.cpp -o ${ctx.localSrcDir}/main.o`, (err, stdout, stderr) => {
-      if (err) {
-        ctx.status = {
-          ok: false,
-          message: 'Compilation Error: ' + stderr
+    ChildProcess.exec(`
+      set -e ;
+      set -x ;
+      INCLUDES=$(find . -type d | sed 's/\(.*\)$/-I\1/') ;
+      SOURCE_FILES=$(find . -type f -name "*.cpp" | sed 's/\(.*\)$/-c \1/') ;
+      g++ $INCLUDES $SOURCE_FILES 2>&1 ;
+      O_FILES=$(find . -type f -name "*.o") ;
+      g++ $O_FILES 2>&1 ;
+    `, {
+        cwd: ctx.localSrcDir
+      }, (err, stdout) => {
+        if (err) {
+          ctx.status = {
+            ok: false,
+            message: 'Compilation Error',
+            additionalInfo: stdout
+          }
+        } else {
+          ctx.status = {
+            ok: true,
+            message: 'Compiled source',
+            additionalInfo: stdout
+          }
         }
-      } else {
-        ctx.status = {
-          ok: true,
-          message: 'Compiled source'
-        }
-      }
 
-      return callback(ctx.status)
-    })
+        return callback(ctx.status)
+      })
 
   })
 
@@ -98,7 +110,7 @@ server.on('connection', client => {
     for (let i = 0; i < testCount; i++) {
       const inputPath = Path.join(ctx.localTestDir, i.toString(), 'input')
       const outputPath = Path.join(ctx.localTestDir, i.toString(), 'output')
-      const binPath = Path.join(ctx.localSrcDir, 'main.o')
+      const binPath = Path.join(ctx.localSrcDir, 'a.out')
       const [input, expectedOutput] = await Promise.all([
         FS.readFile(inputPath, 'utf8'),
         FS.readFile(outputPath, 'utf8')

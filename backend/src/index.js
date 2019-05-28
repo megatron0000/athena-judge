@@ -145,11 +145,15 @@ AttachPubSubListener(async (notification, ack) => {
     .filter(value_index => MIME.zip.concat(MIME.gzip, MIME.tar).indexOf(value_index.value) !== -1)
 
   if (compressedFileMimes.length === 0) {
-    return console.error('Could not find compressed file in submission')
+    return await respondToStudent({
+      error: 'Could not find compressed file in submission'
+    })
   }
 
   if (compressedFileMimes.length > 1) {
-    return console.error('Found more than one compressed file in submission')
+    return await respondToStudent({
+      error: 'Found more than one compressed file in submission'
+    })
   }
 
   const compressedFileId = driveFileIds[compressedFileMimes[0].index]
@@ -158,31 +162,35 @@ AttachPubSubListener(async (notification, ack) => {
     ? '.zip'
     : MIME.tar.indexOf(compressedFileMime) !== -1
       ? '.tar'
-      : '.tar.gzip'
-  const tmpDir = resolve('/tmp', courseId, courseWorkId, submissionId)
-  const localCompressedFilePath = join(tmpDir, compressedFileId + compressedFileFormat)
+      : MIME.gzip.indexOf(compressedFileMime) !== -1
+        ? '.tar.gzip'
+        : null
 
-  await downloadFile(courseId, compressedFileId, localCompressedFilePath)
-
-  await decompress(localCompressedFilePath, tmpDir)
-
-  await unlink(localCompressedFilePath)
-
-  const mainCppPaths = await findFileRecursive(tmpDir, 'main.cpp')
-
-  if (mainCppPaths.length === 0) {
-    return console.error('No main.cpp file found')
+  if (compressedFileFormat === null) {
+    return await respondToStudent({
+      error: 'Bad file compression format'
+    })
   }
 
-  if (mainCppPaths.length > 1) {
-    return console.error('More than one main.cpp file found')
+  const tmpSubmissionDir = resolve('/tmp', courseId, courseWorkId, submissionId)
+  const localCompressedFilePath = join(tmpSubmissionDir, compressedFileId + compressedFileFormat)
+
+  try {
+    await downloadFile(courseId, compressedFileId, localCompressedFilePath)
+    await decompress(localCompressedFilePath, tmpSubmissionDir)
+    await unlink(localCompressedFilePath)
+  } catch (err) {
+    console.error(err)
+    return respondToStudent({
+      error: 'While decompressing submission: ' + (err.message || 'unknown error')
+    })
   }
 
   await uploadCourseWorkSubmissionFiles(
     courseId,
     courseWorkId,
     submissionId,
-    dirname(mainCppPaths[0])
+    tmpSubmissionDir
   )
 
   const requestOptions = {
@@ -212,3 +220,17 @@ AttachPubSubListener(async (notification, ack) => {
 })
 
 StartPubSub().then(() => console.log('Listening on Pub/Sub...'))
+
+/**
+ * 
+ * @param {object} arg
+ * @param {string} arg.error Optional. Error message (should be false-ish if no error)
+ * @param {string=} arg.message Optional. Success message
+ */
+async function respondToStudent({ error, message }) {
+  if (error) {
+    console.error('backend found an error: ', error)
+  } else {
+    console.log('backend resulted: ', message)
+  }
+}
