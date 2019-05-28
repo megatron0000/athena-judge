@@ -188,11 +188,11 @@ const INTERNAL = {
   /**
    * @returns {Promise<string>} On success, resolves with the stdout. On failure, rejects with the stderr
    */
-  runCommandOverSSH(commandString, privateKeyPath, username, hostnameOrIP, withShell = false) {
+  runCommandOverSSH(commandString, privateKeyPath, username, hostnameOrIP, withShell = false, hideConsoleLogs = false) {
     return INTERNAL.runPiped('ssh', [
       '-i', privateKeyPath, '-q', '-o', 'StrictHostKeyChecking no',
       username + '@' + hostnameOrIP, 'set -x; ' + commandString
-    ], withShell)
+    ], withShell, hideConsoleLogs)
   },
 
   /**
@@ -219,17 +219,22 @@ const INTERNAL = {
    */
   async acquireVMLock() {
     try {
-      await runCommandOnVM('mkdir /tmp/athena-judge-lockdir', false)
+      await runCommandOnVM('mkdir /tmp/athena-judge-lockdir', false, true)
     } catch (err) {
+      log.red('Failed to acquire VM lock. Already locked')
       return false
     }
 
+    log.green('Success in acquiring VM log')
     return true
   },
   async releaseVMLock() {
     try {
-      await runCommandOnVM('rmdir /tmp/athena-judge-lockdir', false)
-    } catch (err) { }
+      await runCommandOnVM('rmdir /tmp/athena-judge-lockdir', false, true)
+      log.green('Release VM lock')
+    } catch (err) { 
+      log.red('Failed to release VM lock')
+    }
   },
   /**
    * Setup information needed to connect (over SSH) to a Compute Engine instance.
@@ -290,13 +295,15 @@ const INTERNAL = {
         'echo "Waiting SSH key establishment" ;',
         sshKeys.privateKeyPath,
         vmUsername,
-        instanceIP
+        instanceIP,
+        undefined,
+        true
       )
         .then(stdout => false)
         .catch(stderr => {
           if (trycount < 24) {
             trycount++
-            log.green('Trying again (' + trycount + '/24 times')
+            log.green('Trying again (' + trycount + '/24) times')
             return true
           }
           throw new Error('SSH command failed. Tried 24 times (2 minutes)')
@@ -785,7 +792,7 @@ async function createAndSetupVM(gitBranchName = 'master') {
  * 
  * @returns {Promise<string>} stdout of the command
  */
-async function runCommandOnVM(cmdString, withShell = false) {
+async function runCommandOnVM(cmdString, withShell = false, hideConsoleLogs = false) {
 
   const { sshKeys, vmUsername, instanceIP } = await INTERNAL.setupInstanceConnection()
 
@@ -794,7 +801,8 @@ async function runCommandOnVM(cmdString, withShell = false) {
     sshKeys.privateKeyPath,
     vmUsername,
     instanceIP,
-    withShell
+    withShell,
+    hideConsoleLogs
   )
 
   // oslogin.users.sshPublicKeys.delete({
@@ -1061,7 +1069,7 @@ async function deployContinuousIntegrationServer() {
 
   await INTERNAL.releaseVMLock()
 
-  log.green('Deployed CI server too App Engine\n')
+  log.green('Deployed CI server to App Engine\n')
 
 }
 
@@ -1072,11 +1080,13 @@ async function deployContinuousIntegrationServer() {
  */
 async function testVMLock() {
   try {
-    await runCommandOnVM('[ -d /tmp/athena-judge-lockdir ] || exit 1')
+    await runCommandOnVM('[ -d /tmp/athena-judge-lockdir ] || exit 1', undefined, true)
   } catch (err) {
+    log.green('Test: VM is not locked')
     return false
   }
 
+  log.green('Test: VM is locked')
   return true
 }
 
