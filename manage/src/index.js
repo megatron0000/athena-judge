@@ -765,12 +765,14 @@ async function createAndSetupVM(gitBranchName = 'master') {
 /**
  * Example: cmdString="ls /" will list all content of the root directory of the remote VM instance.
  * By default, the working directory will be the home dir of the remote user
+ * 
+ * @returns {Promise<string>} stdout of the command
  */
 async function runCommandOnVM(cmdString, withShell = false) {
 
   const { sshKeys, vmUsername, instanceIP } = await INTERNAL.setupInstanceConnection()
 
-  await INTERNAL.runCommandOverSSH(
+  return await INTERNAL.runCommandOverSSH(
     cmdString,
     sshKeys.privateKeyPath,
     vmUsername,
@@ -793,8 +795,15 @@ async function runCommandOnVM(cmdString, withShell = false) {
  */
 async function stopVMProcesses() {
   await runCommandOnVM(
-    'echo "exit" > /dev/tcp/localhost/3000 ;' // stop backend, which will tell runner to stop as well
+    'echo "exit" > /dev/tcp/localhost/3000 ;' + // stop backend, which will tell runner to stop as well
+    'sleep 10;' + // wait 10 seconds for processes to stop
+    'sudo fuser -k 3000/tcp ;' +
+    'sudo fuser -k 3001/tcp ;' +
+    '( docker stop $(docker ps -q) 1>/dev/null 2>&1 || exit 0 );',
+    true
   ).catch(() => { })
+
+  
 }
 
 /**
@@ -825,8 +834,8 @@ async function runTestsOnVM(remoteProjectDir) {
   // run application processes
   await runCommandOnVM(
     'cd ' + remoteProjectDir + ' ;' +
-    'cd backend/ && screen -Logfile /tmp/backend.log -dmL npm run dev ;' +
-    'cd ../runner && screen -Logfile /tmp/runner.log -dmL npm run dev ;'
+    'cd backend/ && screen -Logfile /tmp/backend-test.log -dmL npm run dev ;' +
+    'cd ../runner && screen -Logfile /tmp/runner-test.log -dmL npm run dev ;'
   )
 
   await runCommandOnVM(

@@ -10,6 +10,9 @@ sudo n 8.11.2
 # install 'screen' for running detached commands 
 sudo apt-get install screen -y
 
+# install fuser for finding processes listening on ports
+sudo apt-get install psmisc -y
+
 # install NPM package dependecies
 cd google-interface/
 npm install
