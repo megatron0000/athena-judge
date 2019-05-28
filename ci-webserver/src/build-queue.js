@@ -5,6 +5,7 @@
 
 const { resolve } = require('path')
 const { exec } = require('child_process')
+const { testVMLock } = require('./manage')
 
 function randomString() {
   return Math.random().toString(36).substring(2, 15)
@@ -106,7 +107,12 @@ function scheduleTestRun(commitId) {
  * @returns {Promise<boolean>} true iff the tests passed
  */
 function runTestNow(testSpec) {
-  return new Promise(promiseResolve => {
+  return new Promise(async promiseResolve => {
+
+    while (await testVMLock()) {
+      console.log('VM is locked. Waiting 20 seconds before trying again...')
+      await new Promise(resolve => setTimeout(resolve, 20000))
+    }
 
     exec('node ' + resolve(__dirname, 'manage/index.js') + ' deploy ' + testSpec.commitId + ' test-only > ' + testSpec.logFile + ' 2>&1', {
       // 20 minutes timeout

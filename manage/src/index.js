@@ -215,6 +215,23 @@ const INTERNAL = {
     }
   },
   /**
+   * @returns {Promise<boolean>} true if, and only if, the lock was acquired
+   */
+  async acquireVMLock() {
+    try {
+      await runCommandOnVM('mkdir /tmp/athena-judge-lockdir', false)
+    } catch (err) {
+      return false
+    }
+
+    return true
+  },
+  async releaseVMLock() {
+    try {
+      await runCommandOnVM('rmdir /tmp/athena-judge-lockdir', false)
+    } catch (err) { }
+  },
+  /**
    * Setup information needed to connect (over SSH) to a Compute Engine instance.
    */
   async setupInstanceConnection() {
@@ -803,7 +820,7 @@ async function stopVMProcesses() {
     true
   ).catch(() => { })
 
-  
+
 }
 
 /**
@@ -814,6 +831,9 @@ async function stopVMProcesses() {
  * executed and tested.
  * 
  * Does not leave side effects (i.e. stops all application processes it started)
+ * 
+ * Assumes the VM is not locked (does not acquire the lock by itself, since deployToVM
+ * already does this, and recursive locks are not supported)
  * 
  * @param {string} remoteProjectDir Relative to the remote user home directory. In production,
  * it is "athena-latest"
@@ -870,6 +890,11 @@ async function runTestsOnVM(remoteProjectDir) {
  * @returns {Promise<boolean>} true iff tests passed
  */
 async function deployToVM(branchNameOrCommitId = 'master', deploy = true) {
+
+  if (! await INTERNAL.acquireVMLock()) {
+    log.green('The VM is in use by another process, you should try again later')
+  }
+
   log.green('Stopping application processes previously in execution (if any)')
   await stopVMProcesses()
   log.green('Applications processes stopped')
@@ -939,6 +964,8 @@ async function deployToVM(branchNameOrCommitId = 'master', deploy = true) {
     )
     log.green('Deploying succeded ! The application was started with the new codebase')
   }
+
+  await INTERNAL.releaseVMLock()
 
   return allOK
 
@@ -1024,11 +1051,33 @@ async function createTestCourseRegistration() {
  */
 async function deployContinuousIntegrationServer() {
 
+  if (! await INTERNAL.acquireVMLock()) {
+    log.green('The VM is in use by another process, you should try again later')
+  }
+
   log.green('Deploying Continuous Integration code to App Engine...')
 
   await INTERNAL.runPiped('npm', ['run', 'deploy'], true, false, resolve(__dirname, '../../ci-webserver'))
 
+  await INTERNAL.releaseVMLock()
+
   log.green('Deployed CI server too App Engine\n')
+
+}
+
+/**
+ * Only tests. Does NOT acquire the lock 
+ *
+ * @returns {Promise<boolean>} true if, and only if, the VM *IS* currently locked
+ */
+async function testVMLock() {
+  try {
+    await runCommandOnVM('[ -d /tmp/athena-judge-lockdir ] || exit 1')
+  } catch (err) {
+    return false
+  }
+
+  return true
 }
 
 if (require.main === module) {
@@ -1098,10 +1147,8 @@ if (require.main === module) {
 
 module.exports = {
   setupProjectFirstTime,
-  stopVMProcesses,
-  runCommandOnVM,
   uploadCredentials,
   deployToVM,
   deployContinuousIntegrationServer,
-  INTERNAL
+  testVMLock
 }
