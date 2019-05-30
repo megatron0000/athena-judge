@@ -433,8 +433,8 @@ const INTERNAL = {
     // run application processes
     await runCommandOnVM(
       'cd ' + remoteProjectDir + ' ;' +
-      'cd backend/ && screen -Logfile /tmp/backend-test.log -dmL npm run dev ;' +
-      'cd ../runner && screen -Logfile /tmp/runner-test.log -dmL npm run dev ;'
+      'cd backend/ && screen -Logfile /usr/local/lib/athena-judge/backend-test.log -dmL /bin/bash -c "npm run dev | ts" ;' +
+      'cd ../runner && screen -Logfile /usr/local/lib/athena-judge/runner-test.log -dmL /bin/bash -c "npm run dev | ts" ;'
     )
 
     await runCommandOnVM(
@@ -957,8 +957,8 @@ async function deployToVM(branchNameOrCommitId = 'master', deploy = true) {
       '(rm -r athena-tmp-deploy || exit 0);' +
       'cd athena-latest/runner/docker && npm run build ;' +
       'cd ../../ ;' +
-      'cd backend/ && screen -Logfile /tmp/backend.log -dmL npm run prod ;' +
-      'cd ../runner && screen -Logfile /tmp/runner.log -dmL npm run prod ;'
+      'cd backend/ && screen -Logfile /usr/local/lib/athena-judge/backend.log -dmL /bin/bash -c "npm run prod | ts" ;' +
+      'cd ../runner && screen -Logfile /usr/local/lib/athena-judge/runner.log -dmL /bin/bash -c "npm run prod | ts" ;'
     )
 
     if (!allOK) {
@@ -973,8 +973,8 @@ async function deployToVM(branchNameOrCommitId = 'master', deploy = true) {
       'rm -r athena-latest ;' +
       'mv athena-tmp-deploy athena-latest ;' +
       'cd athena-latest ;' +
-      'cd backend/ && screen -Logfile /tmp/backend.log -dmL npm run prod ;' +
-      'cd ../runner && screen -Logfile /tmp/runner.log -dmL npm run prod ;'
+      'cd backend/ && screen -Logfile /usr/local/lib/athena-judge/backend.log -dmL /bin/bash -c "npm run prod | ts" ;' +
+      'cd ../runner && screen -Logfile /usr/local/lib/athena-judge/runner.log -dmL /bin/bash -c "npm run prod | ts" ;'
     )
     log.green('Deploying succeded ! The application was started with the new codebase')
   }
