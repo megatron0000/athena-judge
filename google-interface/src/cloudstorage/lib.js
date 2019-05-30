@@ -1,9 +1,8 @@
-const fs = require('promise-fs')
 const path = require('path')
-const { mkdir } = require('mkdir-recursive')
 
 const { Storage } = require('@google-cloud/storage')
 const { getProjectId } = require('../credentials/config')
+const { mkdirRecursive } = require('../mkdir-recursive')
 
 
 // must be accessed by getBucket()
@@ -26,7 +25,7 @@ async function getBucket() {
 
 
 async function listFiles() {
-  
+
   // Lists files in the bucket
   const bucket = await getBucket()
   return bucket.getFiles()
@@ -88,22 +87,17 @@ async function uploadFile(localFilename, destinationPath) {
 
 async function downloadFile(srcFilename, destFilename) {
   const bucket = await getBucket()
-  return new Promise((resolve, reject) => {
-    //@ts-ignore
-    mkdir(path.dirname(destFilename), err => {
-      if (err && !err.message.match('EEXIST')) reject(err)
 
-      const options = {
-        // The path to which the file should be downloaded, e.g. "./file.txt"
-        destination: destFilename,
-        gzip: false
-      }
+  await mkdirRecursive(path.dirname(destFilename))
 
-      // Downloads the file
-      bucket.file(srcFilename).download(options).then(resolve)
-    })
-  })
+  const options = {
+    // The path to which the file should be downloaded, e.g. "./file.txt"
+    destination: destFilename,
+    gzip: false
+  }
 
+  // Downloads the file
+  return bucket.file(srcFilename).download(options)
 
   // [END storage_download_file]
 }

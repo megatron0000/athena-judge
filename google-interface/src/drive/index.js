@@ -2,23 +2,9 @@ const { google } = require('googleapis')
 const { getOAuth2Client } = require('../credentials/auth')
 const { createWriteStream } = require('fs')
 const { dirname } = require('path')
+const { mkdirRecursive } = require('../mkdir-recursive')
 
-/**
- * 
- * @param {string} dirname
- * @returns {Promise<void>}
- */
-function mkdirRecursive(dirname) {
-  return new Promise((resolve, reject) => {
-    //@ts-ignore
-    require('mkdir-recursive').mkdir(dirname, err => {
-      if (err && !err.message.match('EEXIST')) {
-        return reject(err)
-      }
-      return resolve()
-    })
-  })
-}
+
 
 /**
  * 
@@ -51,7 +37,7 @@ exports.downloadFile = async function downloadFile(courseId, fileId, localDestin
 
 /**
  * @param {string | ReadableStream} content 
- * @returns {string} the created file id
+ * @returns {Promise<string>} the created file id
  */
 exports.createFile = async function createFile(courseId, content) {
   const drive = await getDrive(courseId)

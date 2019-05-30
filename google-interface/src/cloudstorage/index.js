@@ -1,23 +1,9 @@
 const GCS = require('./lib'); // GCS = Google Cloud Storage
 const fs = require('promise-fs')
 const path = require('path')
+const { mkdirRecursive } = require('../mkdir-recursive')
 
-/**
- * 
- * @param {string} dirname
- * @returns {Promise<void>}
- */
-function mkdirRecursive(dirname) {
-  return new Promise((resolve, reject) => {
-    //@ts-ignore
-    require('mkdir-recursive').mkdir(dirname, err => {
-      if (err && !err.message.match('EEXIST')) {
-        return reject(err)
-      }
-      return resolve()
-    })
-  })
-}
+
 
 /**
  * @returns {Promise<string[]>} filenames relative to the 'dir'
