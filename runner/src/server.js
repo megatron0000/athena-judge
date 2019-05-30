@@ -73,17 +73,19 @@ app.post("/run", async (req, res) => {
     let testResults = []
     let status = await downloadSourceAndTests(socket, courseId, courseWorkId, submissionId)
 
-    console.log('downloaded files')
-
     if (status.ok) {
+      console.log('downloaded files')
       status = await compileSource(socket)
-      console.log('compiled source')
     }
 
     if (status.ok) {
+      console.log('compiled source')
       const result = await runTests(socket, executionTimeout, memLimitMB, containerId)
       testResults = result.testResults
       status = result.status
+    }
+
+    if (status.ok) {
       console.log('ran tests')
     }
 

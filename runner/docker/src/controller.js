@@ -59,28 +59,17 @@ server.on('connection', client => {
   })
 
   client.on('compileSource', async callback => {
-    /**
-     * @type {string[]}
-     */
-    const sourceList = await FS.readdir(ctx.localSrcDir)
-    const mainFile = sourceList.find(source => source === 'main.cpp')
 
-    if (!mainFile) {
-      ctx.status = {
-        ok: false,
-        message: 'File main.cpp not present at root directory'
-      }
-      return callback(ctx.status)
-    }
-
-    ChildProcess.exec(`
-      set -e ;
+    ChildProcess.exec(
+      `
+      (set -e ;
       set -x ;
-      INCLUDES=$(find . -type d | sed 's/\(.*\)$/-I\1/') ;
-      SOURCE_FILES=$(find . -type f -name "*.cpp" | sed 's/\(.*\)$/-c \1/') ;
+      INCLUDES=$(find . -type d | sed 's/\\(.*\\)$/-I\\1/') ;
+      SOURCE_FILES=$(find . -type f -name "*.cpp" | sed 's/\\(.*\\)$/-c \\1/') ;
       g++ $INCLUDES $SOURCE_FILES 2>&1 ;
       O_FILES=$(find . -type f -name "*.o") ;
-      g++ $O_FILES 2>&1 ;
+      g++ $O_FILES 2>&1 ;) 2>&1 ;
+      exit $? ;
     `, {
         cwd: ctx.localSrcDir
       }, (err, stdout) => {
@@ -99,7 +88,8 @@ server.on('connection', client => {
         }
 
         return callback(ctx.status)
-      })
+      }
+    )
 
   })
 
@@ -137,9 +127,7 @@ server.on('connection', client => {
       })
     }
 
-    ChildProcess.exec(`rm -r -f ${ctx.localSubmissionDir}`, (err, stdout, stderr) => {
-      client.emit('executionEnd')
-    })
+    client.emit('executionEnd')
 
   })
 

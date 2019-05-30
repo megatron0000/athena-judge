@@ -698,7 +698,7 @@ describe('/run', function () {
     )
 
     assert.equal(
-      status.message.match('Compilation Error: ') && true,
+      status.message.match('Compilation Error') && true,
       true
     )
 
