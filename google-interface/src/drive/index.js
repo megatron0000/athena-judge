@@ -27,11 +27,12 @@ async function downloadFile(courseId, fileId, localDestinationPath) {
   const drive = await getDrive(courseId)
   // ref: https://github.com/AfroMan94/lern2drive/blob/28dd6b7a8a4c9e3d42fcfc2b7189d96bdc3fc5d0/services/googleDrive/googleDrive.js
   const { data: stream } = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'stream' })
+  const writeStream = createWriteStream(localDestinationPath)
   return new Promise((resolve, reject) => {
     stream
+      .pipe(writeStream)
       .on('error', reject)
-      .on('end', resolve)
-      .pipe(createWriteStream(localDestinationPath))
+      .on('close', resolve)
   })
 }
 

@@ -25,35 +25,34 @@ const schedule = {
   registerForLater(cb) {
     this._queue.push(cb)
   },
-  executeScheduled() {
+  async executeScheduled() {
     const queueSnapshot = this._queue
     this._queue = []
-    return Promise.all(
-      queueSnapshot.map(cb => new Promise(async (resolve, reject) => {
-        try {
-          await cb()
-          resolve(null)
-        } catch (err) {
-          resolve(err)
-        }
-      }))
+    
+    const results = []
+    for (let i = 0; i < queueSnapshot.length; i++) {
+      const cb = queueSnapshot[i]
+      try {
+        await cb()
+        results.push(null)
+      } catch (err) {
+        results.push(err)
+      }
+    }
+
+    const errors = results.filter(result => result !== null)
+    if (errors.length === 0) {
+      return
+    }
+
+    const message = errors.map(err =>
+      'Error in scheduled function: \n' + err.stack + '\n'
+    ).join('\n')
+
+    throw new Error(
+      message +
+      errors.length + ' out of ' + results.length + ' executeScheduled functions generated errors. See above.'
     )
-      .then(results => {
-        const errors = results.filter(result => result !== null)
-        if (errors.length === 0) {
-          return
-        }
-
-        const message = errors.map(err =>
-          'Error in scheduled function: \n' + err.stack + '\n'
-        ).join('\n')
-
-        throw new Error(
-          message +
-          errors.length + ' out of ' + results.length + ' executeScheduled functions generated errors. See above.'
-        )
-
-      })
   }
 }
 
@@ -210,17 +209,17 @@ async function testWrongSubmission({
     id: submissionObj.id
   })
 
-  schedule.registerForLater(async () => {
-    // Failure. Should have been returned
-    if (await submissionIsTurnedIn(process.env['CLASSROOM_TEST_COURSE_ID'], courseWorkObj.id, submissionObj.id)) {
-      // assigning grade returns the submission. 
-      await assignGradeToSubmission(process.env['CLASSROOM_TEST_COURSE_ID'], courseWorkObj.id, submissionObj.id, 0)
-      // then the student will own his file again, thus will be able to delete it
-      await studentDrive.files.delete({
-        fileId: driveFile.id
-      })
-    }
-  })
+  // schedule.registerForLater(async () => {
+  //   // Failure. Should have been returned
+  //   if (await submissionIsTurnedIn(process.env['CLASSROOM_TEST_COURSE_ID'], courseWorkObj.id, submissionObj.id)) {
+  //     // assigning grade returns the submission. 
+  //     await assignGradeToSubmission(process.env['CLASSROOM_TEST_COURSE_ID'], courseWorkObj.id, submissionObj.id, 0)
+  //     // then the student will own his file again, thus will be able to delete it
+  //     await studentDrive.files.delete({
+  //       fileId: driveFile.id
+  //     })
+  //   }
+  // })
 
   let updatedStudentSubmission
   do {
