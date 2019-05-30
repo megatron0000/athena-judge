@@ -98,6 +98,13 @@ const codeCorrectionLock = {
   }
 }
 
+/**
+ * TODO: There are really lots of functionalities inside here: 
+ * - Understading the submission format (.zip ? .tar ? etc.)
+ * - Locking mechanism to avoid processing things more-than-once etc.
+ * - Calculating grade based on test results
+ * - Communicating any status (midway-failure or complete success) to the student who wubmitted
+ */
 AttachPubSubListener(async (notification, ack) => {
   notification = JSON.parse(notification.data.toString('utf8'))
   console.log(notification)
@@ -163,7 +170,7 @@ AttachPubSubListener(async (notification, ack) => {
     : MIME.tar.indexOf(compressedFileMime) !== -1
       ? '.tar'
       : MIME.gzip.indexOf(compressedFileMime) !== -1
-        ? '.tar.gzip'
+        ? '.tar.gz'
         : null
 
   if (compressedFileFormat === null) {
