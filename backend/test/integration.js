@@ -1,10 +1,10 @@
 /// <reference types="mocha"/>
 const { getOAuth2ClientFromLocalCredentials } = require('../src/google-interface/credentials/auth')
 const { deleteCourseWorkTestFiles, uploadCourseWorkTestFiles, uploadTeacherCredential } = require('../src/google-interface/cloudstorage')
-const { createRegistration } = require('../src/google-interface/classroom')
+const { createRegistration, submissionIsTurnedIn, assignGradeToSubmission } = require('../src/google-interface/classroom')
 const { google } = require('googleapis')
 const { createReadStream } = require('fs')
-const { resolve } = require('path')
+const { resolve, basename } = require('path')
 const assert = require('assert')
 
 let studentClassroom
@@ -173,6 +173,9 @@ async function testWrongSubmission({
     media: {
       mimeType,
       body: createReadStream(resolve(__dirname, 'sample-files', 'wrong-submission', localFileName))
+    },
+    requestBody: {
+      name: basename(localFileName)
     }
   })
 
@@ -205,6 +208,18 @@ async function testWrongSubmission({
     courseId: process.env['CLASSROOM_TEST_COURSE_ID'],
     courseWorkId: courseWorkObj.id,
     id: submissionObj.id
+  })
+
+  schedule.registerForLater(async () => {
+    // Failure. Should have been returned
+    if (await submissionIsTurnedIn(process.env['CLASSROOM_TEST_COURSE_ID'], courseWorkObj.id, submissionObj.id)) {
+      // assigning grade returns the submission. 
+      await assignGradeToSubmission(process.env['CLASSROOM_TEST_COURSE_ID'], courseWorkObj.id, submissionObj.id, 0)
+      // then the student will own his file again, thus will be able to delete it
+      await studentDrive.files.delete({
+        fileId: driveFile.id
+      })
+    }
   })
 
   let updatedStudentSubmission

@@ -1,8 +1,8 @@
 const { StartPubSub, AttachPubSubListener } = require('./google-interface/pubsub')
-const { getFileMIME, MIME, downloadFile } = require('./google-interface/drive')
+const { isCompressed, getFileName, downloadFile } = require('./google-interface/drive')
 const { submissionIsTurnedIn, submissionIsReturned, assignGradeToSubmission, getSubmissionDriveFileIds } = require('./google-interface/classroom')
 const request = require('request-promise-native')
-const { resolve, dirname, join } = require('path')
+const { resolve, join } = require('path')
 const { unlink, readdir, stat } = require('promise-fs')
 const decompress = require('decompress')
 const { uploadCourseWorkSubmissionFiles } = require('./google-interface/cloudstorage')
@@ -145,42 +145,29 @@ AttachPubSubListener(async (notification, ack) => {
 
   const driveFileIds = await getSubmissionDriveFileIds(courseId, courseWorkId, submissionId)
 
-  const driveFileMimes = await Promise.all(driveFileIds.map(fileId => getFileMIME(courseId, fileId)))
+  const driveFileNames = await Promise.all(driveFileIds.map(fileId => getFileName(courseId, fileId)))
 
-  const compressedFileMimes = driveFileMimes
-    .map((value, index) => ({ value, index }))
-    .filter(value_index => MIME.zip.concat(MIME.gzip, MIME.tar).indexOf(value_index.value) !== -1)
+  const compressedFileNames = driveFileNames
+    .map((name, index) => ({ name, index }))
+    .filter(name_index => isCompressed(name_index.name))
 
-  if (compressedFileMimes.length === 0) {
+  if (compressedFileNames.length === 0) {
     return await respondToStudent({
-      error: 'Could not find compressed file in submission'
+      error: 'Could not find compressed file in submission (no recognized compression format, at least)'
     })
   }
 
-  if (compressedFileMimes.length > 1) {
+  if (compressedFileNames.length > 1) {
     return await respondToStudent({
       error: 'Found more than one compressed file in submission'
     })
   }
 
-  const compressedFileId = driveFileIds[compressedFileMimes[0].index]
-  const compressedFileMime = compressedFileMimes[0].value
-  const compressedFileFormat = MIME.zip.indexOf(compressedFileMime) !== -1
-    ? '.zip'
-    : MIME.tar.indexOf(compressedFileMime) !== -1
-      ? '.tar'
-      : MIME.gzip.indexOf(compressedFileMime) !== -1
-        ? '.tar.gz'
-        : null
-
-  if (compressedFileFormat === null) {
-    return await respondToStudent({
-      error: 'Bad file compression format'
-    })
-  }
+  const compressedFileId = driveFileIds[compressedFileNames[0].index]
+  const compressedFileName = compressedFileNames[0].name
 
   const tmpSubmissionDir = resolve('/tmp', courseId, courseWorkId, submissionId)
-  const localCompressedFilePath = join(tmpSubmissionDir, compressedFileId + compressedFileFormat)
+  const localCompressedFilePath = join(tmpSubmissionDir, compressedFileId + '-' + compressedFileName)
 
   try {
     await downloadFile(courseId, compressedFileId, localCompressedFilePath)

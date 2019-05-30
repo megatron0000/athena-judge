@@ -1,7 +1,7 @@
 const { google } = require('googleapis')
 const { getOAuth2Client } = require('../credentials/auth')
-const { createWriteStream } = require('fs')
-const { dirname } = require('path')
+const { createWriteStream, ReadStream } = require('fs')
+const { dirname, extname } = require('path')
 const { mkdirRecursive } = require('../mkdir-recursive')
 
 
@@ -22,7 +22,7 @@ async function getDrive(courseId) {
  * @param {string} fileId
  * @returns {string}
  */
-exports.downloadFile = async function downloadFile(courseId, fileId, localDestinationPath) {
+async function downloadFile(courseId, fileId, localDestinationPath) {
   await mkdirRecursive(dirname(localDestinationPath))
   const drive = await getDrive(courseId)
   // ref: https://github.com/AfroMan94/lern2drive/blob/28dd6b7a8a4c9e3d42fcfc2b7189d96bdc3fc5d0/services/googleDrive/googleDrive.js
@@ -36,10 +36,10 @@ exports.downloadFile = async function downloadFile(courseId, fileId, localDestin
 }
 
 /**
- * @param {string | ReadableStream} content 
+ * @param {string | ReadStream} content 
  * @returns {Promise<string>} the created file id
  */
-exports.createFile = async function createFile(courseId, content) {
+async function createFile(courseId, content) {
   const drive = await getDrive(courseId)
   const response = await drive.files.create({
     media: {
@@ -49,30 +49,27 @@ exports.createFile = async function createFile(courseId, content) {
   return response.data.id
 }
 
-exports.deleteFile = async function deleteFile(courseId, fileId) {
+async function deleteFile(courseId, fileId) {
   const drive = await getDrive(courseId)
   return drive.files.delete({ fileId })
 }
 
-exports.getFileMIME = async function getFileMIME(courseId, fileId) {
+async function getFileName(courseId, fileId) {
   const drive = await getDrive(courseId)
   const response = await drive.files.get({ fileId })
   const file = response.data
-  return file.mimeType
+  return file.name
 }
 
-exports.MIME = {
-  zip: [
-    'application/x-compressed',
-    'application/x-zip-compressed',
-    'application/zip',
-    'multipart/x-zip',
-    'application/x-zip'
-  ],
-  tar: [
-    'application/x-tar'
-  ],
-  gzip: [
-    'application/x-gzip'
-  ]
+function isCompressed(filename) {
+  const extensions = ['.zip', '.tar', '.gz']
+  return extensions.indexOf(extname(filename)) !== -1
+}
+
+module.exports = {
+  getFileName,
+  deleteFile,
+  createFile,
+  downloadFile,
+  isCompressed
 }
