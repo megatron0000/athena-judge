@@ -100,11 +100,15 @@ server.on('connection', client => {
     for (let i = 0; i < testCount; i++) {
       const inputPath = Path.join(ctx.localTestDir, i.toString(), 'input')
       const outputPath = Path.join(ctx.localTestDir, i.toString(), 'output')
-      const binPath = Path.join(ctx.localSrcDir, 'a.out')
-      const [input, expectedOutput] = await Promise.all([
+      const metadataPath = Path.join(ctx.localTestDir, i.toString(), 'metadata')
+
+      const [input, expectedOutput, metadata] = await Promise.all([
         FS.readFile(inputPath, 'utf8'),
-        FS.readFile(outputPath, 'utf8')
+        FS.readFile(outputPath, 'utf8'),
+        FS.readFile(metadataPath, 'utf8').then(JSON.parse)
       ])
+
+      const binPath = Path.join(ctx.localSrcDir, 'a.out')
 
       await new Promise(resolve => {
         ChildProcess.exec(
@@ -117,7 +121,9 @@ server.on('connection', client => {
               output: stdout,
               // TODO: This timeout identification is not 100% reliable
               error: !err ? '' : stderr || 'Timeout',
-              pass: !err && stdout === expectedOutput
+              pass: !err && stdout === expectedOutput,
+              isPrivate: metadata.isPrivate,
+              weight: metadata.weight
             }
             client.emit('testResult', testResult)
             resolve()

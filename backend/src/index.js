@@ -31,32 +31,6 @@ const portListener = createServer(socket => {
 
 portListener.listen(PORT)
 
-/**
- *
- * @param {string} rootDir Directory under which to search for a file
- * @param {*} searchName Filename to be searched (like "main.cpp")
- * @returns {Promise<string[]>} Absolute paths of all matching files found
- */
-async function findFileRecursive(rootDir, searchName) {
-  const filenames = await readdir(rootDir)
-  const fileStats = await Promise.all(filenames.map(file => stat(join(rootDir, file))))
-  const dirs = []
-
-  const result = []
-  fileStats.forEach((fs, i) => {
-    const filename = resolve(rootDir, filenames[i])
-
-    if (fs.isFile() && filename.endsWith(searchName)) {
-      result.push(filename)
-    } else if (fs.isDirectory()) {
-      dirs.push(findFileRecursive(filename, searchName))
-    }
-  });
-
-  const subDirMatches = await Promise.all(dirs)
-  return result.concat(...subDirMatches)
-}
-
 const run_endpoint = 'http://localhost:3001/run'
 const default_options = {
   method: 'POST',
@@ -198,13 +172,35 @@ AttachPubSubListener(async (notification, ack) => {
     }
   }
 
+  /**
+   * @typedef {object} TestResult
+   * @property {boolean} pass
+   * @property {string} input
+   * @property {string} expectedOutput
+   * @property {string} output
+   * @property {string} error
+   * @property {boolean} isPrivate
+   * @property {number} weight
+   */
+  /**
+   * @typedef {object} Status
+   * @property {boolean} ok
+   * @property {string} message
+   * @property {string=} additionalInfo
+   */
+  /**
+   * @type {{status: Status, testResults: TestResult[]}}
+   */
   const { status, testResults } = await request(requestOptions)
 
   const grade = !status.ok
     ? 0.0
     : !testResults.length
       ? 10
-      : 10 * testResults.filter(r => r.pass).length / testResults.length
+      : 10 * testResults
+        .filter(r => r.pass)
+        .reduce((previous, current) => previous + current.weight, 0)
+      / testResults.reduce((previous, current) => previous + current.weight, 0)
 
   console.log(status)
   console.log(testResults)
