@@ -33,12 +33,17 @@ export default class AuthButton extends React.Component {
 
   handleUserUpdate = (guser) => {
     if (guser && guser.isSignedIn()) {
+
+      var id_token = guser.Zi.id_token
+
       let profile = guser.getBasicProfile();
+
       this.props.onUserUpdate({
         gid: profile.getId(),
         name: profile.getName(),
         photo: profile.getImageUrl(),
-        email: profile.getEmail()
+        email: profile.getEmail(),
+        id_token: id_token,
       });
     } else {
       this.props.onUserUpdate(null);

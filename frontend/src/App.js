@@ -23,6 +23,7 @@ export default class App extends React.Component {
         name: user.name,
         photo: user.photo,
         email: user.email,
+        id_token: user.id_token,
       });
     }
   }
@@ -30,6 +31,19 @@ export default class App extends React.Component {
   handleOpenSidebar = () => {
     this.sideBar.handleOpen();
   }
+
+  // handleArrowBackClick = () => {
+  //   let currentState = this.main.state;
+  //   console.log(this.main.state);
+  //   // this.main.setState({ show: "CourseList", courseId: null });
+  //   if (currentState.show == "CourseView") {
+  //     this.main.setState({ show: "CourseList", courseId: null });
+  //   } else if (currentState.show == "CourseCreate") {
+  //     this.main.showHome();
+  //   } else if(currentState.show == "CourseList") {
+  //     this.main.setState({ show: "CourseList", courseId: null });
+  //   }
+  // }
 
   handleHomeClick = () => {
     this.main.showHome();
@@ -40,6 +54,7 @@ export default class App extends React.Component {
       <div>
         <TopBar
           title="Athena Judge"
+          // onArrowBackClick={this.handleArrowBackClick}
           onHomeClick={this.handleHomeClick}
           user={this.state.user}
           onUserUpdate={this.handleUserUpdate}
@@ -54,7 +69,7 @@ export default class App extends React.Component {
         >
           {
             (this.state.user != null) ?
-            <Main 
+            <Main
               ref={(ref) => { this.main = ref; } }
               user={this.state.user}
             />

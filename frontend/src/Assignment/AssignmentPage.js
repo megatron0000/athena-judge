@@ -112,6 +112,8 @@ export default class AssignmentPage extends React.Component {
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });
+    }).then(() => {
+      this.setState({ show: "list" });
     });
   }
 
