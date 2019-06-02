@@ -14,7 +14,7 @@ sudo apt-get install screen -y
 sudo apt-get install psmisc -y
 
 # install ts for logging with timestamps
-sudo apt-get install moreutils
+sudo apt-get install moreutils -y
 
 # create /var/athena-judge for permanent information (i.e. log files)
 (sudo mkdir -m777 /usr/local/lib/athena-judge || exit 0)
