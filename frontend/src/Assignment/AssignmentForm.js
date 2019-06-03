@@ -42,7 +42,17 @@ export default class AssignmentForm extends React.Component {
   }
 
   handlePublicTestsChange = (files) => {
+    var newFiles = [];
+    for (var i = 0; i < files.length; i++) {
+      var newFile = {input: files[i].name, output: files[i].name, isPrivate: false, weight: files[i].weight};
+      newFiles[i] = newFile;
+      console.log('oi');
+      console.log(newFile);
+    }
+    console.log(newFiles);
+    console.log(files);
     this.setState({ publicTests: files });
+    // filesObject = {input: files.name, output: files.name, isPrivate: false, weight: files.weight};
   }
 
   handlePrivateTestsChange = (files) => {
