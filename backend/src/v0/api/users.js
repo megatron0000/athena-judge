@@ -49,27 +49,11 @@ router.get("/:gid", async (req, res, next) => {
   } else {
     res.status(401);
     res.json({ error: "UnauthorizedError", message: "Usuário não autenticado"});
+    console.log(res);
   }
 });
 
 router.put("/:gid", async (req, res, next) => {
-  //const {OAuth2Client} = require('google-auth-library');
-  //const client = new OAuth2Client(req.body.gid);
-  //async function verify() {
-  //  const ticket = await client.verifyIdToken({
-  //      idToken: req.body.id_token,
-  //      audience: req.body.gid,  // Specify the CLIENT_ID of the app that accesses the backend
-  //      // Or, if multiple clients access the backend:
-  //      //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
-  //  });
-  //  const payload = ticket.getPayload();
-  //  const gid = payload['sub'];
-  //  const name = payload['name'];
-  //  const photo = payload['picture'];
-  //  const email = payload['email'];
-  //}
-  //verify().catch(console.error);
-
   /*
   @vb: race condition. sequelize's upsert would be better since it its atomic, but
   i couldn't get it to work.
