@@ -1,23 +1,9 @@
 const GCS = require('./lib'); // GCS = Google Cloud Storage
 const fs = require('promise-fs')
 const path = require('path')
+const { mkdirRecursive } = require('../mkdir-recursive')
 
-/**
- * 
- * @param {string} dirname
- * @returns {Promise<void>}
- */
-function mkdirRecursive(dirname) {
-  return new Promise((resolve, reject) => {
-    //@ts-ignore
-    require('mkdir-recursive').mkdir(dirname, err => {
-      if (err && !err.message.match('EEXIST')) {
-        return reject(err)
-      }
-      return resolve()
-    })
-  })
-}
+
 
 /**
  * @returns {Promise<string[]>} filenames relative to the 'dir'
@@ -69,10 +55,10 @@ async function uploadCourseWorkSubmissionFiles(courseId, courseWorkId, submissio
 
   return Promise.all(
     files.map(file =>
-      GCS.uploadFile(
-        path.posix.join(localDirectory, file),
-        path.posix.join(cloudDirectory, file)
-      )
+      GCS.uploadFile({
+        localFilename: path.posix.join(localDirectory, file),
+        destinationPath: path.posix.join(cloudDirectory, file)
+      })
     )
   )
 }
@@ -81,7 +67,7 @@ async function uploadCourseWorkSubmissionFiles(courseId, courseWorkId, submissio
  *
  * @param {string} courseId google-id
  * @param {string} courseWorkId google-id
- * @param {{input: string; output: string}[]}  files
+ * @param {{input: string, output: string, isPrivate?: boolean, weight?: number}[]}  files
  */
 function uploadCourseWorkTestFiles(courseId, courseWorkId, files) {
   const cloudDirectory = path.posix.join(courseId, 'courseWorks', courseWorkId, 'testFiles')
@@ -90,8 +76,18 @@ function uploadCourseWorkTestFiles(courseId, courseWorkId, files) {
   files.forEach((f, i) => {
     const uploadDir = path.posix.join(cloudDirectory, i.toString())
 
-    uploads.push(GCS.uploadFile(f.input, path.posix.join(uploadDir, 'input')))
-    uploads.push(GCS.uploadFile(f.output, path.posix.join(uploadDir, 'output')))
+    uploads.push(GCS.uploadFile({
+      localFilename: f.input,
+      destinationPath: path.posix.join(uploadDir, 'input')
+    }))
+    uploads.push(GCS.uploadFile({
+      localFilename: f.output,
+      destinationPath: path.posix.join(uploadDir, 'output')
+    }))
+    uploads.push(GCS.uploadFile({
+      content: JSON.stringify({ isPrivate: f.isPrivate || false, weight: f.weight || 1 }),
+      destinationPath: path.posix.join(uploadDir, 'metadata')
+    }))
   })
 
   return Promise.all(uploads)
@@ -104,7 +100,10 @@ function uploadCourseWorkTestFiles(courseId, courseWorkId, files) {
  */
 function uploadTeacherCredential(courseId, localCredentialPath) {
   const cloudPath = path.posix.join(courseId, 'teacherCredential.json')
-  return GCS.uploadFile(localCredentialPath, cloudPath)
+  return GCS.uploadFile({
+    localFilename: localCredentialPath,
+    destinationPath: cloudPath
+  })
 }
 
 /**

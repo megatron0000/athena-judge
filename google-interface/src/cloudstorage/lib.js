@@ -1,9 +1,10 @@
-const fs = require('promise-fs')
 const path = require('path')
-const { mkdir } = require('mkdir-recursive')
 
 const { Storage } = require('@google-cloud/storage')
 const { getProjectId } = require('../credentials/config')
+const { mkdirRecursive } = require('../mkdir-recursive')
+const { Readable } = require('stream')
+const { createReadStream } = require('fs')
 
 
 // must be accessed by getBucket()
@@ -26,7 +27,7 @@ async function getBucket() {
 
 
 async function listFiles() {
-  
+
   // Lists files in the bucket
   const bucket = await getBucket()
   return bucket.getFiles()
@@ -64,46 +65,57 @@ async function listFilesByPrefix(prefix) {
   return files.map(file => file.name)
 }
 
-async function uploadFile(localFilename, destinationPath) {
+/**
+ * @param {object} args
+ * @param {string=} args.localFilename Optional. If set, will be used as a local file to be uploaded
+ * @param {string} args.destinationPath Required.
+ * @param {string=} args.content Optional. If set, instead of using 'localFilename', upload content will be taken as this value
+ * @returns {Promise<any>}
+ */
+function uploadFile({ localFilename, destinationPath, content }) {
 
-  const bucket = await getBucket()
-  // Uploads a local file to the bucket
-  return bucket.upload(localFilename, {
-    // Support for HTTP requests made with `Accept-Encoding: gzip`
-    gzip: false,
-    destination: destinationPath,
-    // By setting the option `destination`, you can change the name of the
-    // object you are uploading to a bucket
-    metadata: {
-      // Enable long-lived HTTP caching headers
-      // Use only if the contents of the file will never change
-      // (If the contents will change, use cacheControl: 'no-cache')
-      cacheControl: 'public, max-age=31536000',
-    },
+  if (content && localFilename) {
+    throw new Error('"content" and "localFilename" are exclusive')
+  }
+
+  return new Promise(async (resolve, reject) => {
+    let readStream
+    if (content) {
+      readStream = new Readable()
+      readStream.push(content)
+      readStream.push(null)
+    } else {
+      readStream = createReadStream(localFilename)
+    }
+
+    const bucket = await getBucket()
+    const file = bucket.file(destinationPath)
+    readStream.pipe(file.createWriteStream({
+      gzip: false,
+      metadata: {
+        cacheControl: 'no-cache'
+      }
+    }))
+      .on('error', reject)
+      .on('finish', resolve)
+
   })
 
-  // console.log(`${localFilename} uploaded to ${bucket.name}.`)
-  // [END storage_upload_file]
 }
 
 async function downloadFile(srcFilename, destFilename) {
   const bucket = await getBucket()
-  return new Promise((resolve, reject) => {
-    //@ts-ignore
-    mkdir(path.dirname(destFilename), err => {
-      if (err && !err.message.match('EEXIST')) reject(err)
 
-      const options = {
-        // The path to which the file should be downloaded, e.g. "./file.txt"
-        destination: destFilename,
-        gzip: false
-      }
+  await mkdirRecursive(path.dirname(destFilename))
 
-      // Downloads the file
-      bucket.file(srcFilename).download(options).then(resolve)
-    })
-  })
+  const options = {
+    // The path to which the file should be downloaded, e.g. "./file.txt"
+    destination: destFilename,
+    gzip: false
+  }
 
+  // Downloads the file
+  return bucket.file(srcFilename).download(options)
 
   // [END storage_download_file]
 }

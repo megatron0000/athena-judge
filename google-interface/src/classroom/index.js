@@ -1,7 +1,7 @@
 require('../credentials/config')
 const { google } = require('googleapis')
 const { getOAuth2Client } = require('../credentials/auth')
-const {getProjectId} = require('../credentials/config')
+const { getProjectId } = require('../credentials/config')
 
 
 /**

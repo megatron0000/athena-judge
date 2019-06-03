@@ -6,16 +6,19 @@
 require('./google-interface/credentials/config')
 const { google } = require('googleapis')
 const readline = require('readline')
-const { readFileSync, writeFileSync, existsSync } = require('fs')
-const { readFile } = require('promise-fs')
+const { readFileSync, writeFileSync, existsSync, mkdirSync } = require('fs')
+const { readFile, exists, mkdir, writeFile } = require('promise-fs')
 const { resolve, basename, dirname } = require('path')
 const { getOAuth2ClientFromLocalCredentials } = require('./google-interface/credentials/auth')
-const { getProjectId } = require('./google-interface/credentials/config')
+const { getProjectId, getGithubRepoHref, SCOPES } = require('./google-interface/credentials/config')
 const { spawn } = require('child_process')
+
 // https://www.npmjs.com/package/ololog
 // https://github.com/xpl/ansicolor#supported-styles
 const log = require('ololog')
 
+const { uploadTeacherCredential } = require('./google-interface/cloudstorage')
+const { createRegistration } = require('./google-interface/classroom')
 
 /**
  * Functions used internally. Should not be called for scripting
@@ -53,7 +56,7 @@ const INTERNAL = {
     }
   },
 
-  async getOAuth2Client(oauthCredPath, scopes, readlineInterface, tokenDestinationPath) {
+  async getOAuth2ClientInteractive(oauthCredPath, scopes, readlineInterface, tokenDestinationPath) {
     let oauthCred
     try {
       oauthCred = JSON.parse(readFileSync(oauthCredPath, 'utf8'))
@@ -147,15 +150,18 @@ const INTERNAL = {
    * Invokes spawn() (from child_process module), piping stdout and stderr.
    * @returns {Promise<string>} On success, resolves with the stdout. On failure, rejects with the stderr
    */
-  runPiped(command, args, withShell = true, hideConsoleLogs = false) {
+  runPiped(command, args, withShell = true, hideConsoleLogs = false, cwd = process.cwd()) {
     return new Promise((resolve, reject) => {
 
       let completeStdout = ''
       let completeStderr = ''
 
-      log.yellow('launching child process')
+      if (!hideConsoleLogs) {
+        log.yellow('launching child process for command "' + command + '" with args', args)
+      }
+
       // use shell to allow substitutions and other preprocessing facilities
-      const child = spawn(command, args, { shell: withShell })
+      const child = spawn(command, args, { shell: withShell && '/bin/bash', cwd })
 
       child.stdout.on('data', data => {
         completeStdout += data.toString()
@@ -172,7 +178,11 @@ const INTERNAL = {
       })
 
       child.on('close', code => {
-        log.yellow(`child process exited with code ${code}`)
+
+        if (!hideConsoleLogs) {
+          log.yellow(`child process exited with code ${code}`)
+        }
+
         child.unref()
         if (code) {
           return reject(completeStderr)
@@ -185,11 +195,11 @@ const INTERNAL = {
   /**
    * @returns {Promise<string>} On success, resolves with the stdout. On failure, rejects with the stderr
    */
-  runCommandOverSSH(commandString, privateKeyPath, username, hostnameOrIP, withShell = false) {
+  runCommandOverSSH(commandString, privateKeyPath, username, hostnameOrIP, hideConsoleLogs = false) {
     return INTERNAL.runPiped('ssh', [
       '-i', privateKeyPath, '-q', '-o', 'StrictHostKeyChecking no',
       username + '@' + hostnameOrIP, 'set -x; ' + commandString
-    ], withShell)
+    ], false, hideConsoleLogs)
   },
 
   /**
@@ -198,6 +208,9 @@ const INTERNAL = {
    * @returns {Promise<{publicKey: string, privateKeyPath: string}>}
    */
   async createSSHKey() {
+    if (!existsSync('/tmp/athena-judge')) {
+      mkdirSync('/tmp/athena-judge')
+    }
     const privateKeyPath = '/tmp/athena-judge/key-' + new Date().toISOString()
     await INTERNAL.runPiped('bash', [
       '-c', 'ssh-keygen -t rsa -N "" -C "" -f ' + privateKeyPath
@@ -206,6 +219,28 @@ const INTERNAL = {
     return {
       publicKey,
       privateKeyPath
+    }
+  },
+  /**
+   * @returns {Promise<boolean>} true if, and only if, the lock was acquired
+   */
+  async acquireVMLock() {
+    try {
+      await runCommandOnVM('mkdir /tmp/athena-judge-lockdir', true)
+    } catch (err) {
+      log.red('Failed to acquire VM lock. Already locked')
+      return false
+    }
+
+    log.green('Success in acquiring VM lock')
+    return true
+  },
+  async releaseVMLock() {
+    try {
+      await runCommandOnVM('rmdir /tmp/athena-judge-lockdir', true)
+      log.green('Release VM lock')
+    } catch (err) {
+      log.red('Failed to release VM lock')
     }
   },
   /**
@@ -261,19 +296,23 @@ const INTERNAL = {
     const vmUsername = vmLoginProfile.loginProfile.posixAccounts[0].username
 
     // wait for key to be recognized by Google before returning to the caller
+    let trycount = 1
     while (
       await INTERNAL.runCommandOverSSH(
         'echo "Waiting SSH key establishment" ;',
         sshKeys.privateKeyPath,
         vmUsername,
-        instanceIP
+        instanceIP,
+        true
       )
         .then(stdout => false)
         .catch(stderr => {
-          if (stderr.match('Connection refused') || stderr.match('Permission denied')) {
+          if (trycount < 24) {
+            trycount++
+            log.green('Trying again (' + trycount + '/24) times')
             return true
           }
-          throw new Error('SSH command failed.')
+          throw new Error('SSH command failed. Tried 24 times (2 minutes)')
         })
     ) {
       await new Promise(resolve => setTimeout(resolve, 5000))
@@ -288,6 +327,131 @@ const INTERNAL = {
       projId
     }
 
+  },
+  /**
+   * Downloads the linux version of gcloud. For other environments, see
+   * https://cloud.google.com/sdk/docs/downloads-versioned-archives.
+   * 
+   * Also appends the PATH and uses a service-account to authenticate gcloud
+   */
+  async downloadUncompressInstallGCloud() {
+    const appPath = resolve(__dirname, '../../')
+    const gcloudDownloadUrl = 'https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-247.0.0-linux-x86_64.tar.gz'
+    await INTERNAL.runPiped('wget', [gcloudDownloadUrl, '-O', 'gcloud.tar.gz'], true, false, appPath)
+    await INTERNAL.runPiped('tar', ['-xf', 'gcloud.tar.gz'], true, false, appPath)
+    await INTERNAL.runPiped(
+      'bash',
+      ['google-cloud-sdk/install.sh', '--usage-reporting=false', '--quiet', '--path-update=true'],
+      true,
+      false,
+      appPath
+    )
+    process.env['PATH'] = resolve(appPath, 'google-cloud-sdk/bin') + ':' + process.env['PATH']
+    await INTERNAL.runPiped('gcloud', ['config', 'set', 'project', await getProjectId()], true, false, appPath)
+    await INTERNAL.runPiped('gcloud', [
+      'auth',
+      'activate-service-account',
+      '--key-file',
+      process.env['APPENGINE_HANDLER_SERVICEACCOUNT_CREDENTIALS']
+    ], true, false)
+  },
+  /**
+   * @returns {Promise<string>} Email of the created account
+   */
+  async createServiceAccount(displayName, id, outputKeyPath) {
+    const prompt = INTERNAL.promisifiedReadlineInterface()
+    const scopes = [
+      'https://www.googleapis.com/auth/cloud-platform'
+    ]
+    const oauthCredPath = process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE']
+    const oauthTokenPath = process.env['OAUTH_PROJECT_ADMIN_TOKEN_FILE']
+    const projId = await getProjectId()
+    const auth = await INTERNAL.getOAuth2ClientInteractive(
+      oauthCredPath,
+      scopes,
+      prompt,
+      oauthTokenPath
+    )
+
+    const iam = google.iam({
+      version: 'v1',
+      auth
+    })
+
+    const { data: account } = await iam.projects.serviceAccounts.create({
+      name: 'projects/' + projId,
+      requestBody: {
+        accountId: id,
+        serviceAccount: {
+          displayName
+        }
+      }
+    })
+
+    const { data: accountKey } = await iam.projects.serviceAccounts.keys.create({
+      name: 'projects/' + projId + '/serviceAccounts/' + account.email,
+      requestBody: {
+        privateKeyType: 'TYPE_GOOGLE_CREDENTIALS_FILE',
+        keyAlgorithm: 'KEY_ALG_RSA_2048'
+      }
+    })
+
+    //@ts-ignore
+    writeFileSync(outputKeyPath, JSON.stringify(INTERNAL.convertServiceAccountCredential(accountKey)))
+
+    return account.email
+  },
+
+  /**
+ * Runs all tests on the remote VM instance, piping the output (so it is visible if
+ * errors occur).
+ * 
+ * Assumes the 'remoteProjectDir' contains a valid copy of the codebase, the one to be
+ * executed and tested.
+ * 
+ * Does not leave side effects (i.e. stops all application processes it started)
+ * 
+ * Assumes the VM is not locked (does not acquire the lock by itself, since deployToVM
+ * already does this, and recursive locks are not supported)
+ * 
+ * @param {string} remoteProjectDir Relative to the remote user home directory. In production,
+ * it is "athena-latest"
+ * @returns {Promise<boolean>} Whether all tests passed or not
+ */
+  async runTestsOnVM(remoteProjectDir) {
+
+    await stopVMProcesses()
+
+    let allTestsPassed = true
+
+    await runCommandOnVM(
+      'cd ' + remoteProjectDir + ' ;' +
+      'cd google-interface/ ;' +
+      'npm run test ;'
+    ).catch(() => allTestsPassed = false)
+
+    // run application processes
+    await runCommandOnVM(
+      'cd ' + remoteProjectDir + ' ;' +
+      'cd backend/ && screen -Logfile /usr/local/lib/athena-judge/backend-test.log -dmL /bin/bash -c "npm run dev | ts" ;' +
+      'cd ../runner && screen -Logfile /usr/local/lib/athena-judge/runner-test.log -dmL /bin/bash -c "npm run dev | ts" ;'
+    )
+
+    await runCommandOnVM(
+      'cd ' + remoteProjectDir + ' ;' +
+      'cd runner/ ;' +
+      'npm run test ;'
+    ).catch(() => allTestsPassed = false)
+
+    await runCommandOnVM(
+      'cd ' + remoteProjectDir + ' ;' +
+      'cd backend/ ;' +
+      'npm run test ;'
+    ).catch(() => allTestsPassed = false)
+
+    await stopVMProcesses()
+
+    return allTestsPassed
   }
 
 }
@@ -324,7 +488,7 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
 
   const oauthTokenPath = process.env['OAUTH_PROJECT_ADMIN_TOKEN_FILE']
 
-  const auth = await INTERNAL.getOAuth2Client(
+  const auth = await INTERNAL.getOAuth2ClientInteractive(
     oauthCredPath,
     scopes,
     prompt,
@@ -334,7 +498,29 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
   const projId = await getProjectId()
   const projNumber = await prompt.question('Paste your project\'s number here (not project ID or project name): ')
 
-  log.green('\nEnabling APIs (this may take a couple of minutes)...')
+  log.green(
+    'Using Github site (specifically, the https://github.com/settings/tokens page)' +
+    ', create a Personal Access Token and give it two access scopes: "repo:status" and "gist". ' +
+    'Take note of the generated token\'s number. ' +
+    'Note: this must be done by the owner of the repo for the project on github.'
+  )
+
+  const githubTokenNumber = await prompt.question('Paste your Github access token number here: ')
+  const githubRepo = await prompt.question(
+    'Paste the Github repository name for the project (the repo you own). ' +
+    'We want the short name, not the full url. For example, "athena-judge". Type the repo name here: '
+  )
+  const githubUsername = await prompt.question(
+    'Type your github username here: '
+  )
+
+  await writeFile(process.env['GITHUB_ACCESS_TOKEN'], JSON.stringify({
+    user: githubUsername,
+    repo: githubRepo,
+    token: githubTokenNumber
+  }))
+
+  log.green('\nEnabling Google APIs (this may take a couple of minutes)...')
 
   const serviceusage = google.serviceusage({
     version: 'v1',
@@ -351,7 +537,8 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
         'storage-component.googleapis.com',
         'storage-api.googleapis.com',
         'iam.googleapis.com',
-        'cloudresourcemanager.googleapis.com'
+        'cloudresourcemanager.googleapis.com',
+        'appengine.googleapis.com'
       ]
     }
   })
@@ -378,108 +565,43 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
 
   log.green('Creating Pub/Sub handling service account...')
 
-  const resourceManager = google.cloudresourcemanager({
-    version: 'v1',
-    auth
-  })
-
-  const iam = google.iam({
-    version: 'v1',
-    auth
-  })
-
-  const { data: projPolicies } = await resourceManager.projects.getIamPolicy({
-    resource: projId,
-    requestBody: {}
-  })
-
-  const pubsubAccountName = process.env['PUBSUB_LISTENER_SERVICEACCOUNT_DISPLAY_NAME']
-  const pubsubAccountId = process.env['PUBSUB_LISTENER_SERVICEACCOUNT_ID']
-
-  const { data: pubsubAccount } = await iam.projects.serviceAccounts.create({
-    name: 'projects/' + projId,
-    requestBody: {
-      accountId: pubsubAccountId,
-      serviceAccount: {
-        displayName: pubsubAccountName
-      }
-    }
-  })
-
-  const { data: pubsubAccountKey } = await iam.projects.serviceAccounts.keys.create({
-    name: 'projects/' + projId + '/serviceAccounts/' + pubsubAccount.email,
-    requestBody: {
-      privateKeyType: 'TYPE_GOOGLE_CREDENTIALS_FILE',
-      keyAlgorithm: 'KEY_ALG_RSA_2048'
-    }
-  })
-
-  const pubsubAccountKeyPath = process.env['PUBSUB_LISTENER_SERVICEACCOUNT_CREDENTIALS']
-
-  // @ts-ignore
-  writeFileSync(pubsubAccountKeyPath, JSON.stringify(INTERNAL.convertServiceAccountCredential(pubsubAccountKey)))
+  const pubsubAccountEmail = await INTERNAL.createServiceAccount(
+    process.env['PUBSUB_LISTENER_SERVICEACCOUNT_DISPLAY_NAME'],
+    process.env['PUBSUB_LISTENER_SERVICEACCOUNT_ID'],
+    process.env['PUBSUB_LISTENER_SERVICEACCOUNT_CREDENTIALS']
+  )
 
   log.green('Created Pub/Sub handling service account\n')
 
   log.green('Creating Cloud Storage handling service account...')
 
-
-  const storageAccountName = process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_DISPLAY_NAME']
-  const storageAccountId = process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_ID']
-
-  const { data: storageAccount } = await iam.projects.serviceAccounts.create({
-    name: 'projects/' + projId,
-    requestBody: {
-      accountId: storageAccountId,
-      serviceAccount: {
-        displayName: storageAccountName
-      }
-    }
-  })
-
-  const { data: storageAccountKey } = await iam.projects.serviceAccounts.keys.create({
-    name: 'projects/' + projId + '/serviceAccounts/' + storageAccount.email,
-    requestBody: {
-      privateKeyType: 'TYPE_GOOGLE_CREDENTIALS_FILE',
-      keyAlgorithm: 'KEY_ALG_RSA_2048'
-    }
-  })
-
-  const storageAccountKeyPath = process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_CREDENTIALS']
-
-  writeFileSync(storageAccountKeyPath, JSON.stringify(INTERNAL.convertServiceAccountCredential(storageAccountKey)))
+  const storageAccountEmail = await INTERNAL.createServiceAccount(
+    process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_DISPLAY_NAME'],
+    process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_ID'],
+    process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_CREDENTIALS']
+  )
 
   log.green('Created Cloud Storage handling service account\n')
 
   log.green('Creating VM instance connector service account...')
 
-  const vmAccountName = process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_DISPLAY_NAME']
-  const vmAccountId = process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_ID']
-
-  const { data: vmAccount } = await iam.projects.serviceAccounts.create({
-    name: 'projects/' + projId,
-    requestBody: {
-      accountId: vmAccountId,
-      serviceAccount: {
-        displayName: vmAccountName
-      }
-    }
-  })
-
-  const { data: vmAccountKey } = await iam.projects.serviceAccounts.keys.create({
-    name: 'projects/' + projId + '/serviceAccounts/' + vmAccount.email,
-    requestBody: {
-      privateKeyType: 'TYPE_GOOGLE_CREDENTIALS_FILE',
-      keyAlgorithm: 'KEY_ALG_RSA_2048'
-    }
-  })
-
-  const vmAccountKeyPath = process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_CREDENTIALS']
-
-  // @ts-ignore
-  writeFileSync(vmAccountKeyPath, JSON.stringify(INTERNAL.convertServiceAccountCredential(vmAccountKey)))
+  const vmAccountEmail = await INTERNAL.createServiceAccount(
+    process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_DISPLAY_NAME'],
+    process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_ID'],
+    process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_CREDENTIALS']
+  )
 
   log.green('Created VM instance connector service account\n')
+
+  log.green('Creating AppEngine handler service account...')
+
+  const appEngineAccountEmail = await INTERNAL.createServiceAccount(
+    process.env['APPENGINE_HANDLER_SERVICEACCOUNT_DISPLAY_NAME'],
+    process.env['APPENGINE_HANDLER_SERVICEACCOUNT_ID'],
+    process.env['APPENGINE_HANDLER_SERVICEACCOUNT_CREDENTIALS']
+  )
+
+  log.green('Created AppEngine handler service account\n')
 
   log.green('Creating Pub/Sub topic and subscription...')
 
@@ -505,7 +627,17 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
 
   log.green('Created Pub/Sub topic and subscription\n')
 
-  log.green('Defining Pub/Sub, Cloud Storage and Compute Engine service account permissions...')
+  log.green('Defining Pub/Sub, Cloud Storage, Compute Engine and App Engine service accounts\' permissions...')
+
+  const resourceManager = google.cloudresourcemanager({
+    version: 'v1',
+    auth
+  })
+
+  const { data: projPolicies } = await resourceManager.projects.getIamPolicy({
+    resource: projId,
+    requestBody: {}
+  })
 
   INTERNAL.addMemberToProjectRole_inplace(
     projPolicies,
@@ -513,15 +645,22 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
     'roles/pubsub.publisher'
   )
 
-  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + pubsubAccount.email, 'roles/pubsub.admin')
+  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + pubsubAccountEmail, 'roles/pubsub.admin')
 
-  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + storageAccount.email, 'roles/storage.admin')
+  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + storageAccountEmail, 'roles/storage.admin')
 
-  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + vmAccount.email, 'roles/compute.osAdminLogin')
+  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + vmAccountEmail, 'roles/compute.osAdminLogin')
 
-  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + vmAccount.email, 'roles/compute.admin')
+  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + vmAccountEmail, 'roles/compute.admin')
 
-  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + vmAccount.email, 'roles/iam.serviceAccountUser')
+  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + vmAccountEmail, 'roles/iam.serviceAccountUser')
+
+  /**
+   * Owner !!! This is necessary for the service account
+   * to have permission to create the App Engine application
+   * (though deploying does not require the 'owner' role)
+   */
+  INTERNAL.addMemberToProjectRole_inplace(projPolicies, 'serviceAccount:' + appEngineAccountEmail, 'roles/owner')
 
   await resourceManager.projects.setIamPolicy({
     resource: projId,
@@ -530,9 +669,23 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
     }
   })
 
-  log.green('Defined service accounts permissions\n')
+  log.green('Defined service accounts\' permissions\n')
 
   await createAndSetupVM(gitBranchName)
+
+  log.green('Installing gcloud command line tools...')
+
+  await INTERNAL.downloadUncompressInstallGCloud()
+
+  log.green('Installed gcloud\n')
+
+  log.green('Creating App Engine application for the project...')
+
+  await INTERNAL.runPiped('gcloud', ['app', 'create', '-q', '--region', 'us-central'], true, false)
+
+  log.green('Create App Engine application')
+
+  await deployContinuousIntegrationServer()
 
 }
 
@@ -552,7 +705,7 @@ async function createAndSetupVM(gitBranchName = 'master') {
   const oauthTokenPath = process.env['OAUTH_PROJECT_ADMIN_TOKEN_FILE']
   const projId = await getProjectId()
 
-  const auth = await INTERNAL.getOAuth2Client(
+  const auth = await INTERNAL.getOAuth2ClientInteractive(
     oauthCredPath,
     scopes,
     prompt,
@@ -652,7 +805,7 @@ async function createAndSetupVM(gitBranchName = 'master') {
           operation: operation.data.name
         })
         if (operation.data.error) {
-          return reject(new Error('Failed to enable APIs'))
+          return reject(new Error('Failed to create VM instance'))
         }
         return resolve()
       }, 5000)
@@ -663,65 +816,14 @@ async function createAndSetupVM(gitBranchName = 'master') {
 
   log.green('Deploying code to VM instance...')
 
-  const vmAccountLocalCredJSON = JSON.parse(readFileSync(
-    process.env['VM_INSTANCE_CONNECTOR_SERVICEACCOUNT_CREDENTIALS'],
-    'utf8'
-  ))
-  const vmAccountAuth = google.auth.fromJSON(vmAccountLocalCredJSON)
-  const vmAccountEmail = vmAccountLocalCredJSON.client_email
-
-  // @ts-ignore
-  vmAccountAuth.scopes = ['https://www.googleapis.com/auth/cloud-platform']
-  const oslogin = google.oslogin({
-    version: 'v1',
-    auth: vmAccountAuth
-  })
-
-  const { data: instanceObj } = await compute.instances.get({
-    project: projId,
-    zone,
-    instance: instanceName
-  })
-
-  const instanceIP = INTERNAL.getInstanceIP(instanceObj)
-
-  const sshKeys = await INTERNAL.createSSHKey()
-
-  const { data: vmLoginProfile } = await oslogin.users.importSshPublicKey({
-    // @ts-ignore
-    parent: 'users/' + vmAccountEmail,
-    projectId: projId,
-    requestBody: {
-      key: sshKeys.publicKey,
-      expirationTimeUsec: 1000 * (300000 + Date.now()) // Date.now() gives milliseconds. Set 300 seconds expiration
-    }
-  })
-
-  const vmUsername = vmLoginProfile.loginProfile.posixAccounts[0].username
-
-  // keep trying to run command. This is because the VM instance takes some time to wake up
-  while (
-    await INTERNAL.runCommandOverSSH(
-      'sudo apt-get update;' +
-      'sudo apt-get upgrade -y;' +
-      'sudo apt-get install git-core -y;' +
-      'git clone ' + process.env['PROJECT_GITHUB_HREF'] + ' athena-latest;' +
-      'cd athena-latest;' +
-      'git checkout ' + gitBranchName + ' ;',
-      sshKeys.privateKeyPath,
-      vmUsername,
-      instanceIP
-    )
-      .then(stdout => false)
-      .catch(stderr => {
-        if (stderr.match('Connection refused') || stderr.match('Permission denied')) {
-          return true
-        }
-        throw new Error('SSH command failed.')
-      })
-  ) {
-    await new Promise(resolve => setTimeout(resolve, 5000))
-  }
+  await runCommandOnVM(
+    'sudo apt-get update;' +
+    'sudo apt-get upgrade -y;' +
+    'sudo apt-get install git-core -y;' +
+    'git clone ' + (await getGithubRepoHref()) + ' athena-latest;' +
+    'cd athena-latest;' +
+    'git checkout ' + gitBranchName + ' ;'
+  )
 
   log.green('Code deployed to VM instance\n')
 
@@ -745,17 +847,19 @@ async function createAndSetupVM(gitBranchName = 'master') {
 /**
  * Example: cmdString="ls /" will list all content of the root directory of the remote VM instance.
  * By default, the working directory will be the home dir of the remote user
+ * 
+ * @returns {Promise<string>} stdout of the command
  */
-async function runCommandOnVM(cmdString, withShell = false) {
+async function runCommandOnVM(cmdString, hideConsoleLogs = false) {
 
   const { sshKeys, vmUsername, instanceIP } = await INTERNAL.setupInstanceConnection()
 
-  await INTERNAL.runCommandOverSSH(
+  return await INTERNAL.runCommandOverSSH(
     cmdString,
     sshKeys.privateKeyPath,
     vmUsername,
     instanceIP,
-    withShell
+    hideConsoleLogs
   )
 
   // oslogin.users.sshPublicKeys.delete({
@@ -773,65 +877,38 @@ async function runCommandOnVM(cmdString, withShell = false) {
  */
 async function stopVMProcesses() {
   await runCommandOnVM(
-    'echo "exit" > /dev/tcp/localhost/3000 ;' // stop backend, which will tell runner to stop as well
+    'echo "exit" > /dev/tcp/localhost/3000 ;' + // stop backend, which will tell runner to stop as well
+    'sleep 10;' + // wait 10 seconds for processes to stop
+    'if [[ $(sudo fuser 3000/tcp) != "" ]]; then sudo fuser -k 3000/tcp ; fi;' +
+    'if [[ $(sudo fuser 3001/tcp) != "" ]]; then sudo fuser -k 3001/tcp ; fi;' +
+    '( docker stop $(docker ps -q) 1>/dev/null 2>&1 || exit 0 );'
   ).catch(() => { })
+
+
 }
 
-/**
- * Runs all tests on the remote VM instance, piping the output (so it is visible if
- * errors occur).
- * 
- * Does not leave side effects (i.e. stops all application processes it started)
- * 
- * @param {string} remoteProjectDir Relative to the remote user home directory. In production,
- * it is "athena-latest"
- * @returns {Promise<boolean>} Whether all tests passed or not
- */
-async function runTestsOnVM(remoteProjectDir) {
 
-  await stopVMProcesses()
-
-  let allTestsPassed = true
-
-  await runCommandOnVM(
-    'cd ' + remoteProjectDir + ' ;' +
-    'cd google-interface/ ;' +
-    'npm run test ;'
-  ).catch(() => allTestsPassed = false)
-
-  // run application processes
-  await runCommandOnVM(
-    'cd ' + remoteProjectDir + ' ;' +
-    'cd backend/ && screen -Logfile /tmp/backend.log -dmL npm run dev ;' +
-    'cd ../runner && screen -Logfile /tmp/runner.log -dmL npm run dev ;'
-  )
-
-  await runCommandOnVM(
-    'cd ' + remoteProjectDir + ' ;' +
-    'cd runner/ ;' +
-    'npm run test ;'
-  ).catch(() => allTestsPassed = false)
-
-  await runCommandOnVM(
-    'cd ' + remoteProjectDir + ' ;' +
-    'cd backend/ ;' +
-    'npm run test ;'
-  ).catch(() => allTestsPassed = false)
-
-  await stopVMProcesses()
-
-  return allTestsPassed
-}
 
 /**
  * - stop running VM processes
  * - git clone to another temporary dir
- * - deploy credentials to it (therefore: TODO: refactor uploadCredentials())
+ * - deploy credentials to it
  * - run tests
- * - if ok, rename the directory to make it official (athena-latest) and delete the old one. Run the new code
- * - else, just delete the temp dir. Rerun the original code. Report back the error
+ * - if ok and deploy=true, rename the directory to make it official (athena-latest) and delete the old one. Run the new code
+ * - else, just delete the temp dir. Rerun the original code. Report back the error, if any
+ * 
+ * @param {string} branchNameOrCommitId A branch name or a commit ID for running 'git checkout' to fetch code
+ * @param {boolean} deploy Whether to really deploy after making tests. If false, the deployment to production 
+ * is not done and, instead, the code is reversed to the last stable version
+ * 
+ * @returns {Promise<boolean>} true iff tests passed
  */
-async function deployToVM(branchName = 'master') {
+async function deployToVM(branchNameOrCommitId = 'master', deploy = true) {
+
+  if (! await INTERNAL.acquireVMLock()) {
+    return log.green('The VM is in use by another process, you should try again later')
+  }
+
   log.green('Stopping application processes previously in execution (if any)')
   await stopVMProcesses()
   log.green('Applications processes stopped')
@@ -841,11 +918,11 @@ async function deployToVM(branchName = 'master') {
   try {
     await runCommandOnVM(
       // remove old tmp dir, if present
-      'rm -r athena-tmp-deploy || echo "bypass error" ;' +
+      '(rm -r athena-tmp-deploy || exit 0) ;' +
       // fetch newest code
-      'git clone ' + process.env['PROJECT_GITHUB_HREF'] + ' athena-tmp-deploy ;' +
+      'git clone ' + (await getGithubRepoHref()) + ' athena-tmp-deploy ;' +
       'cd athena-tmp-deploy ;' +
-      'git checkout ' + branchName + ' ;' +
+      'git checkout ' + branchNameOrCommitId + ' ;' +
       // install npm dependencies
       'cd google-interface/ ;' +
       'npm install ;' +
@@ -865,7 +942,7 @@ async function deployToVM(branchName = 'master') {
       'npm run build ;'
     )
 
-    const testsPassed = await runTestsOnVM('athena-tmp-deploy')
+    const testsPassed = await INTERNAL.runTestsOnVM('athena-tmp-deploy')
 
     allOK = testsPassed
 
@@ -874,27 +951,37 @@ async function deployToVM(branchName = 'master') {
   }
 
 
-  if (!allOK) {
+  if (!allOK || !deploy) {
     // rebuild docker image; rerun production application processes
     await runCommandOnVM(
-      'rm -r athena-tmp-deploy || echo "bypass error" ;' +
+      '(rm -r athena-tmp-deploy || exit 0);' +
       'cd athena-latest/runner/docker && npm run build ;' +
       'cd ../../ ;' +
-      'cd backend/ && screen -Logfile /tmp/backend.log -dmL npm run prod ;' +
-      'cd ../runner && screen -Logfile /tmp/runner.log -dmL npm run prod ;'
+      'cd backend/ && screen -Logfile /usr/local/lib/athena-judge/backend.log -dmL /bin/bash -c "npm run prod | ts" ;' +
+      'cd ../runner && screen -Logfile /usr/local/lib/athena-judge/runner.log -dmL /bin/bash -c "npm run prod | ts" ;'
     )
-    log.red('Deploying failed. The application was restarted with the previous stable codebase')
+
+    if (!allOK) {
+      log.red('Deploying failed. The application was restarted with the previous stable codebase')
+    } else {
+      log.green('All tests passed ! However, deploy was called with deploy=false, hence the production ' +
+        'code has been resumed to the last stable version instead of deploying the new version')
+    }
   } else {
     // make athena-tmp-deploy directory the production one
     await runCommandOnVM(
       'rm -r athena-latest ;' +
       'mv athena-tmp-deploy athena-latest ;' +
       'cd athena-latest ;' +
-      'cd backend/ && screen -Logfile /tmp/backend.log -dmL npm run prod ;' +
-      'cd ../runner && screen -Logfile /tmp/runner.log -dmL npm run prod ;'
+      'cd backend/ && screen -Logfile /usr/local/lib/athena-judge/backend.log -dmL /bin/bash -c "npm run prod | ts" ;' +
+      'cd ../runner && screen -Logfile /usr/local/lib/athena-judge/runner.log -dmL /bin/bash -c "npm run prod | ts" ;'
     )
     log.green('Deploying succeded ! The application was started with the new codebase')
   }
+
+  await INTERNAL.releaseVMLock()
+
+  return allOK
 
 }
 
@@ -960,6 +1047,55 @@ async function getVMIpAddress() {
   return instanceIP
 }
 
+/**
+ * Creates Pub/Sub Registration for Classroom test course
+ */
+async function createTestCourseRegistration() {
+  await uploadTeacherCredential(
+    process.env['CLASSROOM_TEST_COURSE_ID'],
+    process.env['CLASSROOM_TEST_COURSE_TEACHER_OAUTH_TOKEN_FILE']
+  )
+
+  await createRegistration(process.env['CLASSROOM_TEST_COURSE_ID'])
+}
+
+/**
+ * Deploys code from 'ci-webserver' folder to Google, employing the deploy script from the
+ * package itself
+ */
+async function deployContinuousIntegrationServer() {
+
+  if (! await INTERNAL.acquireVMLock()) {
+    return log.green('The VM is in use by another process, you should try again later')
+  }
+
+  log.green('Deploying Continuous Integration code to App Engine...')
+
+  await INTERNAL.runPiped('npm', ['run', 'deploy'], true, false, resolve(__dirname, '../../ci-webserver'))
+
+  await INTERNAL.releaseVMLock()
+
+  log.green('Deployed CI server to App Engine\n')
+
+}
+
+/**
+ * Only tests. Does NOT acquire the lock 
+ *
+ * @returns {Promise<boolean>} true if, and only if, the VM *IS* currently locked
+ */
+async function testVMLock() {
+  try {
+    await runCommandOnVM('[ -d /tmp/athena-judge-lockdir ] || exit 1', true)
+  } catch (err) {
+    log.green('Test: VM is not locked')
+    return false
+  }
+
+  log.green('Test: VM is locked')
+  return true
+}
+
 if (require.main === module) {
   const args = {}
 
@@ -973,30 +1109,63 @@ if (require.main === module) {
     case 'instance-ip':
       getVMIpAddress().then(IP => log.green(IP))
       break
+
     case 'setup-first-time':
       setupProjectFirstTime().then(() => log.green('\nProject setup complete. Exiting...'))
       break
+
     case 'deploy':
-      args.branchName = process.argv[3] || 'master'
-      deployToVM(args.branchName).then(() => log.green('Done. Exiting...'))
+      console.log(process.argv)
+      args.branchNameOrCommitId = process.argv[3] || 'master'
+      args.deploy = process.argv[4] === 'test-only' ? false : true
+      deployToVM(args.branchNameOrCommitId, args.deploy)
+        .then(passed => {
+          if (passed) {
+            return
+          }
+          throw new Error()
+        })
+        .catch(() => process.exit(1))
       break
+
     case 'upload-credentials':
       uploadCredentials('athena-latest').then(() => log.green('Done. Exiting...'))
       break
+
     case 'create-vm':
       args.branchName = process.argv[3] || 'master'
       createAndSetupVM(args.branchName).then(() => log.green('Done. Exiting...'))
       break
+
+    case 'create-pubsub-test-registration':
+      createTestCourseRegistration().then(() => log.green('Done. Exiting...'))
+      break
+
+    case 'update-ciwebserver':
+      deployContinuousIntegrationServer().then(() => log.green('Done. Exiting...'))
+      break
+
+    case 'authorize-as-teacher':
+      INTERNAL.getOAuth2ClientInteractive(
+        process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
+        SCOPES,
+        INTERNAL.promisifiedReadlineInterface(),
+        process.env['CLASSROOM_TEST_COURSE_TEACHER_OAUTH_TOKEN_FILE']
+      ).then(() => log.green('Done. Exiting...'))
+
     default:
       log.red('Unrecognized command')
       process.exit(1)
+
   }
 
 }
 
 module.exports = {
   setupProjectFirstTime,
-  stopVMProcesses,
-  runCommandOnVM,
-  uploadCredentials
+  uploadCredentials,
+  deployToVM,
+  deployContinuousIntegrationServer,
+  testVMLock,
+  stopVMProcesses
 }

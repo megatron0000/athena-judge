@@ -1,8 +1,8 @@
 const { StartPubSub, AttachPubSubListener } = require('./google-interface/pubsub')
-const { getFileMIME, MIME, downloadFile } = require('./google-interface/drive')
+const { isCompressed, getFileName, downloadFile } = require('./google-interface/drive')
 const { submissionIsTurnedIn, submissionIsReturned, assignGradeToSubmission, getSubmissionDriveFileIds } = require('./google-interface/classroom')
 const request = require('request-promise-native')
-const { resolve, dirname, join } = require('path')
+const { resolve, join } = require('path')
 const { unlink, readdir, stat } = require('promise-fs')
 const decompress = require('decompress')
 const { uploadCourseWorkSubmissionFiles } = require('./google-interface/cloudstorage')
@@ -30,32 +30,6 @@ const portListener = createServer(socket => {
 })
 
 portListener.listen(PORT)
-
-/**
- *
- * @param {string} rootDir Directory under which to search for a file
- * @param {*} searchName Filename to be searched (like "main.cpp")
- * @returns {Promise<string[]>} Absolute paths of all matching files found
- */
-async function findFileRecursive(rootDir, searchName) {
-  const filenames = await readdir(rootDir)
-  const fileStats = await Promise.all(filenames.map(file => stat(join(rootDir, file))))
-  const dirs = []
-
-  const result = []
-  fileStats.forEach((fs, i) => {
-    const filename = resolve(rootDir, filenames[i])
-
-    if (fs.isFile() && filename.endsWith(searchName)) {
-      result.push(filename)
-    } else if (fs.isDirectory()) {
-      dirs.push(findFileRecursive(filename, searchName))
-    }
-  });
-
-  const subDirMatches = await Promise.all(dirs)
-  return result.concat(...subDirMatches)
-}
 
 const run_endpoint = 'http://localhost:3001/run'
 const default_options = {
@@ -98,6 +72,13 @@ const codeCorrectionLock = {
   }
 }
 
+/**
+ * TODO: There are really lots of functionalities inside here: 
+ * - Understading the submission format (.zip ? .tar ? etc.)
+ * - Locking mechanism to avoid processing things more-than-once etc.
+ * - Calculating grade based on test results
+ * - Communicating any status (midway-failure or complete success) to the student who wubmitted
+ */
 AttachPubSubListener(async (notification, ack) => {
   notification = JSON.parse(notification.data.toString('utf8'))
   console.log(notification)
@@ -138,51 +119,46 @@ AttachPubSubListener(async (notification, ack) => {
 
   const driveFileIds = await getSubmissionDriveFileIds(courseId, courseWorkId, submissionId)
 
-  const driveFileMimes = await Promise.all(driveFileIds.map(fileId => getFileMIME(courseId, fileId)))
+  const driveFileNames = await Promise.all(driveFileIds.map(fileId => getFileName(courseId, fileId)))
 
-  const compressedFileMimes = driveFileMimes
-    .map((value, index) => ({ value, index }))
-    .filter(value_index => MIME.zip.concat(MIME.gzip, MIME.tar).indexOf(value_index.value) !== -1)
+  const compressedFileNames = driveFileNames
+    .map((name, index) => ({ name, index }))
+    .filter(name_index => isCompressed(name_index.name))
 
-  if (compressedFileMimes.length === 0) {
-    return console.error('Could not find compressed file in submission')
+  if (compressedFileNames.length === 0) {
+    return await respondToStudent({
+      error: 'Could not find compressed file in submission (no recognized compression format, at least)'
+    })
   }
 
-  if (compressedFileMimes.length > 1) {
-    return console.error('Found more than one compressed file in submission')
+  if (compressedFileNames.length > 1) {
+    return await respondToStudent({
+      error: 'Found more than one compressed file in submission'
+    })
   }
 
-  const compressedFileId = driveFileIds[compressedFileMimes[0].index]
-  const compressedFileMime = compressedFileMimes[0].value
-  const compressedFileFormat = MIME.zip.indexOf(compressedFileMime) !== -1
-    ? '.zip'
-    : MIME.tar.indexOf(compressedFileMime) !== -1
-      ? '.tar'
-      : '.tar.gzip'
-  const tmpDir = resolve('/tmp', courseId, courseWorkId, submissionId)
-  const localCompressedFilePath = join(tmpDir, compressedFileId + compressedFileFormat)
+  const compressedFileId = driveFileIds[compressedFileNames[0].index]
+  const compressedFileName = compressedFileNames[0].name
 
-  await downloadFile(courseId, compressedFileId, localCompressedFilePath)
+  const tmpSubmissionDir = resolve('/tmp', courseId, courseWorkId, submissionId)
+  const localCompressedFilePath = join(tmpSubmissionDir, compressedFileId + '-' + compressedFileName)
 
-  await decompress(localCompressedFilePath, tmpDir)
-
-  await unlink(localCompressedFilePath)
-
-  const mainCppPaths = await findFileRecursive(tmpDir, 'main.cpp')
-
-  if (mainCppPaths.length === 0) {
-    return console.error('No main.cpp file found')
-  }
-
-  if (mainCppPaths.length > 1) {
-    return console.error('More than one main.cpp file found')
+  try {
+    await downloadFile(courseId, compressedFileId, localCompressedFilePath)
+    await decompress(localCompressedFilePath, tmpSubmissionDir)
+    await unlink(localCompressedFilePath)
+  } catch (err) {
+    console.error(err)
+    return respondToStudent({
+      error: 'While decompressing submission: ' + (err.message || 'unknown error')
+    })
   }
 
   await uploadCourseWorkSubmissionFiles(
     courseId,
     courseWorkId,
     submissionId,
-    dirname(mainCppPaths[0])
+    tmpSubmissionDir
   )
 
   const requestOptions = {
@@ -196,13 +172,35 @@ AttachPubSubListener(async (notification, ack) => {
     }
   }
 
+  /**
+   * @typedef {object} TestResult
+   * @property {boolean} pass
+   * @property {string} input
+   * @property {string} expectedOutput
+   * @property {string} output
+   * @property {string} error
+   * @property {boolean} isPrivate
+   * @property {number} weight
+   */
+  /**
+   * @typedef {object} Status
+   * @property {boolean} ok
+   * @property {string} message
+   * @property {string=} additionalInfo
+   */
+  /**
+   * @type {{status: Status, testResults: TestResult[]}}
+   */
   const { status, testResults } = await request(requestOptions)
 
   const grade = !status.ok
     ? 0.0
     : !testResults.length
       ? 10
-      : 10 * testResults.filter(r => r.pass).length / testResults.length
+      : 10 * testResults
+        .filter(r => r.pass)
+        .reduce((previous, current) => previous + current.weight, 0)
+      / testResults.reduce((previous, current) => previous + current.weight, 0)
 
   console.log(status)
   console.log(testResults)
@@ -212,3 +210,17 @@ AttachPubSubListener(async (notification, ack) => {
 })
 
 StartPubSub().then(() => console.log('Listening on Pub/Sub...'))
+
+/**
+ * 
+ * @param {object} arg
+ * @param {string} arg.error Optional. Error message (should be false-ish if no error)
+ * @param {string=} arg.message Optional. Success message
+ */
+async function respondToStudent({ error, message }) {
+  if (error) {
+    console.error('backend found an error: ', error)
+  } else {
+    console.log('backend resulted: ', message)
+  }
+}

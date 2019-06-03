@@ -20,8 +20,14 @@ describe('Cloud Storage', function () {
 
   it('should upload files', async () => {
     await Promise.all([
-      storage.uploadFile(path.resolve(__dirname, 'sample-files', 'file1'), 'root/dir/file1'),
-      storage.uploadFile(path.resolve(__dirname, 'sample-files', 'file2'), 'root/dir/file2')
+      storage.uploadFile({
+        localFilename: path.resolve(__dirname, 'sample-files', 'file1'),
+        destinationPath: 'root/dir/file1'
+      }),
+      storage.uploadFile({
+        localFilename: path.resolve(__dirname, 'sample-files', 'file2'),
+        destinationPath: 'root/dir/file2'
+      })
     ])
   })
 

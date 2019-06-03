@@ -10,6 +10,15 @@ sudo n 8.11.2
 # install 'screen' for running detached commands 
 sudo apt-get install screen -y
 
+# install fuser for finding processes listening on ports
+sudo apt-get install psmisc -y
+
+# install ts for logging with timestamps
+sudo apt-get install moreutils -y
+
+# create /var/athena-judge for permanent information (i.e. log files)
+(sudo mkdir -m777 /usr/local/lib/athena-judge || exit 0)
+
 # install NPM package dependecies
 cd google-interface/
 npm install
