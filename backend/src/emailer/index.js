@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const diff = require("diff");
 
 export const sendAckResponseEmail = async (teacherAuth, student) => {
     sendEmail(teacherAuth, { 
@@ -24,7 +25,7 @@ export const sendAckResponseEmail = async (teacherAuth, student) => {
     }, [ student.email ])
 }
 
-const sendErrorEmail = async (teacherAuth, student, error) => {
+export const sendErrorEmail = async (teacherAuth, student, error) => {
     sendEmail(teacherAuth, {
         subject: "Ocorreu um erro ao compilar sua submissão!",
         text: 
@@ -34,6 +35,36 @@ const sendErrorEmail = async (teacherAuth, student, error) => {
                 <body>
                     <p>Olá, aluno(a) ${student.name}! <br /><br /> Sua submissão foi recebida, porém o seguinte erro ocorreu
                     ao tentar executar seu código: ${error}.</b></p>
+
+                    <p>Atenciosamente, <br /> Professor(a). </p>
+                </body>
+            </html>
+        `
+    })
+}
+
+export const sendDiffMail = async (teacherAuth, student, txt1, txt2) => {
+    wrongCasesList = diff.diffLines(txt1, txt2)
+    wrongCasesStr = "";
+
+    for(i=0; i<wrongCasesList.length(); i++)
+        wrongCasesStr += "Linha i: " + wrongCasesList[i] + "\n";
+    
+    sendEmail(teacherAuth, {
+        subject: "Resultado da submissão da atividade",
+        text: 
+        `
+            <html>
+                <head></head>
+                <body>
+                    <p>Olá, aluno(a) ${student.name}! <br /><br /> Segue o resultado da submissão de sua atividade.</b></p>
+
+                    <p>Os casos que resultaram em erro foram: </p>
+
+                    <p>${wrongCasesStr} </p>
+
+                    <p>Se você tem alguma dúvida sobre os casos teste,
+                    entre em contato comigo imediatamente!</p>
 
                     <p>Atenciosamente, <br /> Professor(a). </p>
                 </body>

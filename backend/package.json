@@ -16,6 +16,7 @@
     "@types/mocha": "^5.2.6",
     "cors": "2.8.4",
     "decompress": "^4.2.0",
+    "diff": "^4.0.1",
     "express": "^4.16.4",
     "googleapis": "^39.2.0",
     "mkdir-recursive": "^0.4.0",
