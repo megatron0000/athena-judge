@@ -47,7 +47,7 @@ async function authorize(credentials, userTokenPath) {
     client_secret,
     client_id,
     redirect_uris
-  } = credentials.installed
+  } = credentials.installed || credentials.web
   const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]); // does not throw
 
   try {
@@ -127,7 +127,7 @@ exports.getOAuth2Client = async function getOAuth2Client(courseId) {
       client_secret,
       client_id,
       redirect_uris
-    } = clientCred.installed
+    } = clientCred.installed || clientCred.web
     const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0])
     oAuth2Client.setCredentials(token)
 
