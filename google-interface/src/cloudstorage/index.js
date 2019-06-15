@@ -179,6 +179,15 @@ function downloadTeacherCredential(courseId, localDestinationPath) {
 }
 
 /**
+ * @returns {Promise<boolean>} true if and only if the teacher's credential is already present in Cloud Storage
+ */
+function hasTeacherCredential(courseId) {
+  return GCS
+    .listFilesByPrefix(path.posix.join(courseId, 'teacherCredential.json'))
+    .then(files => files && files.length > 0)
+}
+
+/**
  *
  * @param {string} courseId
  * @param {string} courseWorkId
@@ -231,13 +240,16 @@ async function downloadCourseWorkTestFiles(courseId, courseWorkId, submissionId,
 }
 
 
-exports.uploadCourseWorkSubmissionFiles = uploadCourseWorkSubmissionFiles
-exports.uploadCourseWorkTestFiles = uploadCourseWorkTestFiles
-exports.uploadTeacherCredential = uploadTeacherCredential
-exports.deleteCourseWorkSubmissionFiles = deleteCourseWorkSubmissionFiles
-exports.deleteCourseWorkTestFile = deleteCourseWorkTestFile
-exports.deleteCourseWorkTestFiles = deleteCourseWorkTestFiles
-exports.deleteTeacherCredential = deleteTeacherCredential
-exports.downloadTeacherCredential = downloadTeacherCredential
-exports.downloadCourseWorkSubmissionFiles = downloadCourseWorkSubmissionFiles
-exports.downloadCourseWorkTestFiles = downloadCourseWorkTestFiles
+module.exports = {
+  uploadCourseWorkSubmissionFiles,
+  uploadCourseWorkTestFiles,
+  uploadTeacherCredential,
+  deleteCourseWorkSubmissionFiles,
+  deleteCourseWorkTestFile,
+  deleteCourseWorkTestFiles,
+  deleteTeacherCredential,
+  downloadTeacherCredential,
+  downloadCourseWorkSubmissionFiles,
+  downloadCourseWorkTestFiles,
+  hasTeacherCredential
+}
