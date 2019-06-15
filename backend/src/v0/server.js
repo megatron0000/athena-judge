@@ -1,37 +1,70 @@
-import Express from "express";
-import Cors from "cors";
+const Express = require("express")
+const Cors = require("cors")
+const Session = require('express-session')
+const Passport = require('passport')
+const { Strategy: GoogleAuthCodeStrategy } = require('passport-google-authcode')
+const { getProjectOAuthClientId, getProjectOAuthClientSecret } = require('./google-interface/credentials/config')
 
-import DB from "./db";
-import Api from "./api/api";
+const { ApiRouter } = require("./api/api")
 
-import Config from "./config";
+const { Config } = require("./config")
 
-const app = Express();
+const RandomString = require('crypto-random-string')
 
-app.use(Cors());
+async function main() {
+  const app = Express()
 
-app.use(Express.urlencoded({ extended: true }));
-app.use(Express.json());
+  Passport.use(
+    new GoogleAuthCodeStrategy({
+      clientID: await getProjectOAuthClientId(),
+      clientSecret: await getProjectOAuthClientSecret(),
+      callbackURL: 'http://localhost:8080'
+    }, async (accessToken, refreshToken, profile, done) => {
+      console.log(accessToken, refreshToken, profile)
+      done(null, { myuser: 1 })
+    })
+  )
 
-app.get("/", (req, res) => {
-  res.json({ data: "OK" });
-});
+  app.use(Cors())
 
-app.use("/api", Api);
+  app.use(Express.urlencoded({ extended: true }))
+  app.use(Express.json())
+  app.use(Session({
+    secret: RandomString({ length: 20 }),
+    cookie: {
+      httpOnly: true,
+      secure: true,
+      sameSite: true
+    },
+    saveUninitialized: false
+  }))
+  app.use(Passport.initialize())
+  app.use(Passport.session())
 
-app.use((req, res, next) => {
-  res.status(404);
-  res.json({ error: "NotFound", message: "Não encontrado" });
-});
+  app.get("/", (req, res) => {
+    res.json({ data: "OK" })
+  })
 
-app.use((err, req, res, next) => {
-  console.log(err.stack);
-  res.status(500);
-  res.json({ error: "InternalServerError", message: err.message });
-});
+  app.use("/api", ApiRouter)
 
-app.listen(Config.PORT, () => {
-  console.log(`Server running at port ${Config.PORT}`);
-});
+  app.use((req, res, next) => {
+    req.url
 
-DB.sync();
+    res.status(404)
+    res.json({ error: "NotFound", message: "Não encontrado" })
+  })
+
+  app.use((err, req, res, next) => {
+    console.log(err.stack)
+    res.status(500)
+    res.json({ error: "InternalServerError", message: err.message })
+  })
+
+  app.listen(Config.PORT, () => {
+    console.log(`Server running at port ${Config.PORT}`)
+  })
+
+
+}
+
+main()

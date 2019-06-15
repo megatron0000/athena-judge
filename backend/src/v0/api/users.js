@@ -1,116 +1,63 @@
-import Express from "express";
-import DB from "../db";
+const Express = require('express')
+const { DB } = require('../db')
+const { OAuth2Client } = require('google-auth-library')
+const { getProjectOAuthClientId } = require('../google-interface/credentials/config')
+const Passport = require('passport')
 
-const router = Express.Router();
+const UsersRouter = Express.Router()
 
-router.get("/", async (req, res, next) => {
+UsersRouter.get("/", async (req, res, next) => {
   try {
-    let rows = await DB.users.findAll();
-    res.json({ data: rows });
+    let rows = await DB.users.findAll()
+    res.json({ data: rows })
   } catch (err) {
-    next(err);
+    next(err)
   }
-});
+})
 
-async function verifyToken(req) {
-  const {OAuth2Client} = require('google-auth-library');
-  const client = new OAuth2Client(req.body.gid);
-  let payload;
+async function verifyToken(gid, id_token) {
+  const oauthClient = new OAuth2Client(gid)
+
+  let googleUserInfo
   try {
-    const ticket = await client.verifyIdToken({
-      idToken: req.body.id_token,
-      audience: req.body.gid,  // Specify the CLIENT_ID of the app that accesses the backend
-      // Or, if multiple clients access the backend:
-      //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
-    });
-    payload = ticket.getPayload();
-  } catch(err) {
-    console.error(err);
-    payload = null;
+    const ticket = await oauthClient.verifyIdToken({
+      idToken: id_token,
+      audience: await getProjectOAuthClientId()
+    })
+    googleUserInfo = ticket.getPayload()
+  } catch (err) {
+    console.error(err)
+    googleUserInfo = null
   }
 
-  return payload;
+  return googleUserInfo
 }
 
-router.get("/:gid", async (req, res, next) => {
-  const payload = await verifyToken(req);
 
-  console.log(payload)
 
-  if (payload != null) {
-    try {
-      let payload = await verifyToken(req);
-      let gid = payload['sub'];
-      let row = await DB.users.findOne({ where: { gid: gid } });
-      res.json({ data: row });
-    } catch (err) {
-      next(err);
-    }  
-  } else {
-    res.status(401);
-    res.json({ error: "UnauthorizedError", message: "Usuário não autenticado"});
+/**
+ * User login (merely creation of a session) based on 'id_token' created by google on client-side
+ */
+UsersRouter.put("/login", async (req, res) => {
+  const googleUserInfo = await verifyToken(req.body.gid, req.body.id_token)
+  console.log(googleUserInfo)
+
+  if (!googleUserInfo) {
+    return res.status(401).json({ error: "UnauthorizedError", message: "Usuário não autenticado" })
   }
-});
 
-router.put("/:gid", async (req, res, next) => {
-  //const {OAuth2Client} = require('google-auth-library');
-  //const client = new OAuth2Client(req.body.gid);
-  //async function verify() {
-  //  const ticket = await client.verifyIdToken({
-  //      idToken: req.body.id_token,
-  //      audience: req.body.gid,  // Specify the CLIENT_ID of the app that accesses the backend
-  //      // Or, if multiple clients access the backend:
-  //      //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
-  //  });
-  //  const payload = ticket.getPayload();
-  //  const gid = payload['sub'];
-  //  const name = payload['name'];
-  //  const photo = payload['picture'];
-  //  const email = payload['email'];
-  //}
-  //verify().catch(console.error);
+  const { sub: gid, email, name, picture } = googleUserInfo
 
-  /*
-  @vb: race condition. sequelize's upsert would be better since it its atomic, but
-  i couldn't get it to work.
-  */
-  const payload = await verifyToken(req);
-  console.log(payload)
+  req.session.googleUserInfo = { gid, email, name, picture, hasOfflineCreds: false }
 
-  if (payload != null) {
-    try {
-      const gid = payload['sub'];
-      const name = payload['name'];
-      const photo = payload['picture'];
-      const email = payload['email'];
+  return res.status(200).end()
+})
 
-      let user = await DB.users.findOne({
-        where: { gid: gid }
-      });
-      if (user == null) {
-        await DB.users.create({
-          gid: gid,
-          name: name,
-          photo: photo,
-          email: email,
-        });
-      } else {
-        await DB.users.update({
-          name: name,
-          photo: photo,
-          email: email,
-        }, {
-          where: { gid: gid }
-        });
-      }
-      res.json({ data: null });
-    } catch (err) {
-      next(err);
-    }
-  } else {
-    res.status(401);
-    res.json({ error: "UnauthorizedError", message: "Usuário não autenticado"});
-  }
-});
+UsersRouter.put('/give-offline-permission', Passport.authenticate('google-authcode', { session: false }), async (req, res) => {
+  console.log('req user: ', req.user)
+  res.end(200)
+})
 
-export default router;
+module.exports = {
+  UsersRouter
+}
