@@ -1,9 +1,9 @@
-import Express from "express";
-import DB from "../db";
+const Express = require('express')
+const { DB } = require('../db')
 
-const router = Express.Router();
+const SubmissionsRouter = Express.Router();
 
-router.get("/", async (req, res, next) => {
+SubmissionsRouter.get("/", async (req, res, next) => {
   try {
     let rows = await DB.submissions.findAll();
     res.json({ data: rows });
@@ -12,7 +12,7 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.get("/:id", async (req, res, next) => {
+SubmissionsRouter.get("/:id", async (req, res, next) => {
   try {
     let row = await DB.submissions.findById(req.params.id);
     res.json({ data: row });
@@ -21,7 +21,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", async(req, res, next) => {
+SubmissionsRouter.post("/", async (req, res, next) => {
   try {
     let row = await DB.submissions.create({
       studentUserGid: req.body.usergid,
@@ -37,26 +37,28 @@ router.post("/", async(req, res, next) => {
   }
 });
 
-router.put("/:id", async (req, res, next) => {
+SubmissionsRouter.put("/:id", async (req, res, next) => {
   try {
     let row = await DB.submissions.update({
       title: req.body.title,
       description: req.body.description,
       dueDate: req.body.dueDate,
-    }, { where: { id: req.params.id }});
+    }, { where: { id: req.params.id } });
     res.json({ data: row[0] });
   } catch (err) {
     next(err);
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+SubmissionsRouter.delete("/:id", async (req, res, next) => {
   try {
-    let row = await DB.submissions.destroy({ where: { id: req.params.id }});
+    let row = await DB.submissions.destroy({ where: { id: req.params.id } });
     res.json({ data: row });
   } catch (err) {
     next(err);
   }
 });
 
-export default router;
+module.exports = {
+  SubmissionsRouter
+}

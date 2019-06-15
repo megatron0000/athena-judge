@@ -1,11 +1,11 @@
-import AssignmentsModel from "./schema/assignments";
-import AssignmentsTestsModel from "./schema/assignments_tests";
-import CoursesModel from "./schema/courses";
-import CoursesAssocModel from "./schema/courses_assoc";
-import SubmissionsModel from "./schema/submissions";
-import UsersModel from "./schema/users";
+const { AssignmentsModel } = require("./schema/assignments")
+const { AssignmentsTestsModel } = require("./schema/assignments_tests")
+const { CoursesModel } = require("./schema/courses")
+const { CoursesAssocModel } = require("./schema/courses_assoc")
+const { SubmissionsModel } = require("./schema/submissions")
+const { UsersModel } = require("./schema/users")
 
-export default class DB {}
+class DB { }
 
 DB.assignments = AssignmentsModel;
 DB.assignments_tests = AssignmentsTestsModel;
@@ -148,4 +148,7 @@ DB.sync = async function sync() {
     userGid: "3",
     role: "student",
   });
+}
+module.exports = {
+  DB
 }

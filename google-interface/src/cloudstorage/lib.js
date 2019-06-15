@@ -34,6 +34,9 @@ async function listFiles() {
 
 }
 
+/**
+ * @returns {Promise<string[]>} Filenames
+ */
 async function listFilesByPrefix(prefix) {
 
   /**

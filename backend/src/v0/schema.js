@@ -1,4 +1,4 @@
-import Sequelize from "sequelize";
+const Sequelize = require('sequelize')
 
 /** Exemplo: 
 * 
@@ -27,4 +27,6 @@ const Schema = new Sequelize("athena", "athena", "athena", {
   dialect: "postgres"
 });
 
-export default Schema;
+module.exports = {
+  Schema
+}

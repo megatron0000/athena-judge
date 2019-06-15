@@ -1,7 +1,7 @@
-import Sequelize from "sequelize";
-import Schema from "../schema";
+const Sequelize = require('sequelize')
+const { Schema } = require('../schema')
 
-export default Schema.define("assignments_tests", {
+const AssignmentsTestsModel = Schema.define("assignments_tests", {
   id: {
     type: Sequelize.INTEGER,
     allowNull: false,
@@ -25,8 +25,12 @@ export default Schema.define("assignments_tests", {
     allowNull: false,
   },
 }, {
-  timestamps: true,
-  paranoid: true,
-  freezeTableName: true,
-  tableName: "assignments_tests",
-});
+    timestamps: true,
+    paranoid: true,
+    freezeTableName: true,
+    tableName: "assignments_tests",
+  });
+
+module.exports = {
+  AssignmentsTestsModel
+}
