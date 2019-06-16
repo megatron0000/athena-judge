@@ -11,6 +11,7 @@ import AddIcon from "@material-ui/icons/Add";
 import Button from "@material-ui/core/Button";
 
 import ConfirmDialog from "../Components/ConfirmDialog";
+import GoogleApi from "../GoogleApi";
 
 export default class CourseList extends React.Component {
   constructor(props) {
@@ -37,19 +38,18 @@ export default class CourseList extends React.Component {
     let doneCount = 0;
 
     // All courses    
-    Api.get("/courses").then((res) => {
-      this.setState({ courses: res.data.data }, done);
-    });
+    // Api.get("/courses").then((res) => {
+    //   this.setState({ courses: res.data.data }, done);
+    // });
 
-    // My enrolled courses
-    Api.get(`/courses/enrolled/${this.props.user.gid}`).then((res) => {
-      this.setState({ enrolledCourses: res.data.data }, done);
-    });
+    GoogleApi.listCourses()
+      // .then(x => console.log(x) || x)
+      .then(courses => {
 
-    // My teaching courses
-    Api.get(`/courses/teaching/${this.props.user.gid}`).then((res) => {
-      this.setState({ teachingCourses: res.data.data }, done);
-    });
+        this.setState({ teachingCourses: courses }, done)
+
+        this.setState({ enrolledCourses: [] }, done)
+      })
 
     function done() {
       doneCount++;
@@ -128,11 +128,11 @@ export default class CourseList extends React.Component {
             <ListItem
               key={course.id}
             >
-            
+
               <ListItemIcon>
                 <ClassIcon />
               </ListItemIcon>
-              
+
               <ListItemText primary={course.name} />
 
               <Button
@@ -180,7 +180,7 @@ export default class CourseList extends React.Component {
           onClick={this.props.onCreateClick}
         >
           Criar curso
-          <AddIcon 
+          <AddIcon
             style={{ marginLeft: 10 }}
           />
         </Button>
