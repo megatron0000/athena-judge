@@ -65,7 +65,7 @@ async function populateCredCache() {
     const credContent = JSON.parse(
       await fs.readFile(process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'])
     )
-    _credCache = credContent.installed || credContent.web
+    _credCache = credContent.web
   }
   return _credCache
 }
@@ -83,6 +83,10 @@ async function getProjectOAuthClientId() {
 
 async function getProjectOAuthClientSecret() {
   return (await populateCredCache()).client_secret
+}
+
+async function getProjectLocalhostRedirectUri() {
+  return (await populateCredCache()).redirect_uris[0]
 }
 
 /**
@@ -110,6 +114,7 @@ module.exports = {
   getProjectId,
   getProjectOAuthClientId,
   getProjectOAuthClientSecret,
+  getProjectLocalhostRedirectUri,
   getGithubAccessToken,
   getGithubRepoHref
 }

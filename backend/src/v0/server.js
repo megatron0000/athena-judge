@@ -1,9 +1,8 @@
 const Express = require("express")
 const Cors = require("cors")
-const Session = require('express-session')
 const Passport = require('passport')
 const { Strategy: GoogleAuthCodeStrategy } = require('passport-google-authcode')
-const { getProjectOAuthClientId, getProjectOAuthClientSecret } = require('./google-interface/credentials/config')
+const { getProjectOAuthClientId, getProjectOAuthClientSecret, getProjectLocalhostRedirectUri } = require('./google-interface/credentials/config')
 
 const { ApiRouter } = require("./api/api")
 
@@ -18,10 +17,13 @@ async function main() {
     new GoogleAuthCodeStrategy({
       clientID: await getProjectOAuthClientId(),
       clientSecret: await getProjectOAuthClientSecret(),
-      callbackURL: 'http://localhost:8080'
+      callbackURL: await getProjectLocalhostRedirectUri()
     }, async (accessToken, refreshToken, profile, done) => {
       console.log(accessToken, refreshToken, profile)
-      done(null, { myuser: 1 })
+      // pass away the access and refresh tokens, because whoever called passport.authenticate() (from
+      // where this function was ultimately called) will want them later. By passing them as argument
+      // to done, we are telling passport to construct req.user with our object
+      done(null, { accessToken, refreshToken })
     })
   )
 
@@ -29,15 +31,6 @@ async function main() {
 
   app.use(Express.urlencoded({ extended: true }))
   app.use(Express.json())
-  app.use(Session({
-    secret: RandomString({ length: 20 }),
-    cookie: {
-      httpOnly: true,
-      secure: true,
-      sameSite: true
-    },
-    saveUninitialized: false
-  }))
   app.use(Passport.initialize())
   app.use(Passport.session())
 
