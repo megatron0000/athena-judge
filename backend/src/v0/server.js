@@ -8,8 +8,6 @@ const { ApiRouter } = require("./api/api")
 
 const { Config } = require("./config")
 
-const RandomString = require('crypto-random-string')
-
 async function main() {
   const app = Express()
 

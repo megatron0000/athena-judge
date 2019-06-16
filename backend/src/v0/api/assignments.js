@@ -1,94 +1,28 @@
 const Express = require("express")
-const { DB } = require("../db")
+const { downloadCourseWorkTestFilesMetadata, hasTeacherCredential } = require('../google-interface/cloudstorage')
+const { getTeacherGids } = require('../google-interface/classroom')
+const { assertPrecondition, assertPermission, authenticateOrDrop } = require('../middlewares')
 
 const AssignmentsRouter = Express.Router()
 
-AssignmentsRouter.get("/", async (req, res, next) => {
-  try {
-    let rows = await DB.assignments.findAll()
-    res.json({ data: rows })
-  } catch (err) {
-    next(err)
-  }
-})
+AssignmentsRouter.get('/test-files-metadata/:courseId/:courseWorkId',
+  authenticateOrDrop(),
+  assertPrecondition(async req => {
+    if (!await hasTeacherCredential(req.params.courseId)) {
+      return 'O sistema nao tem permissao para acessar este curso'
+    }
+  }),
+  assertPermission(async req => {
+    if ((await getTeacherGids(req.params.courseId)).indexOf(req.user.gid) === -1) {
+      return 'Voce nao e professor do curso'
+    }
+  }),
+  async (req, res) => {
 
-AssignmentsRouter.get("/:id", async (req, res, next) => {
-  try {
-    let row = await DB.assignments.findById(req.params.id)
-    res.json({ data: row })
-  } catch (err) {
-    next(err)
-  }
-})
+    const { courseId, courseWorkId } = req.params
 
-AssignmentsRouter.post("/", async (req, res, next) => {
-  try {
-    let row = await DB.assignments.create({
-      title: req.body.title,
-      description: req.body.description,
-      courseId: req.body.courseId,
-      dueDate: req.body.dueDate,
-    })
-    res.json({ data: row })
-  } catch (err) {
-    next(err)
-  }
-})
-
-AssignmentsRouter.put("/:id", async (req, res, next) => {
-  try {
-    let row = await DB.assignments.update({
-      title: req.body.title,
-      description: req.body.description,
-      courseId: req.body.courseId,
-      dueDate: req.body.dueDate,
-    }, { where: { id: req.params.id } })
-    res.json({ data: row[0] })
-  } catch (err) {
-    next(err)
-  }
-})
-
-AssignmentsRouter.delete("/:id", async (req, res, next) => {
-  try {
-    let row = await DB.assignments.destroy({ where: { id: req.params.id } })
-    res.json({ data: row })
-  } catch (err) {
-    next(err)
-  }
-})
-
-AssignmentsRouter.get("/:id/submissions", async (req, res, next) => {
-  try {
-    let row = await DB.submissions.findAll({ where: { assignmentId: req.params.id } })
-    res.json({ data: row })
-  } catch (err) {
-    next(err)
-  }
-})
-
-AssignmentsRouter.get("/:id/tests", async (req, res, next) => {
-  try {
-    let rows = await DB.assignments_tests.findAll({ where: { assignmentId: req.params.id } })
-    res.json({ data: rows })
-  } catch (err) {
-    next(err)
-  }
-})
-
-AssignmentsRouter.post("/:id/tests", async (req, res, next) => {
-  try {
-    let row = await DB.assignments_tests.create({
-      assignmentId: req.params.id,
-      type: req.body.type,
-      input: req.body.input,
-      output: req.body.output,
-    })
-    res.json({ data: row })
-  } catch (err) {
-    next(err)
-  }
-})
+    return res.json(await downloadCourseWorkTestFilesMetadata(courseId, courseWorkId))
+  })
 
 module.exports = {
   AssignmentsRouter
