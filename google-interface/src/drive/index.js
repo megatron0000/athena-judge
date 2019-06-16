@@ -1,5 +1,5 @@
 const { google } = require('googleapis')
-const { getOAuth2Client } = require('../credentials/auth')
+const { getOAuth2ClientFromCloudStorage } = require('../credentials/auth')
 const { createWriteStream, ReadStream } = require('fs')
 const { dirname, extname } = require('path')
 const { mkdirRecursive } = require('../mkdir-recursive')
@@ -13,7 +13,7 @@ const { mkdirRecursive } = require('../mkdir-recursive')
 async function getDrive(courseId) {
   return google.drive({
     version: 'v3',
-    auth: await getOAuth2Client(courseId)
+    auth: await getOAuth2ClientFromCloudStorage(courseId)
   })
 }
 

@@ -32,68 +32,15 @@ exports.getOAuth2ClientFromLocalCredentials = async function getOAuth2ClientFrom
     throw new Error('Did not supply oauthUserTokenPath')
   }
 
-  const credentials = await fs.readFile(oauthClientCredentialsPath)
+  const credentials = JSON.parse(await fs.readFile(oauthClientCredentialsPath))
 
-  return authorize(JSON.parse(credentials), oauthUserTokenPath)
-}
-
-/**
- * Create an OAuth2 client with the given credentials, and then execute the
- * given callback function.
- * @param {Object} credentials The authorization client credentials.
- */
-async function authorize(credentials, userTokenPath) {
-  const {
-    client_secret,
-    client_id,
-    redirect_uris
-  } = credentials.installed || credentials.web
+  const { client_secret, client_id, redirect_uris } = credentials.installed || credentials.web
   const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]); // does not throw
 
-  try {
-    const token = await fs.readFile(userTokenPath)
-    oAuth2Client.setCredentials(JSON.parse(token))
-    return oAuth2Client
-  } catch (err) {
-    return getNewToken(oAuth2Client, userTokenPath)
-  }
-}
+  const token = JSON.parse(await fs.readFile(oauthUserTokenPath))
+  oAuth2Client.setCredentials(token)
 
-/**
- * Get and store new token after prompting for user authorization, and then
- * execute the given callback with the authorized OAuth2 client.
- * @param {OAuth2Client} oAuth2Client The OAuth2 client to get token for.
- */
-function getNewToken(oAuth2Client, userTokenPath) {
-  const authUrl = oAuth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: SCOPES,
-  })
-
-  console.log('Authorize this app by visiting this url:', authUrl)
-
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  })
-
-  return new Promise((resolve, reject) => {
-    rl.question('Enter the code from that page here: ', (code) => {
-      rl.close()
-      oAuth2Client.getToken(code, async (err, token) => {
-        if (err) {
-          err.message = 'Error retrieving access token: ' + err.message
-          return reject(err)
-        }
-        oAuth2Client.setCredentials(token)
-        // Store the token to disk for later program executions
-        await fs.writeFile(userTokenPath, JSON.stringify(token))
-
-        console.log('Token stored to', userTokenPath)
-        return resolve(oAuth2Client)
-      })
-    })
-  })
+  return oAuth2Client
 }
 
 /**
@@ -111,7 +58,7 @@ const credcache = {}
  * TODO: The local credential cache may incur in problems if the credential is ever updated
  * solely on Cloud Storage
  */
-exports.getOAuth2Client = async function getOAuth2Client(courseId) {
+exports.getOAuth2ClientFromCloudStorage = async function getOAuth2ClientFromCloudStorage(courseId) {
   if (!credcache[courseId]) {
     const tokenPath = path.resolve('/tmp', 'athena-judge', 'credcache', courseId.toString())
 
@@ -123,11 +70,12 @@ exports.getOAuth2Client = async function getOAuth2Client(courseId) {
         .then(JSON.parse)
     ])
 
-    const {
+    let {
       client_secret,
       client_id,
       redirect_uris
-    } = clientCred.installed || clientCred.web
+    } = clientCred.web
+
     const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0])
     oAuth2Client.setCredentials(token)
 

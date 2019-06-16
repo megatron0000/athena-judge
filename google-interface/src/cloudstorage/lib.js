@@ -106,21 +106,46 @@ function uploadFile({ localFilename, destinationPath, content }) {
 
 }
 
-async function downloadFile(srcFilename, destFilename) {
-  const bucket = await getBucket()
+/**
+ * 
+ * @param {object} args
+ * @param {string} args.srcFilename
+ * @param {string=} args.destFilename Optional. If present, the file is downloaded to this path
+ * @param {boolean=} args.downloadToMemory Optional. If present, the file is downloaded to memory and returned
+ * @returns {Promise<Buffer>} File contents. Returned only if *args.downloadToMemory === true*
+ */
+async function downloadFile({ srcFilename, destFilename, downloadToMemory }) {
 
-  await mkdirRecursive(path.dirname(destFilename))
-
-  const options = {
-    // The path to which the file should be downloaded, e.g. "./file.txt"
-    destination: destFilename,
-    gzip: false
+  if (destFilename && downloadToMemory) {
+    throw new Error('destFilename and downloadToMemory are exclusive')
   }
 
-  // Downloads the file
-  return bucket.file(srcFilename).download(options)
+  const bucket = await getBucket()
 
-  // [END storage_download_file]
+  if (destFilename) {
+    await mkdirRecursive(path.dirname(destFilename))
+
+    return bucket.file(srcFilename).download({
+      // The path to which the file should be downloaded, e.g. "./file.txt"
+      destination: destFilename,
+      gzip: false
+    })
+  }
+
+  // else, requested download to memory
+
+  return new Promise((resolve, reject) => {
+
+    bucket.file(srcFilename).download({ gzip: false }, (/**@type {any} */err, /**@type {Buffer} */ content) => {
+      if (err) {
+        return reject(err)
+      }
+
+      return resolve(content)
+    })
+
+  })
+
 }
 
 async function deleteFile(filename) {

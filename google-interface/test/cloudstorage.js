@@ -36,7 +36,10 @@ describe('Cloud Storage', function () {
     assert.deepEqual(await storage.listFilesByPrefix('dir'), [])
     assert.deepEqual((await storage.listFilesByPrefix('root')).length, 2)
 
-    await storage.downloadFile('root/dir/file1', path.resolve(__dirname, 'sample-files', 'file1.download'))
+    await storage.downloadFile({
+      srcFilename: 'root/dir/file1',
+      destFilename: path.resolve(__dirname, 'sample-files', 'file1.download')
+    })
 
     assert.equal(
       fs.readFileSync(path.resolve(__dirname, 'sample-files', 'file1.download'), 'utf8'),
@@ -147,7 +150,6 @@ describe('Cloud Storage', function () {
     await GCS.downloadCourseWorkTestFiles(
       testCourseId,
       testCourseWorkIds[0],
-      testSubmissionIds[0],
       path.resolve(__dirname, 'sample-files', '.testdownload')
     )
 

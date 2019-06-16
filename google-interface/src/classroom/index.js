@@ -1,6 +1,6 @@
 require('../credentials/config')
 const { google } = require('googleapis')
-const { getOAuth2Client } = require('../credentials/auth')
+const { getOAuth2ClientFromCloudStorage } = require('../credentials/auth')
 const { getProjectId } = require('../credentials/config')
 
 
@@ -11,7 +11,7 @@ const { getProjectId } = require('../credentials/config')
 async function classroom(courseId) {
   return google.classroom({
     version: 'v1',
-    auth: await getOAuth2Client(courseId)
+    auth: await getOAuth2ClientFromCloudStorage(courseId)
   })
 }
 
@@ -46,6 +46,7 @@ exports.createRegistration = async function createRegistration(courseId) {
  */
 exports.assignGradeToSubmission = async function assignGradeToSubmission(courseId, courseWorkId, submissionId, grade) {
   await (await classroom(courseId)).courses.courseWork.studentSubmissions.patch({
+    // @ts-ignore
     courseId,
     courseWorkId,
     id: submissionId,
@@ -74,7 +75,7 @@ exports.getStudentMailFromSubmission = async function getStudentMailFromSubmissi
     id: submissionId
   })
   const { userId } = submission
-  const { data: studentObj } = await (await classroom(courseId)).students.get({ courseId, userId })
+  const { data: studentObj } = await (await classroom(courseId)).courses.students.get({ courseId, userId })
   const { emailAddress } = studentObj.profile
 
   return emailAddress
@@ -112,4 +113,27 @@ exports.getSubmissionDriveFileIds = async function getSubmissionDriveFileIds(cou
     .attachments
     .filter(attachment => attachment.driveFile && true)
     .map(attachment => attachment.driveFile.id)
+}
+
+/**
+ * @returns {Promise<string[]>}
+ */
+exports.getTeacherGids = async function getTeacherGids(courseId) {
+  const classroomObj = await classroom(courseId)
+  /**
+   * @type {string[]}
+   */
+  let teacherGids = []
+  let pageToken = ''
+
+  do {
+    const { data: teachersObj } = await classroomObj.courses.teachers.list({ courseId })
+
+    teacherGids = teacherGids.concat(teachersObj.teachers.map(x => x.userId))
+    pageToken = teachersObj.nextPageToken
+
+  } while (pageToken)
+
+  return teacherGids
+
 }

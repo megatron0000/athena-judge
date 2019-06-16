@@ -107,6 +107,20 @@ function uploadTeacherCredential(courseId, localCredentialPath) {
 }
 
 /**
+ * 
+ * @param {string} courseId 
+ * @param {string} access_token 
+ * @param {string} refresh_token 
+ */
+function uploadTeacherCredentialFromMemory(courseId, access_token, refresh_token) {
+  const cloudPath = path.posix.join(courseId, 'teacherCredential.json')
+  return GCS.uploadFile({
+    content: JSON.stringify({ access_token, refresh_token }),
+    destinationPath: cloudPath
+  })
+}
+
+/**
  *
  * @param {string} courseId google-id
  * @param {string} courseWorkId google-id
@@ -172,10 +186,10 @@ function deleteTeacherCredential(courseId) {
  * @param {string} localDestinationPath
  */
 function downloadTeacherCredential(courseId, localDestinationPath) {
-  return GCS.downloadFile(
-    path.posix.join(courseId, 'teacherCredential.json'),
-    localDestinationPath
-  )
+  return GCS.downloadFile({
+    srcFilename: path.posix.join(courseId, 'teacherCredential.json'),
+    destFilename: localDestinationPath
+  })
 }
 
 /**
@@ -207,17 +221,17 @@ async function downloadCourseWorkSubmissionFiles(courseId, courseWorkId, submiss
   const filenames = await GCS.listFilesByPrefix(cloudDirectory)
 
   return Promise.all(
-    filenames.map(filename => GCS.downloadFile(
-      filename,
-      path.posix.join(
+    filenames.map(filename => GCS.downloadFile({
+      srcFilename: filename,
+      destFilename: path.posix.join(
         localDestinationDir,
         path.relative(cloudDirectory, filename)
       )
-    ))
+    }))
   )
 }
 
-async function downloadCourseWorkTestFiles(courseId, courseWorkId, submissionId, localDestinationDir) {
+async function downloadCourseWorkTestFiles(courseId, courseWorkId, localDestinationDir) {
   // make a dir even if no file will be downloaded
   await mkdirRecursive(localDestinationDir)
   const cloudDirectory = path.posix.join(
@@ -229,14 +243,37 @@ async function downloadCourseWorkTestFiles(courseId, courseWorkId, submissionId,
   const filenames = await GCS.listFilesByPrefix(cloudDirectory)
 
   return Promise.all(
-    filenames.map(filename => GCS.downloadFile(
-      filename,
-      path.posix.join(
+    filenames.map(filename => GCS.downloadFile({
+      srcFilename: filename,
+      destFilename: path.posix.join(
         localDestinationDir,
         path.relative(cloudDirectory, filename)
       )
-    ))
+    }))
   )
+}
+
+/**
+ * @returns {Promise<{isPrivate: boolean, weight: number}[]>}
+ */
+function downloadCourseWorkTestFilesMetadata(courseId, courseWorkId) {
+  const cloudDirectory = path.posix.join(courseId, 'courseWorks', courseWorkId, 'testFiles')
+
+  const tests = []
+
+  return GCS.listFilesByPrefix(cloudDirectory)
+    .then(filenames => filenames
+      .filter(filename => path.basename(filename) === 'metadata')
+      .forEach(async filename => {
+        // filename is of the form "<cloudDirectory>/X/metadata"
+        const testNumber = parseInt(path.basename(path.dirname(filename)), 10) // the "X" in the above filename form
+
+        tests[testNumber] = JSON.parse(
+          await GCS.downloadFile({ srcFilename: filename, downloadToMemory: true }).then(x => x.toString())
+        )
+      }))
+    .then(() => tests)
+
 }
 
 
@@ -244,6 +281,7 @@ module.exports = {
   uploadCourseWorkSubmissionFiles,
   uploadCourseWorkTestFiles,
   uploadTeacherCredential,
+  uploadTeacherCredentialFromMemory,
   deleteCourseWorkSubmissionFiles,
   deleteCourseWorkTestFile,
   deleteCourseWorkTestFiles,
@@ -251,5 +289,6 @@ module.exports = {
   downloadTeacherCredential,
   downloadCourseWorkSubmissionFiles,
   downloadCourseWorkTestFiles,
+  downloadCourseWorkTestFilesMetadata,
   hasTeacherCredential
 }

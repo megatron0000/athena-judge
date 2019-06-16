@@ -31,7 +31,6 @@ server.on('connection', client => {
         cloudstorage.downloadCourseWorkTestFiles(
           ctx.courseId,
           ctx.courseWorkId,
-          ctx.submissionId,
           ctx.localTestDir
         ),
         cloudstorage.downloadCourseWorkSubmissionFiles(
