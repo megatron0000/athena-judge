@@ -7,7 +7,7 @@ require('./google-interface/credentials/config')
 const { google } = require('googleapis')
 const readline = require('readline')
 const { readFileSync, writeFileSync, existsSync, mkdirSync } = require('fs')
-const { readFile, exists, mkdir, writeFile } = require('promise-fs')
+const { readFile, writeFile } = require('promise-fs')
 const { resolve, basename, dirname } = require('path')
 const { getOAuth2ClientFromLocalCredentials } = require('./google-interface/credentials/auth')
 const { getProjectId, getGithubRepoHref, SCOPES } = require('./google-interface/credentials/config')
@@ -56,7 +56,9 @@ const INTERNAL = {
     }
   },
 
-  async getOAuth2ClientInteractive(oauthCredPath, scopes, readlineInterface, tokenDestinationPath) {
+  async getOAuth2ClientInteractive(oauthCredPath, scopes, tokenDestinationPath) {
+    const http = require('http')
+
     let oauthCred
     try {
       oauthCred = JSON.parse(readFileSync(oauthCredPath, 'utf8'))
@@ -68,7 +70,7 @@ const INTERNAL = {
       client_secret,
       client_id,
       redirect_uris
-    } = (oauthCred.installed || oauthCred.web)
+    } = oauthCred.web
 
     const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0])
 
@@ -79,15 +81,30 @@ const INTERNAL = {
         scope: scopes,
       })
 
-      log.green('Authorize this app by visiting this url:', authUrl)
-      const code = await readlineInterface.question('Enter the code from that page here: ')
+      await new Promise((resolve, reject) => {
+        // make sure the route is visited only once
+        let accessed = false
+        try {
+          const server = http.createServer(async (req, res) => {
+            if (accessed) {
+              return log.red('Route accessed more than once')
+            }
+            accessed = true
+            res.end('Authentication successful. Please close the browser tab and return to the console')
+            server.close()
 
-      try {
-        token = (await oAuth2Client.getToken(code)).tokens
-      } catch (err) {
-        throw new Error('Error retrieving access token: ' + err.message)
-      }
-      writeFileSync(tokenDestinationPath, JSON.stringify(token))
+            /**@type {string} */
+            // @ts-ignore
+            const code = require('url').parse(req.url, true).query.code
+            const { tokens } = await oAuth2Client.getToken({ code })
+            token = tokens
+            writeFileSync(tokenDestinationPath, JSON.stringify(token))
+            resolve()
+          }).listen(8080, () => log.green('Authorize this app by visiting this url:', authUrl))
+        } catch (err) {
+          reject(err)
+        }
+      })
 
     } else {
       token = JSON.parse(readFileSync(tokenDestinationPath, 'utf8'))
@@ -99,11 +116,10 @@ const INTERNAL = {
   },
 
   /**
- * 
- * @param {cloudresourcemanager_v1.Schema$Policy} projectPolicies 
- * @param {string} memberName Already in the format "serviceAccount:{email}" or analogous
- * @param {string} role "roles/pubsub.admin" or other one
- */
+   * @param {any} projectPolicies 
+   * @param {string} memberName Already in the format "serviceAccount:{email}" or analogous
+   * @param {string} role "roles/pubsub.admin" or other one
+   */
   addMemberToProjectRole_inplace(projectPolicies, memberName, role) {
     const existentBinding = projectPolicies.bindings.find(binding => binding.role === role)
     if (existentBinding) {
@@ -369,7 +385,6 @@ const INTERNAL = {
     const auth = await INTERNAL.getOAuth2ClientInteractive(
       oauthCredPath,
       scopes,
-      prompt,
       oauthTokenPath
     )
 
@@ -491,7 +506,6 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
   const auth = await INTERNAL.getOAuth2ClientInteractive(
     oauthCredPath,
     scopes,
-    prompt,
     oauthTokenPath
   )
 
@@ -708,7 +722,6 @@ async function createAndSetupVM(gitBranchName = 'master') {
   const auth = await INTERNAL.getOAuth2ClientInteractive(
     oauthCredPath,
     scopes,
-    prompt,
     oauthTokenPath
   )
 
@@ -1115,7 +1128,6 @@ if (require.main === module) {
       break
 
     case 'deploy':
-      console.log(process.argv)
       args.branchNameOrCommitId = process.argv[3] || 'master'
       args.deploy = process.argv[4] === 'test-only' ? false : true
       deployToVM(args.branchNameOrCommitId, args.deploy)
@@ -1145,13 +1157,44 @@ if (require.main === module) {
       deployContinuousIntegrationServer().then(() => log.green('Done. Exiting...'))
       break
 
-    case 'authorize-as-teacher':
+    case 'authorize-testcourse-as-teacher':
       INTERNAL.getOAuth2ClientInteractive(
         process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
         SCOPES,
-        INTERNAL.promisifiedReadlineInterface(),
         process.env['CLASSROOM_TEST_COURSE_TEACHER_OAUTH_TOKEN_FILE']
       ).then(() => log.green('Done. Exiting...'))
+      break
+
+    case 'authorize-testcourse-as-student':
+      INTERNAL.getOAuth2ClientInteractive(
+        process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
+        SCOPES,
+        process.env['CLASSROOM_TEST_COURSE_STUDENT_OAUTH_TOKEN_FILE']
+      ).then(() => log.green('Done. Exiting...'))
+      break
+
+    case 'authorize-project-as-admin':
+      INTERNAL.getOAuth2ClientInteractive(
+        process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
+        ['https://www.googleapis.com/auth/cloud-platform'],
+        process.env['OAUTH_PROJECT_ADMIN_TOKEN_FILE']
+      ).then(() => log.green('Done. Exiting...'))
+      break
+
+    case 'debug-oauth-creds-grant':
+      const outputPath = '/tmp/athena-debug-cred.json'
+      INTERNAL.getOAuth2ClientInteractive(
+        process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
+        SCOPES,
+        outputPath
+      )
+        .then(oauth2Client => oauth2Client.credentials)
+        .then(credentials => {
+          log.green('Credentials are:')
+          log.green(credentials)
+          log.green('If you want to take a closer look, it was saved at ' + outputPath)
+        })
+      break
 
     default:
       log.red('Unrecognized command')
