@@ -44,44 +44,33 @@ exports.getOAuth2ClientFromLocalCredentials = async function getOAuth2ClientFrom
 }
 
 /**
- * @type {{[courseId: string]: OAuth2Client}}
- */
-const credcache = {}
-
-/**
  * Creates an OAuth2Client based on courseId, by finding the credentials of the course teacher
  * stored on Cloud Storage
  * @param {string} courseId
  * @throws {Error} If no credentials are found in Cloud Storage for the specified course.
  * This happens when the course's teacher had not previously given permissions to the application
  *
- * TODO: The local credential cache may incur in problems if the credential is ever updated
- * solely on Cloud Storage
  */
 exports.getOAuth2ClientFromCloudStorage = async function getOAuth2ClientFromCloudStorage(courseId) {
-  if (!credcache[courseId]) {
-    const tokenPath = path.resolve('/tmp', 'athena-judge', 'credcache', courseId.toString())
+  const tokenPath = path.resolve('/tmp', 'athena-judge', 'coursecred', courseId.toString())
 
-    const [token, clientCred] = await Promise.all([
-      gcs.downloadTeacherCredential(courseId, tokenPath)
-        .then(() => fs.readFile(tokenPath))
-        .then(JSON.parse),
-      fs.readFile(process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'])
-        .then(JSON.parse)
-    ])
+  const [token, clientCred] = await Promise.all([
+    gcs.downloadTeacherCredential(courseId, tokenPath)
+      .then(() => fs.readFile(tokenPath))
+      .then(JSON.parse),
+    fs.readFile(process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'])
+      .then(JSON.parse)
+  ])
 
-    let {
-      client_secret,
-      client_id,
-      redirect_uris
-    } = clientCred.web
+  let {
+    client_secret,
+    client_id,
+    redirect_uris
+  } = clientCred.web
 
-    const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0])
-    oAuth2Client.setCredentials(token)
+  const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0])
+  oAuth2Client.setCredentials(token)
 
-    credcache[courseId] = oAuth2Client
+  return oAuth2Client
 
-  }
-
-  return credcache[courseId]
 }
