@@ -13,17 +13,21 @@ export default class App extends React.Component {
     super(props);
     this.state = {
       user: null, // { gid, name, photo, email }
+      error: null,
     };
   }
 
   handleUserUpdate = (user) => {
-    this.setState({ user });
+    this.setState({ user: user });
     if (user != null) {
       Api.put(`/users/${user.gid}`, {
         name: user.name,
         photo: user.photo,
         email: user.email,
         id_token: user.id_token,
+      })
+      .catch((error) => {
+        this.setState({ error: error });
       });
     }
   }
@@ -50,6 +54,10 @@ export default class App extends React.Component {
   }
 
   render() {
+    if(this.state.error != null) {
+        throw this.state.error;
+    }
+
     return (
       <div>
         <TopBar
