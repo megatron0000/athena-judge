@@ -17,17 +17,11 @@ export default class App extends React.Component {
   }
 
   handleUserUpdate = (user) => {
+    if (!user) {
+      return
+    }
     this.setState({ user })
     Api.setAuthorizationToken(user.gid, user.id_token)
-    // if (user !== null) {
-    //   Api.put(`/users/login`, {
-    //     name: user.name,
-    //     photo: user.photo,
-    //     email: user.email,
-    //     id_token: user.id_token,
-    //     gid: user.gid
-    //   });
-    // }
   }
 
   handleOpenSidebar = () => {
