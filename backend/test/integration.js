@@ -1,6 +1,6 @@
 /// <reference types="mocha"/>
 const { getOAuth2ClientFromLocalCredentials, getOAuth2ClientFromCloudStorage } = require('../src/google-interface/credentials/auth')
-const { deleteCourseWorkTestFiles, uploadCourseWorkTestFiles, uploadTeacherCredential } = require('../src/google-interface/cloudstorage')
+const { deleteCourseWorkTestFiles, uploadCourseWorkTestFiles } = require('../src/google-interface/cloudstorage')
 const { createRegistration, submissionIsTurnedIn, assignGradeToSubmission } = require('../src/google-interface/classroom')
 const { google } = require('googleapis')
 const { createReadStream } = require('fs')

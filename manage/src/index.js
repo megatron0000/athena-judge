@@ -1190,7 +1190,7 @@ if (require.main === module) {
       break
 
     case 'upload-credentials':
-      uploadCredentials('athena-latest').then(() => log.green('Done. Exiting...'))
+      uploadCredentials('athena-latest/google-interface/src/credentials').then(() => log.green('Done. Exiting...'))
       break
 
     case 'create-vm':
