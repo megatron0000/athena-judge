@@ -56,22 +56,37 @@ const SCOPES = [
 ];
 
 /**
- * Must be accessed via getProjectId()
+ * Must not be accessed directly
  */
-let _projIdCache
+let _credCache
+
+async function populateCredCache() {
+  if (!_credCache) {
+    const credContent = JSON.parse(
+      await fs.readFile(process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'])
+    )
+    _credCache = credContent.web
+  }
+  return _credCache
+}
 
 /**
  * @returns {Promise<string>}
  */
 async function getProjectId() {
-  if (!_projIdCache) {
-    const credContent = JSON.parse(
-      await fs.readFile(process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'])
-    )
-    _projIdCache = credContent.installed.project_id
-  }
+  return (await populateCredCache()).project_id
+}
 
-  return _projIdCache
+async function getProjectOAuthClientId() {
+  return (await populateCredCache()).client_id
+}
+
+async function getProjectOAuthClientSecret() {
+  return (await populateCredCache()).client_secret
+}
+
+async function getProjectLocalhostRedirectUri() {
+  return (await populateCredCache()).redirect_uris[0]
 }
 
 /**
@@ -89,13 +104,17 @@ async function getGithubAccessToken() {
 }
 
 async function getGithubRepoHref() {
-  const token = await  getGithubAccessToken()
+  const token = await getGithubAccessToken()
   return 'https://github.com/' + token.user + '/' + token.repo
 }
+
 
 module.exports = {
   SCOPES,
   getProjectId,
+  getProjectOAuthClientId,
+  getProjectOAuthClientSecret,
+  getProjectLocalhostRedirectUri,
   getGithubAccessToken,
   getGithubRepoHref
 }

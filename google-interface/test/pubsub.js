@@ -5,7 +5,7 @@ let request = require('request-promise-native');
 const { getProjectId } = require('../src/credentials/config')
 
 
-const { getOAuth2ClientFromLocalCredentials } = require('../src/credentials/auth')
+const { getOAuth2ClientFromCloudStorage } = require('../src/credentials/auth')
 const { AttachPubSubListener, StopPubSub, StartPubSub } = require('../src/pubsub')
 const { classroom_v1 } = require('googleapis')
 
@@ -17,10 +17,7 @@ describe('Pub/Sub', function () {
 
   it('should enable listening for Classroom notifications', async () => {
 
-    const auth = await getOAuth2ClientFromLocalCredentials(
-      process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
-      process.env['CLASSROOM_TEST_COURSE_TEACHER_OAUTH_TOKEN_FILE']
-    )
+    const auth = await getOAuth2ClientFromCloudStorage(process.env['CLASSROOM_TEST_COURSE_ID'])
 
     const classroom = new classroom_v1.Classroom({ auth })
 

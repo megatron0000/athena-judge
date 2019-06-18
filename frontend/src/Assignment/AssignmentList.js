@@ -15,12 +15,13 @@ import Button from "@material-ui/core/Button";
 import AddIcon from "@material-ui/icons/Add";
 
 import ConfirmDialog from "../Components/ConfirmDialog";
+import GoogleApi from "../GoogleApi";
 
 export default class AssignmentList extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      data: null,
+      assignmentList: [],
       loading: false,
       dialogDeleteAssignmentOpen: false,
       candidateToDelete: null
@@ -28,18 +29,18 @@ export default class AssignmentList extends React.Component {
   }
 
   getAssignmentsList = () => {
-    this.setState({ loading: true });
-    Api.get(`/courses/${this.props.courseId}/assignments`).then((res) => {
-      this.setState({ data: res.data.data, loading: false });
-    }).catch((err) => {
-      console.log(err);
-      this.setState({ loading: false });
-    });
+    this.setState({ loading: true })
+    GoogleApi.listAssignments(this.props.courseId)
+      .then(assignmentList => this.setState({ assignmentList, loading: false }))
+      .catch(err => {
+        console.log(err)
+        this.setState({ loading: false })
+      })
   }
 
   handleDelete = () => {
-    Api.delete(`/assignments/${this.state.candidateToDelete}`).then((res) => {  
-      this.setState({ data: this.state.data.filter(o => o.id !== this.state.candidateToDelete), loading: true });
+    Api.delete(`/assignments/${this.state.candidateToDelete}`).then((res) => {
+      this.setState({ assignmentList: this.state.assignmentList.filter(o => o.id !== this.state.candidateToDelete), loading: true });
     }).catch((err) => {
       console.log(err);
       this.setState({ loading: false });
@@ -51,7 +52,7 @@ export default class AssignmentList extends React.Component {
   }
 
   handleOpenDialogDeleteAssign = (id) => {
-    this.setState({ dialogDeleteAssignmentOpen: true,  candidateToDelete: id});
+    this.setState({ dialogDeleteAssignmentOpen: true, candidateToDelete: id });
   };
 
   handleCloseDialogDeleteAssignment = () => {
@@ -62,34 +63,34 @@ export default class AssignmentList extends React.Component {
     return (
       <div>
         <List>
-          {this.state.data && this.state.data.map((assignment) => (
+          {this.state.assignmentList && this.state.assignmentList.map(googleAssignment => (
             <ListItem
-              key={assignment.id}
+              key={googleAssignment.id}
               button
-              onClick={() => { this.props.onOpen(assignment); }}
+              onClick={() => { this.props.onOpen(googleAssignment) }}
             >
               <ListItemIcon>
                 <AssignmentIcon />
               </ListItemIcon>
               <ListItemText
-                primary={assignment.title}
-                secondary={assignment.description}
+                primary={googleAssignment.title}
+                secondary={googleAssignment.description}
               />
               {this.props.isProfessor &&
                 <ListItemSecondaryAction>
                   <IconButton
                     aria-label="Edit"
-                    onClick={() => { this.props.onEdit(assignment.id); }}
+                    onClick={() => { this.props.onEdit(googleAssignment) }}
                   >
                     <EditIcon />
                   </IconButton>
 
-                  <IconButton
-                   aria-label="Delete"
-                    onClick={() => {this.handleOpenDialogDeleteAssign(assignment.id)}}
+                  {/* <IconButton
+                    aria-label="Delete"
+                    onClick={() => { this.handleOpenDialogDeleteAssign(googleAssignment.id) }}
                   >
                     <DeleteIcon />
-                  </IconButton>
+                  </IconButton> */}
 
                 </ListItemSecondaryAction>
               }

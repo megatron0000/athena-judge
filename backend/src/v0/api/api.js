@@ -1,15 +1,15 @@
-import Express from "express";
+const Express = require('express')
 
-import AssignmentsRouter from "./assignments";
-import CoursesRouter from "./courses";
-import UsersRouter from "./users";
-import SubmissionsRouter from "./submissions";
+const { AssignmentsRouter } = require('./assignments')
+const { CoursesRouter } = require('./courses')
+const { InfoRouter } = require('./info')
 
-const api = Express.Router();
+const ApiRouter = Express.Router()
 
-api.use("/assignments", AssignmentsRouter);
-api.use("/courses", CoursesRouter);
-api.use("/users", UsersRouter);
-api.use("/submissions", SubmissionsRouter);
+ApiRouter.use('/assignments', AssignmentsRouter)
+ApiRouter.use('/courses', CoursesRouter)
+ApiRouter.use('/info', InfoRouter)
 
-export default api;
+module.exports = {
+  ApiRouter
+}

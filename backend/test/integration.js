@@ -1,6 +1,6 @@
 /// <reference types="mocha"/>
-const { getOAuth2ClientFromLocalCredentials } = require('../src/google-interface/credentials/auth')
-const { deleteCourseWorkTestFiles, uploadCourseWorkTestFiles, uploadTeacherCredential } = require('../src/google-interface/cloudstorage')
+const { getOAuth2ClientFromLocalCredentials, getOAuth2ClientFromCloudStorage } = require('../src/google-interface/credentials/auth')
+const { deleteCourseWorkTestFiles, uploadCourseWorkTestFiles } = require('../src/google-interface/cloudstorage')
 const { createRegistration, submissionIsTurnedIn, assignGradeToSubmission } = require('../src/google-interface/classroom')
 const { google } = require('googleapis')
 const { createReadStream } = require('fs')
@@ -28,7 +28,7 @@ const schedule = {
   async executeScheduled() {
     const queueSnapshot = this._queue
     this._queue = []
-    
+
     const results = []
     for (let i = 0; i < queueSnapshot.length; i++) {
       const cb = queueSnapshot[i]
@@ -65,10 +65,7 @@ describe('Integration', function () {
   })
 
   before(async () => {
-    const teacherAuth = await getOAuth2ClientFromLocalCredentials(
-      process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
-      process.env['CLASSROOM_TEST_COURSE_TEACHER_OAUTH_TOKEN_FILE']
-    )
+    const teacherAuth = await getOAuth2ClientFromCloudStorage(process.env['CLASSROOM_TEST_COURSE_ID'])
     teacherClassroom = google.classroom({
       version: 'v1',
       auth: teacherAuth
@@ -86,11 +83,6 @@ describe('Integration', function () {
       version: 'v3',
       auth: studentAuth
     })
-
-    await uploadTeacherCredential(
-      process.env['CLASSROOM_TEST_COURSE_ID'],
-      process.env['CLASSROOM_TEST_COURSE_TEACHER_OAUTH_TOKEN_FILE']
-    )
 
     await createRegistration(process.env['CLASSROOM_TEST_COURSE_ID'])
 

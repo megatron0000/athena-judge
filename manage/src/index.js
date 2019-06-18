@@ -7,9 +7,9 @@ require('./google-interface/credentials/config')
 const { google } = require('googleapis')
 const readline = require('readline')
 const { readFileSync, writeFileSync, existsSync, mkdirSync } = require('fs')
-const { readFile, exists, mkdir, writeFile } = require('promise-fs')
+const { readFile, writeFile } = require('promise-fs')
 const { resolve, basename, dirname } = require('path')
-const { getOAuth2ClientFromLocalCredentials } = require('./google-interface/credentials/auth')
+const { getOAuth2ClientFromLocalCredentials, getOAuth2ClientFromCloudStorage } = require('./google-interface/credentials/auth')
 const { getProjectId, getGithubRepoHref, SCOPES } = require('./google-interface/credentials/config')
 const { spawn } = require('child_process')
 
@@ -56,7 +56,9 @@ const INTERNAL = {
     }
   },
 
-  async getOAuth2ClientInteractive(oauthCredPath, scopes, readlineInterface, tokenDestinationPath) {
+  async getOAuth2ClientInteractive(oauthCredPath, scopes, tokenDestinationPath) {
+    const http = require('http')
+
     let oauthCred
     try {
       oauthCred = JSON.parse(readFileSync(oauthCredPath, 'utf8'))
@@ -68,7 +70,7 @@ const INTERNAL = {
       client_secret,
       client_id,
       redirect_uris
-    } = oauthCred.installed
+    } = oauthCred.web
 
     const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0])
 
@@ -79,15 +81,30 @@ const INTERNAL = {
         scope: scopes,
       })
 
-      log.green('Authorize this app by visiting this url:', authUrl)
-      const code = await readlineInterface.question('Enter the code from that page here: ')
+      await new Promise((resolve, reject) => {
+        // make sure the route is visited only once
+        let accessed = false
+        try {
+          const server = http.createServer(async (req, res) => {
+            if (accessed) {
+              return log.red('Route accessed more than once')
+            }
+            accessed = true
+            res.end('Authentication successful. Please close the browser tab and return to the console')
+            server.close()
 
-      try {
-        token = (await oAuth2Client.getToken(code)).tokens
-      } catch (err) {
-        throw new Error('Error retrieving access token: ' + err.message)
-      }
-      writeFileSync(tokenDestinationPath, JSON.stringify(token))
+            /**@type {string} */
+            // @ts-ignore
+            const code = require('url').parse(req.url, true).query.code
+            const { tokens } = await oAuth2Client.getToken({ code })
+            token = tokens
+            writeFileSync(tokenDestinationPath, JSON.stringify(token))
+            resolve()
+          }).listen(8080, () => log.green('Authorize this app by visiting this url:', authUrl))
+        } catch (err) {
+          reject(err)
+        }
+      })
 
     } else {
       token = JSON.parse(readFileSync(tokenDestinationPath, 'utf8'))
@@ -99,11 +116,10 @@ const INTERNAL = {
   },
 
   /**
- * 
- * @param {cloudresourcemanager_v1.Schema$Policy} projectPolicies 
- * @param {string} memberName Already in the format "serviceAccount:{email}" or analogous
- * @param {string} role "roles/pubsub.admin" or other one
- */
+   * @param {any} projectPolicies 
+   * @param {string} memberName Already in the format "serviceAccount:{email}" or analogous
+   * @param {string} role "roles/pubsub.admin" or other one
+   */
   addMemberToProjectRole_inplace(projectPolicies, memberName, role) {
     const existentBinding = projectPolicies.bindings.find(binding => binding.role === role)
     if (existentBinding) {
@@ -369,7 +385,6 @@ const INTERNAL = {
     const auth = await INTERNAL.getOAuth2ClientInteractive(
       oauthCredPath,
       scopes,
-      prompt,
       oauthTokenPath
     )
 
@@ -467,7 +482,13 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
 
   log.green('Create a Google Cloud Platform Project through Google UI. Name it however you like.')
   log.green(
-    'Generate an OAuth2 Client ID for it, download it as JSON and store it ' +
+    'Generate an OAuth2 Client ID for it. The type should be "Web Application", the ' +
+    'allowed javascript origins should be, in this order, "http://localhost:8080" ' +
+    'and "https://web.<project-id>.appspot.com", where <project-id> stands for your project\'s ' +
+    'id. Also, the redirect URIs must be only "http://localhost:8080".'
+  )
+  log.green(
+    'Download the created credential as JSON and store it ' +
     'on the "src/credentials" directory inside the "google-interface" directory ' +
     '(absolute path ' + resolve(__dirname, '../google-interface/src/credentials') + ').'
   )
@@ -476,23 +497,16 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
     '", without the quotes, though.'
   )
   await prompt.question(
-    'Press Enter when you are done... (later, if asked to authorize this app, ' +
-    'use the same Google Account with which you created the Google Platform Project)'
+    'Press Enter when you are done... (when asked to authorize this app, ' +
+    'use the same Google Account with which you created the Google Platform Project, since this is the) ' +
+    '"admin" account.'
   )
 
-  const scopes = [
-    'https://www.googleapis.com/auth/cloud-platform'
-  ]
+  await authorizeProjectAsAdmin()
 
-  const oauthCredPath = process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE']
-
-  const oauthTokenPath = process.env['OAUTH_PROJECT_ADMIN_TOKEN_FILE']
-
-  const auth = await INTERNAL.getOAuth2ClientInteractive(
-    oauthCredPath,
-    scopes,
-    prompt,
-    oauthTokenPath
+  const auth = await getOAuth2ClientFromLocalCredentials(
+    process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
+    process.env['OAUTH_PROJECT_ADMIN_TOKEN_FILE']
   )
 
   const projId = await getProjectId()
@@ -671,6 +685,16 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
 
   log.green('Defined service accounts\' permissions\n')
 
+  log.green(
+    'Now two members of the team must have teacher/student roles at the Google Classroom ' +
+    'test course (one must be a teacher; the other, a student). Once these roles are established, ' +
+    'we will authorize the app with these accounts:'
+  )
+
+  await authorizeTestCourseAsTeacher()
+
+  await authorizeTestCourseAsStudent()
+
   await createAndSetupVM(gitBranchName)
 
   log.green('Installing gcloud command line tools...')
@@ -697,10 +721,7 @@ async function createAndSetupVM(gitBranchName = 'master') {
 
   log.green('Creating compute engine instance and setting up (this may take a couple of minutes)...')
 
-  const prompt = INTERNAL.promisifiedReadlineInterface()
-  const scopes = [
-    'https://www.googleapis.com/auth/cloud-platform'
-  ]
+  const scopes = ['https://www.googleapis.com/auth/cloud-platform']
   const oauthCredPath = process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE']
   const oauthTokenPath = process.env['OAUTH_PROJECT_ADMIN_TOKEN_FILE']
   const projId = await getProjectId()
@@ -708,7 +729,6 @@ async function createAndSetupVM(gitBranchName = 'master') {
   const auth = await INTERNAL.getOAuth2ClientInteractive(
     oauthCredPath,
     scopes,
-    prompt,
     oauthTokenPath
   )
 
@@ -987,10 +1007,7 @@ async function deployToVM(branchNameOrCommitId = 'master', deploy = true) {
 
 async function listTmpDriveFilesThatShouldBeDeleted() {
 
-  const teacherAuth = await getOAuth2ClientFromLocalCredentials(
-    process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
-    process.env['CLASSROOM_TEST_COURSE_TEACHER_OAUTH_TOKEN_FILE']
-  )
+  const teacherAuth = await getOAuth2ClientFromCloudStorage(process.env['CLASSROOM_TEST_COURSE_ID'])
   const teacherDrive = google.drive({
     version: 'v3',
     auth: teacherAuth
@@ -1051,11 +1068,6 @@ async function getVMIpAddress() {
  * Creates Pub/Sub Registration for Classroom test course
  */
 async function createTestCourseRegistration() {
-  await uploadTeacherCredential(
-    process.env['CLASSROOM_TEST_COURSE_ID'],
-    process.env['CLASSROOM_TEST_COURSE_TEACHER_OAUTH_TOKEN_FILE']
-  )
-
   await createRegistration(process.env['CLASSROOM_TEST_COURSE_ID'])
 }
 
@@ -1096,6 +1108,56 @@ async function testVMLock() {
   return true
 }
 
+async function authorizeTestCourseAsTeacher() {
+  log.green(
+    'Authorizing Classroom test course as teacher (' +
+    'use a Google Account registered as teacher in the test course)...'
+  )
+
+  const credPath = '/tmp/athena-judge-teacher-creds-' + new Date().toString() + '.json'
+  await INTERNAL.getOAuth2ClientInteractive(
+    process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
+    SCOPES,
+    credPath
+  )
+  await uploadTeacherCredential(process.env['CLASSROOM_TEST_COURSE_ID'], credPath)
+
+  log.green('Authorized Classroom test course as teacher (credential uploaded to Cloud Storage)\n')
+}
+
+async function authorizeTestCourseAsStudent() {
+
+  log.green(
+    'Authorizing Classroom test course as student (' +
+    'use a Google Account registered as student in the test course)...'
+  )
+
+  await INTERNAL.getOAuth2ClientInteractive(
+    process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
+    SCOPES,
+    process.env['CLASSROOM_TEST_COURSE_STUDENT_OAUTH_TOKEN_FILE']
+  )
+
+  log.green('Authorized Classroom test course as student (credential saved locally)\n')
+}
+
+async function authorizeProjectAsAdmin() {
+
+  log.green(
+    'Authorizing project as admin (use the same Google Account with which ' +
+    'the Google Platform Project was created)...'
+  )
+
+  await INTERNAL.getOAuth2ClientInteractive(
+    process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
+    ['https://www.googleapis.com/auth/cloud-platform'],
+    process.env['OAUTH_PROJECT_ADMIN_TOKEN_FILE']
+  )
+
+  log.green('Authorized project as admin (credential saved locally)\n')
+
+}
+
 if (require.main === module) {
   const args = {}
 
@@ -1115,7 +1177,6 @@ if (require.main === module) {
       break
 
     case 'deploy':
-      console.log(process.argv)
       args.branchNameOrCommitId = process.argv[3] || 'master'
       args.deploy = process.argv[4] === 'test-only' ? false : true
       deployToVM(args.branchNameOrCommitId, args.deploy)
@@ -1129,7 +1190,7 @@ if (require.main === module) {
       break
 
     case 'upload-credentials':
-      uploadCredentials('athena-latest').then(() => log.green('Done. Exiting...'))
+      uploadCredentials('athena-latest/google-interface/src/credentials').then(() => log.green('Done. Exiting...'))
       break
 
     case 'create-vm':
@@ -1145,13 +1206,32 @@ if (require.main === module) {
       deployContinuousIntegrationServer().then(() => log.green('Done. Exiting...'))
       break
 
-    case 'authorize-as-teacher':
+    case 'authorize-testcourse-as-teacher':
+      authorizeTestCourseAsTeacher().then(() => log.green('Done. Exiting...'))
+      break
+
+    case 'authorize-testcourse-as-student':
+      authorizeTestCourseAsStudent().then(() => log.green('Done. Exiting...'))
+      break
+
+    case 'authorize-project-as-admin':
+      authorizeProjectAsAdmin().then(() => log.green('Done. Exiting...'))
+      break
+
+    case 'debug-oauth-creds-grant':
+      const outputPath = '/tmp/athena-debug-cred.json'
       INTERNAL.getOAuth2ClientInteractive(
         process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
         SCOPES,
-        INTERNAL.promisifiedReadlineInterface(),
-        process.env['CLASSROOM_TEST_COURSE_TEACHER_OAUTH_TOKEN_FILE']
-      ).then(() => log.green('Done. Exiting...'))
+        outputPath
+      )
+        .then(oauth2Client => oauth2Client.credentials)
+        .then(credentials => {
+          log.green('Credentials are:')
+          log.green(credentials)
+          log.green('If you want to take a closer look, it was saved at ' + outputPath)
+        })
+      break
 
     default:
       log.red('Unrecognized command')

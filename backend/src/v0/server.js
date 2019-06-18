@@ -1,37 +1,61 @@
-import Express from "express";
-import Cors from "cors";
+const Express = require("express")
+const Cors = require("cors")
+const Passport = require('passport')
+const { Strategy: GoogleAuthCodeStrategy } = require('passport-google-authcode')
+const { getProjectOAuthClientId, getProjectOAuthClientSecret, getProjectLocalhostRedirectUri } = require('./google-interface/credentials/config')
 
-import DB from "./db";
-import Api from "./api/api";
+const { ApiRouter } = require("./api/api")
 
-import Config from "./config";
+const { Config } = require("./config")
 
-const app = Express();
+async function main() {
+  const app = Express()
 
-app.use(Cors());
+  Passport.use(
+    new GoogleAuthCodeStrategy({
+      clientID: await getProjectOAuthClientId(),
+      clientSecret: await getProjectOAuthClientSecret(),
+      callbackURL: await getProjectLocalhostRedirectUri()
+    }, async (accessToken, refreshToken, profile, done) => {
+      console.log(accessToken, refreshToken, profile)
+      // pass away the access and refresh tokens, because whoever called passport.authenticate() (from
+      // where this function was ultimately called) will want them later. By passing them as argument
+      // to done, we are telling passport to construct req.user with our object
+      done(null, { accessToken, refreshToken })
+    })
+  )
 
-app.use(Express.urlencoded({ extended: true }));
-app.use(Express.json());
+  app.use(Cors())
 
-app.get("/", (req, res) => {
-  res.json({ data: "OK" });
-});
+  app.use(Express.urlencoded({ extended: true }))
+  app.use(Express.json())
+  app.use(Passport.initialize())
+  app.use(Passport.session())
 
-app.use("/api", Api);
+  app.get("/", (req, res) => {
+    res.json({ data: "OK" })
+  })
 
-app.use((req, res, next) => {
-  res.status(404);
-  res.json({ error: "NotFound", message: "Não encontrado" });
-});
+  app.use("/api", ApiRouter)
 
-app.use((err, req, res, next) => {
-  console.log(err.stack);
-  res.status(500);
-  res.json({ error: "InternalServerError", message: err.message });
-});
+  app.use((req, res, next) => {
+    req.url
 
-app.listen(Config.PORT, () => {
-  console.log(`Server running at port ${Config.PORT}`);
-});
+    res.status(404)
+    res.json({ error: "NotFound", message: "Não encontrado" })
+  })
 
-DB.sync();
+  app.use((err, req, res, next) => {
+    console.log(err.stack)
+    res.status(500)
+    res.json({ error: "InternalServerError", message: err.message })
+  })
+
+  app.listen(Config.PORT, () => {
+    console.log(`Server running at port ${Config.PORT}`)
+  })
+
+
+}
+
+main()
