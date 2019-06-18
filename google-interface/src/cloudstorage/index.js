@@ -264,7 +264,7 @@ function downloadCourseWorkTestFilesMetadata(courseId, courseWorkId) {
   return GCS.listFilesByPrefix(cloudDirectory)
     .then(filenames => filenames
       .filter(filename => path.basename(filename) === 'metadata')
-      .forEach(async filename => {
+      .map(async filename => {
         // filename is of the form "<cloudDirectory>/X/metadata"
         const testNumber = parseInt(path.basename(path.dirname(filename)), 10) // the "X" in the above filename form
 
@@ -272,6 +272,7 @@ function downloadCourseWorkTestFilesMetadata(courseId, courseWorkId) {
           await GCS.downloadFile({ srcFilename: filename, downloadToMemory: true }).then(x => x.toString())
         )
       }))
+    .then(Promise.all.bind(Promise))
     .then(() => tests)
 
 }
