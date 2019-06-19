@@ -164,20 +164,22 @@ const INTERNAL = {
 
   /**
    * Invokes spawn() (from child_process module), piping stdout and stderr.
+   * @param {number} timeout
    * @returns {Promise<string>} On success, resolves with the stdout. On failure, rejects with the stderr
    */
-  runPiped(command, args, withShell = true, hideConsoleLogs = false, cwd = process.cwd()) {
+  runPiped(command, args, withShell = true, hideConsoleLogs = false, cwd = process.cwd(), timeout = undefined) {
     return new Promise((resolve, reject) => {
 
       let completeStdout = ''
       let completeStderr = ''
 
       if (!hideConsoleLogs) {
-        log.yellow('launching child process for command "' + command + '" with args', args)
+        log.yellow('launching child process for command "' + command + '" with args', args, 'and timeout', timeout)
       }
 
       // use shell to allow substitutions and other preprocessing facilities
-      const child = spawn(command, args, { shell: withShell && '/bin/bash', cwd })
+      const child = spawn(command, args, { shell: withShell && '/bin/bash', cwd, detached: true })
+      let timeoutHandle = null
 
       child.stdout.on('data', data => {
         completeStdout += data.toString()
@@ -194,6 +196,9 @@ const INTERNAL = {
       })
 
       child.on('close', code => {
+        if (timeoutHandle !== null) {
+          clearTimeout(timeoutHandle)
+        }
 
         if (!hideConsoleLogs) {
           log.yellow(`child process exited with code ${code}`)
@@ -205,17 +210,25 @@ const INTERNAL = {
         }
         resolve(completeStdout)
       })
+
+      if (timeout) {
+        timeoutHandle = setTimeout(() => {
+          // kill the range (-PID) of the subprocess's group processes
+          log.red('Child process killed because of user-supplied timeout (' + timeout + ' ms)')
+          process.kill(-child.pid, 'SIGKILL')
+        }, timeout)
+      }
     })
   },
 
   /**
    * @returns {Promise<string>} On success, resolves with the stdout. On failure, rejects with the stderr
    */
-  runCommandOverSSH(commandString, privateKeyPath, username, hostnameOrIP, hideConsoleLogs = false) {
+  runCommandOverSSH(commandString, privateKeyPath, username, hostnameOrIP, hideConsoleLogs = false, timeout = undefined) {
     return INTERNAL.runPiped('ssh', [
       '-i', privateKeyPath, '-q', '-o', 'StrictHostKeyChecking no',
       username + '@' + hostnameOrIP, 'set -x; ' + commandString
-    ], false, hideConsoleLogs)
+    ], false, hideConsoleLogs, undefined, timeout)
   },
 
   /**
@@ -319,7 +332,8 @@ const INTERNAL = {
         sshKeys.privateKeyPath,
         vmUsername,
         instanceIP,
-        true
+        true,
+        1000 * 60 // 1 minute timeout
       )
         .then(stdout => false)
         .catch(stderr => {
@@ -433,7 +447,7 @@ const INTERNAL = {
  * it is "athena-latest"
  * @returns {Promise<boolean>} Whether all tests passed or not
  */
-  async runTestsOnVM(remoteProjectDir) {
+  async runTestsOnVM(remoteProjectDir, timeout = undefined) {
 
     await stopVMProcesses()
 
@@ -442,26 +456,34 @@ const INTERNAL = {
     await runCommandOnVM(
       'cd ' + remoteProjectDir + ' ;' +
       'cd google-interface/ ;' +
-      'npm run test ;'
+      'npm run test ;',
+      undefined,
+      timeout
     ).catch(() => allTestsPassed = false)
 
     // run application processes
     await runCommandOnVM(
       'cd ' + remoteProjectDir + ' ;' +
       'cd backend/ && screen -Logfile /usr/local/lib/athena-judge/backend-test.log -dmL /bin/bash -c "npm run dev | ts" ;' +
-      'cd ../runner && screen -Logfile /usr/local/lib/athena-judge/runner-test.log -dmL /bin/bash -c "npm run dev | ts" ;'
+      'cd ../runner && screen -Logfile /usr/local/lib/athena-judge/runner-test.log -dmL /bin/bash -c "npm run dev | ts" ;',
+      undefined,
+      timeout
     )
 
     await runCommandOnVM(
       'cd ' + remoteProjectDir + ' ;' +
       'cd runner/ ;' +
-      'npm run test ;'
+      'npm run test ;',
+      undefined,
+      timeout
     ).catch(() => allTestsPassed = false)
 
     await runCommandOnVM(
       'cd ' + remoteProjectDir + ' ;' +
       'cd backend/ ;' +
-      'npm run test ;'
+      'npm run test ;',
+      undefined,
+      timeout
     ).catch(() => allTestsPassed = false)
 
     await stopVMProcesses()
@@ -870,7 +892,7 @@ async function createAndSetupVM(gitBranchName = 'master') {
  * 
  * @returns {Promise<string>} stdout of the command
  */
-async function runCommandOnVM(cmdString, hideConsoleLogs = false) {
+async function runCommandOnVM(cmdString, hideConsoleLogs = false, timeout = undefined) {
 
   const { sshKeys, vmUsername, instanceIP } = await INTERNAL.setupInstanceConnection()
 
@@ -879,7 +901,8 @@ async function runCommandOnVM(cmdString, hideConsoleLogs = false) {
     sshKeys.privateKeyPath,
     vmUsername,
     instanceIP,
-    hideConsoleLogs
+    hideConsoleLogs,
+    timeout
   )
 
   // oslogin.users.sshPublicKeys.delete({
@@ -920,18 +943,20 @@ async function stopVMProcesses() {
  * @param {string} branchNameOrCommitId A branch name or a commit ID for running 'git checkout' to fetch code
  * @param {boolean} deploy Whether to really deploy after making tests. If false, the deployment to production 
  * is not done and, instead, the code is reversed to the last stable version
+ * @param {number} timeout Maximum milliseconds that any one remote command session may take
  * 
  * @returns {Promise<boolean>} true iff tests passed
  */
-async function deployToVM(branchNameOrCommitId = 'master', deploy = true) {
+async function deployToVM(branchNameOrCommitId = 'master', deploy = true, timeout = undefined) {
 
   if (! await INTERNAL.acquireVMLock()) {
-    return log.green('The VM is in use by another process, you should try again later')
+    log.green('The VM is in use by another process, you should try again later')
+    return false
   }
 
   log.green('Stopping application processes previously in execution (if any)')
   await stopVMProcesses()
-  log.green('Applications processes stopped')
+  log.green('Application processes stopped')
 
   let allOK = false
 
@@ -959,10 +984,12 @@ async function deployToVM(branchNameOrCommitId = 'master', deploy = true) {
       // the container is built only AFTER having uploaded credentials, because it needs them
       // TODO: The container should not have secrets !!!! This exposes them to code being run inside !!!
       'cd runner/docker ;' +
-      'npm run build ;'
+      'npm run build ;',
+      undefined,
+      timeout
     )
 
-    const testsPassed = await INTERNAL.runTestsOnVM('athena-tmp-deploy')
+    const testsPassed = await INTERNAL.runTestsOnVM('athena-tmp-deploy', timeout)
 
     allOK = testsPassed
 
@@ -978,7 +1005,9 @@ async function deployToVM(branchNameOrCommitId = 'master', deploy = true) {
       'cd athena-latest/runner/docker && npm run build ;' +
       'cd ../../ ;' +
       'cd backend/ && screen -Logfile /usr/local/lib/athena-judge/backend.log -dmL /bin/bash -c "npm run prod | ts" ;' +
-      'cd ../runner && screen -Logfile /usr/local/lib/athena-judge/runner.log -dmL /bin/bash -c "npm run prod | ts" ;'
+      'cd ../runner && screen -Logfile /usr/local/lib/athena-judge/runner.log -dmL /bin/bash -c "npm run prod | ts" ;',
+      undefined,
+      timeout
     )
 
     if (!allOK) {
@@ -994,7 +1023,9 @@ async function deployToVM(branchNameOrCommitId = 'master', deploy = true) {
       'mv athena-tmp-deploy athena-latest ;' +
       'cd athena-latest ;' +
       'cd backend/ && screen -Logfile /usr/local/lib/athena-judge/backend.log -dmL /bin/bash -c "npm run prod | ts" ;' +
-      'cd ../runner && screen -Logfile /usr/local/lib/athena-judge/runner.log -dmL /bin/bash -c "npm run prod | ts" ;'
+      'cd ../runner && screen -Logfile /usr/local/lib/athena-judge/runner.log -dmL /bin/bash -c "npm run prod | ts" ;',
+      undefined,
+      timeout
     )
     log.green('Deploying succeded ! The application was started with the new codebase')
   }
@@ -1179,7 +1210,8 @@ if (require.main === module) {
     case 'deploy':
       args.branchNameOrCommitId = process.argv[3] || 'master'
       args.deploy = process.argv[4] === 'test-only' ? false : true
-      deployToVM(args.branchNameOrCommitId, args.deploy)
+      args.timeout = process.argv[5] ? parseInt(process.argv[5]) : undefined
+      deployToVM(args.branchNameOrCommitId, args.deploy, args.timeout)
         .then(passed => {
           if (passed) {
             return

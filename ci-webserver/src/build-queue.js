@@ -114,12 +114,13 @@ function runTestNow(testSpec) {
       await new Promise(resolve => setTimeout(resolve, 20000))
     }
 
-    exec('node ' + resolve(__dirname, 'manage/index.js') + ' deploy ' + testSpec.commitId + ' test-only > ' + testSpec.logFile + ' 2>&1', {
-      // 20 minutes timeout
-      timeout: 1000 * 60 * 20,
-      killSignal: 'SIGKILL',
-      cwd: process.cwd()
-    }, (err, stdout, stderr) => promiseResolve(err ? false : true))
+    // timeout of 10 minutes for the inner tests
+    exec(
+      'node ' + resolve(__dirname, 'manage/index.js') + ' deploy ' +
+      testSpec.commitId + ' test-only 600000 > ' + testSpec.logFile + ' 2>&1',
+      { cwd: process.cwd() },
+      (err, stdout, stderr) => promiseResolve(err ? false : true)
+    )
 
   })
 }
