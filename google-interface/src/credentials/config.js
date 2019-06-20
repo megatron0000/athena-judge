@@ -108,6 +108,14 @@ async function getGithubRepoHref() {
   return 'https://github.com/' + token.user + '/' + token.repo
 }
 
+/**
+ * The prefix is followed by the project id, because the bucket name
+ * must be unique, even across different projects !!!
+ */
+async function getCloudstorageBucketName() {
+  return process.env['CLOUDSTORAGE_BUCKET_PREFIX'] + '-' + (await getProjectId())
+}
+
 
 module.exports = {
   SCOPES,
@@ -116,5 +124,6 @@ module.exports = {
   getProjectOAuthClientSecret,
   getProjectLocalhostRedirectUri,
   getGithubAccessToken,
-  getGithubRepoHref
+  getGithubRepoHref,
+  getCloudstorageBucketName
 }

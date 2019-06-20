@@ -1,7 +1,7 @@
 const path = require('path')
 
 const { Storage } = require('@google-cloud/storage')
-const { getProjectId } = require('../credentials/config')
+const { getProjectId, getCloudstorageBucketName } = require('../credentials/config')
 const { mkdirRecursive } = require('../mkdir-recursive')
 const { Readable } = require('stream')
 const { createReadStream } = require('fs')
@@ -19,7 +19,7 @@ async function getBucket() {
       keyFilename: process.env['CLOUDSTORAGE_HANDLER_SERVICEACCOUNT_CREDENTIALS']
     })
 
-    _bucket = storage.bucket(process.env['CLOUDSTORAGE_BUCKET_NAME'])
+    _bucket = storage.bucket(await getCloudstorageBucketName())
   }
 
   return _bucket

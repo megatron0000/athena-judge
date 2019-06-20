@@ -30,6 +30,8 @@ cd ../runner
 npm install
 cd ../listener
 npm install
+cd ../manage
+npm install
 cd ..
 
 ############# PostgreSQL no longer used (since Google deals with all database needs)

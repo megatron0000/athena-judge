@@ -10,7 +10,7 @@ const { readFileSync, writeFileSync, existsSync, mkdirSync } = require('fs')
 const { readFile, writeFile } = require('promise-fs')
 const { resolve, basename, dirname } = require('path')
 const { getOAuth2ClientFromLocalCredentials, getOAuth2ClientFromCloudStorage } = require('./google-interface/credentials/auth')
-const { getProjectId, getGithubRepoHref, SCOPES } = require('./google-interface/credentials/config')
+const { getProjectId, getGithubRepoHref, SCOPES, getCloudstorageBucketName } = require('./google-interface/credentials/config')
 const { spawn } = require('child_process')
 
 // https://www.npmjs.com/package/ololog
@@ -671,6 +671,22 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
 
   log.green('Created Pub/Sub topic and subscription\n')
 
+  log.green('Creating Cloud Storage bucket...')
+
+  const storage = google.storage({
+    version: 'v1',
+    auth
+  })
+
+  await storage.buckets.insert({
+    project: projId,
+    requestBody: {
+      name: await getCloudstorageBucketName()
+    }
+  })
+
+  log.green('Created Cloud Storage bucket\n')
+
   log.green('Defining Pub/Sub, Cloud Storage, Compute Engine and App Engine service accounts\' permissions...')
 
   const resourceManager = google.cloudresourcemanager({
@@ -868,7 +884,6 @@ async function createAndSetupVM(gitBranchName = 'master') {
 
   await runCommandOnVM(
     'sudo apt-get update;' +
-    'sudo apt-get upgrade -y;' +
     'sudo apt-get install git-core -y;' +
     'git clone ' + (await getGithubRepoHref()) + ' athena-latest;' +
     'cd athena-latest;' +
@@ -1155,7 +1170,7 @@ async function authorizeTestCourseAsTeacher() {
     'use a Google Account registered as teacher in the test course)...'
   )
 
-  const credPath = '/tmp/athena-judge-teacher-creds-' + new Date().toString() + '.json'
+  const credPath = '/tmp/athena-judge-teacher-creds-' + new Date().valueOf() + '.json'
   await INTERNAL.getOAuth2ClientInteractive(
     process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
     SCOPES,
@@ -1273,6 +1288,10 @@ if (require.main === module) {
           log.green(credentials)
           log.green('If you want to take a closer look, it was saved at ' + outputPath)
         })
+      break
+
+    case 'download-gcloud':
+      INTERNAL.downloadUncompressInstallGCloud().then(() => log.green('Done. Exiting...'))
       break
 
     default:
