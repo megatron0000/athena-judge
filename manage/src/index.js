@@ -464,7 +464,7 @@ const INTERNAL = {
     // run application processes
     await runCommandOnVM(
       'cd ' + remoteProjectDir + ' ;' +
-      'cd backend/ && screen -Logfile /usr/local/lib/athena-judge/backend-test.log -dmL /bin/bash -c "npm run dev | ts" ;' +
+      'cd listener/ && screen -Logfile /usr/local/lib/athena-judge/listener-test.log -dmL /bin/bash -c "npm run dev | ts" ;' +
       'cd ../runner && screen -Logfile /usr/local/lib/athena-judge/runner-test.log -dmL /bin/bash -c "npm run dev | ts" ;',
       undefined,
       timeout
@@ -481,6 +481,14 @@ const INTERNAL = {
     await runCommandOnVM(
       'cd ' + remoteProjectDir + ' ;' +
       'cd backend/ ;' +
+      'npm run test ;',
+      undefined,
+      timeout
+    ).catch(() => allTestsPassed = false)
+
+    await runCommandOnVM(
+      'cd ' + remoteProjectDir + ' ;' +
+      'cd listener/ ;' +
       'npm run test ;',
       undefined,
       timeout
@@ -912,7 +920,7 @@ async function runCommandOnVM(cmdString, hideConsoleLogs = false, timeout = unde
 }
 
 /**
- * Stops backend listener and runner
+ * Stops listener and runner
  * 
  * TODO: After implementing App Engine, stop it as well
  * 
@@ -920,7 +928,7 @@ async function runCommandOnVM(cmdString, hideConsoleLogs = false, timeout = unde
  */
 async function stopVMProcesses() {
   await runCommandOnVM(
-    'echo "exit" > /dev/tcp/localhost/3000 ;' + // stop backend, which will tell runner to stop as well
+    'echo "exit" > /dev/tcp/localhost/3000 ;' + // stop listener, which will tell runner to stop as well
     'sleep 10;' + // wait 10 seconds for processes to stop
     'if [[ $(sudo fuser 3000/tcp) != "" ]]; then sudo fuser -k 3000/tcp ; fi;' +
     'if [[ $(sudo fuser 3001/tcp) != "" ]]; then sudo fuser -k 3001/tcp ; fi;' +
@@ -977,6 +985,8 @@ async function deployToVM(branchNameOrCommitId = 'master', deploy = true, timeou
       'npm install ;' +
       'cd ../runner ;' +
       'npm install ;' +
+      'cd ../listener ;' +
+      'npm install ;' +
       // copy credentials
       'cd ../ ;' +
       'cp ../athena-latest/google-interface/src/credentials/*.json ./google-interface/src/credentials/ ;' +
@@ -1004,7 +1014,7 @@ async function deployToVM(branchNameOrCommitId = 'master', deploy = true, timeou
       '(rm -r athena-tmp-deploy || exit 0);' +
       'cd athena-latest/runner/docker && npm run build ;' +
       'cd ../../ ;' +
-      'cd backend/ && screen -Logfile /usr/local/lib/athena-judge/backend.log -dmL /bin/bash -c "npm run prod | ts" ;' +
+      'cd listener/ && screen -Logfile /usr/local/lib/athena-judge/listener.log -dmL /bin/bash -c "npm run prod | ts" ;' +
       'cd ../runner && screen -Logfile /usr/local/lib/athena-judge/runner.log -dmL /bin/bash -c "npm run prod | ts" ;',
       undefined,
       timeout
@@ -1022,7 +1032,7 @@ async function deployToVM(branchNameOrCommitId = 'master', deploy = true, timeou
       'rm -r athena-latest ;' +
       'mv athena-tmp-deploy athena-latest ;' +
       'cd athena-latest ;' +
-      'cd backend/ && screen -Logfile /usr/local/lib/athena-judge/backend.log -dmL /bin/bash -c "npm run prod | ts" ;' +
+      'cd listener/ && screen -Logfile /usr/local/lib/athena-judge/listener.log -dmL /bin/bash -c "npm run prod | ts" ;' +
       'cd ../runner && screen -Logfile /usr/local/lib/athena-judge/runner.log -dmL /bin/bash -c "npm run prod | ts" ;',
       undefined,
       timeout

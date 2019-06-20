@@ -219,8 +219,8 @@ StartPubSub().then(() => console.log('Listening on Pub/Sub...'))
  */
 async function respondToStudent({ error, message }) {
   if (error) {
-    console.error('backend found an error: ', error)
+    console.error('listener found an error: ', error)
   } else {
-    console.log('backend resulted: ', message)
+    console.log('listener resulted: ', message)
   }
 }

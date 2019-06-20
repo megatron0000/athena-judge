@@ -6,6 +6,7 @@
   "scripts": {
     "test": "mocha",
     "start": "NODE_ENV=prod node src/index.js",
+    "prod": "NODE_ENV=prod node src/index.js",
     "dev": "NODE_ENV=test node src/index.js"
   },
   "author": "",
