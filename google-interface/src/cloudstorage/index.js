@@ -68,6 +68,8 @@ async function uploadCourseWorkSubmissionFiles(courseId, courseWorkId, submissio
  * @param {string} courseId google-id
  * @param {string} courseWorkId google-id
  * @param {{input: string, output: string, isPrivate?: boolean, weight?: number}[]}  files
+ * Description of the tests to be uploaded. *input* and *output* are understood as paths in the local 
+ * filesystem where the respective test contents are to be located
  */
 async function uploadCourseWorkTestFiles(courseId, courseWorkId, files) {
   const cloudDirectory = path.posix.join(courseId, 'courseWorks', courseWorkId, 'testFiles')
@@ -95,6 +97,42 @@ async function uploadCourseWorkTestFiles(courseId, courseWorkId, files) {
 
   return Promise.all(uploads)
 }
+
+/**
+ *
+ * @param {string} courseId google-id
+ * @param {string} courseWorkId google-id
+ * @param {{input: string, output: string, isPrivate?: boolean, weight?: number}[]}  files 
+ * Description of the tests to be uploaded. *input* and *output* are understood as the contents of the test
+ * input and output
+ */
+async function uploadCourseWorkTestFilesFromMemory(courseId, courseWorkId, files) {
+  const cloudDirectory = path.posix.join(courseId, 'courseWorks', courseWorkId, 'testFiles')
+
+  // first delete current test files
+  await GCS.listFilesByPrefix(cloudDirectory).then(GCS.deleteFiles)
+
+  const uploads = []
+  files.forEach((f, i) => {
+    const uploadDir = path.posix.join(cloudDirectory, i.toString())
+
+    uploads.push(GCS.uploadFile({
+      content: f.input,
+      destinationPath: path.posix.join(uploadDir, 'input')
+    }))
+    uploads.push(GCS.uploadFile({
+      content: f.output,
+      destinationPath: path.posix.join(uploadDir, 'output')
+    }))
+    uploads.push(GCS.uploadFile({
+      content: JSON.stringify({ isPrivate: f.isPrivate || false, weight: f.weight || 1 }),
+      destinationPath: path.posix.join(uploadDir, 'metadata')
+    }))
+  })
+
+  return Promise.all(uploads)
+}
+
 
 /**
  *
@@ -306,6 +344,7 @@ function downloadCourseWorkTestFilesMetadata(courseId, courseWorkId) {
 module.exports = {
   uploadCourseWorkSubmissionFiles,
   uploadCourseWorkTestFiles,
+  uploadCourseWorkTestFilesFromMemory,
   uploadTeacherCredential,
   uploadTeacherCredentialFromMemory,
   deleteCourseWorkSubmissionFiles,

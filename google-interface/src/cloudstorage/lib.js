@@ -77,13 +77,13 @@ async function listFilesByPrefix(prefix) {
  */
 function uploadFile({ localFilename, destinationPath, content }) {
 
-  if (content && localFilename) {
+  if ((content !== undefined) && (localFilename !== undefined)) {
     throw new Error('"content" and "localFilename" are exclusive')
   }
 
   return new Promise(async (resolve, reject) => {
     let readStream
-    if (content) {
+    if (content !== undefined) {
       readStream = new Readable()
       readStream.push(content)
       readStream.push(null)
