@@ -5,8 +5,7 @@
   "main": "src/server.js",
   "scripts": {
     "test": "mocha",
-    "dev_v0": "nodemon src/v0/server.js --exec babel-node --plugins transform-es2015-modules-commonjs",
-    "prod_v0": "babel src/v0 -d dist --plugins transform-es2015-modules-commonjs && node src/v0/server.js",
+    "start_v0": "node src/v0/server.js",
     "start": "NODE_ENV=prod node src/index.js",
     "dev": "NODE_ENV=test node src/index.js",
     "prod": "NODE_ENV=production node src/index.js"
@@ -16,7 +15,6 @@
   "dependencies": {
     "@google-cloud/pubsub": "^0.28.1",
     "@google-cloud/storage": "^2.5.0",
-    "@types/mocha": "^5.2.6",
     "cors": "2.8.4",
     "crypto-random-string": "^3.0.0",
     "decompress": "^4.2.0",
@@ -26,17 +24,12 @@
     "mkdir-recursive": "^0.4.0",
     "passport": "^0.4.0",
     "passport-google-authcode": "^0.1.5",
-    "pg": "7.4.1",
     "promise-fs": "^2.1.0",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.7",
-    "sequelize": "4.37.6"
   },
   "devDependencies": {
-    "babel-cli": "6.26.0",
-    "babel-core": "6.26.3",
-    "babel-plugin-transform-es2015-modules-commonjs": "6.26.2",
-    "mocha": "^6.1.4",
-    "nodemon": "1.17.3"
+    "@types/mocha": "^5.2.6",
+    "mocha": "^6.1.4"
   }
 }
