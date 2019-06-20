@@ -376,6 +376,10 @@ const INTERNAL = {
       false,
       appPath
     )
+    await INTERNAL.assertGCloudConfig()
+  },
+  async assertGCloudConfig() {
+    const appPath = resolve(__dirname, '../../')
     process.env['PATH'] = resolve(appPath, 'google-cloud-sdk/bin') + ':' + process.env['PATH']
     await INTERNAL.runPiped('gcloud', ['config', 'set', 'project', await getProjectId()], true, false, appPath)
     await INTERNAL.runPiped('gcloud', [
@@ -465,7 +469,8 @@ const INTERNAL = {
     await runCommandOnVM(
       'cd ' + remoteProjectDir + ' ;' +
       'cd listener/ && screen -Logfile /usr/local/lib/athena-judge/listener-test.log -dmL /bin/bash -c "npm run dev | ts" ;' +
-      'cd ../runner && screen -Logfile /usr/local/lib/athena-judge/runner-test.log -dmL /bin/bash -c "npm run dev | ts" ;',
+      'cd ../runner && screen -Logfile /usr/local/lib/athena-judge/runner-test.log -dmL /bin/bash -c "npm run dev | ts" ;' +
+      'cd ../backend && screen -Logfile /usr/local/lib/athena-judge/backend-test.log -dmL /bin/bash -c "npm run dev | ts" ;',
       undefined,
       timeout
     )
@@ -947,10 +952,9 @@ async function stopVMProcesses() {
     'sleep 10;' + // wait 10 seconds for processes to stop
     'if [[ $(sudo fuser 3000/tcp) != "" ]]; then sudo fuser -k 3000/tcp ; fi;' +
     'if [[ $(sudo fuser 3001/tcp) != "" ]]; then sudo fuser -k 3001/tcp ; fi;' +
-    '( docker stop $(docker ps -q) 1>/dev/null 2>&1 || exit 0 );'
+    '( docker stop $(docker ps -q) 1>/dev/null 2>&1 || exit 0 );' +
+    'sudo fuser -k 8085/tcp;' // stop web-backend, if was running
   ).catch(() => { })
-
-
 }
 
 
@@ -1137,6 +1141,8 @@ async function deployContinuousIntegrationServer() {
     return log.green('The VM is in use by another process, you should try again later')
   }
 
+  await INTERNAL.assertGCloudConfig()
+
   log.green('Deploying Continuous Integration code to App Engine...')
 
   await INTERNAL.runPiped('npm', ['run', 'deploy'], true, false, resolve(__dirname, '../../ci-webserver'))
@@ -1214,6 +1220,7 @@ async function authorizeProjectAsAdmin() {
 
 }
 
+// @ts-ignore
 if (require.main === module) {
   const args = {}
 

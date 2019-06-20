@@ -5,7 +5,9 @@
   "main": "src/server.js",
   "scripts": {
     "test": "mocha",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "dev": "ENV=dev node src/server.js",
+    "prod": "ENV=prod node src/server.js"
   },
   "author": "",
   "license": "ISC",
@@ -24,6 +26,8 @@
   },
   "devDependencies": {
     "@types/mocha": "^5.2.6",
-    "mocha": "^6.1.4"
+    "mocha": "^6.1.4",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.7"
   }
 }
