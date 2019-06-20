@@ -133,7 +133,6 @@ async function downloadFile({ srcFilename, destFilename, downloadToMemory }) {
   }
 
   // else, requested download to memory
-
   return new Promise((resolve, reject) => {
 
     bucket.file(srcFilename).download({ gzip: false }, (/**@type {any} */err, /**@type {Buffer} */ content) => {

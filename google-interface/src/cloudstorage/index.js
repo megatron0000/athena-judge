@@ -69,8 +69,11 @@ async function uploadCourseWorkSubmissionFiles(courseId, courseWorkId, submissio
  * @param {string} courseWorkId google-id
  * @param {{input: string, output: string, isPrivate?: boolean, weight?: number}[]}  files
  */
-function uploadCourseWorkTestFiles(courseId, courseWorkId, files) {
+async function uploadCourseWorkTestFiles(courseId, courseWorkId, files) {
   const cloudDirectory = path.posix.join(courseId, 'courseWorks', courseWorkId, 'testFiles')
+
+  // first delete current test files
+  await GCS.listFilesByPrefix(cloudDirectory).then(GCS.deleteFiles)
 
   const uploads = []
   files.forEach((f, i) => {
@@ -234,12 +237,7 @@ async function downloadCourseWorkSubmissionFiles(courseId, courseWorkId, submiss
 async function downloadCourseWorkTestFiles(courseId, courseWorkId, localDestinationDir) {
   // make a dir even if no file will be downloaded
   await mkdirRecursive(localDestinationDir)
-  const cloudDirectory = path.posix.join(
-    courseId,
-    'courseWorks',
-    courseWorkId,
-    'testFiles'
-  )
+  const cloudDirectory = path.posix.join(courseId, 'courseWorks', courseWorkId, 'testFiles')
   const filenames = await GCS.listFilesByPrefix(cloudDirectory)
 
   return Promise.all(
@@ -251,6 +249,33 @@ async function downloadCourseWorkTestFiles(courseId, courseWorkId, localDestinat
       )
     }))
   )
+}
+
+/**
+ * 
+ * @param {string} courseId 
+ * @param {string} courseWorkId 
+ * @returns {Promise<{input: string, output: string, isPrivate: boolean, weight: number}[]>}
+ */
+async function downloadCourseWorkTestFilesToMemory(courseId, courseWorkId) {
+  const cloudDirectory = path.posix.join(courseId, 'courseWorks', courseWorkId, 'testFiles')
+  const filenames = await GCS.listFilesByPrefix(cloudDirectory)
+  const metadata = await downloadCourseWorkTestFilesMetadata(courseId, courseWorkId)
+
+  return Promise.all(metadata.map(async (test, index) => {
+    const in_out = await Promise.all([
+      GCS.downloadFile({
+        srcFilename: path.posix.join(cloudDirectory, index.toString(), 'input'),
+        downloadToMemory: true
+      }).then(buffer => buffer.toString()),
+      GCS.downloadFile({
+        srcFilename: path.posix.join(cloudDirectory, index.toString(), 'output'),
+        downloadToMemory: true
+      }).then(buffer => buffer.toString())
+    ])
+
+    return { input: in_out[0], output: in_out[1], isPrivate: test.isPrivate, weight: test.weight }
+  }))
 }
 
 /**
@@ -291,5 +316,6 @@ module.exports = {
   downloadCourseWorkSubmissionFiles,
   downloadCourseWorkTestFiles,
   downloadCourseWorkTestFilesMetadata,
+  downloadCourseWorkTestFilesToMemory,
   hasTeacherCredential
 }
