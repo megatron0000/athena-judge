@@ -88,20 +88,17 @@ export default class AssignmentPage extends React.Component {
     });
   }
 
-  handleUpdateAssignment = (form) => {
-    this.setState({ loading: true });
-    Api.put("/assignments/" + form.id, {
-      title: form.title,
-      description: form.description,
-      courseId: this.props.courseId,
-      dueDate: form.dueDate,
-      code: form.code
-    }).then((res) => {
-      this.showListUpdateAssign();
-    }).catch((err) => {
-      console.log(err);
-      this.setState({ loading: false });
-    });
+  handleUpdateAssignment = assignmentForm => {
+    this.setState({ loading: true })
+    Api.put("/assignments/test-files/" + this.props.courseId + '/' + assignmentForm.id, assignmentForm.tests)
+      .then(res => {
+        this.setState({ loading: false })
+        this.showListUpdateAssign()
+      })
+      .catch(err => {
+        console.log(err)
+        this.setState({ loading: false })
+      })
   }
 
   render() {
@@ -139,6 +136,7 @@ export default class AssignmentPage extends React.Component {
             description={this.state.assignment.description}
             dueDate={this.state.assignment.dueDate}
             onSubmit={this.handleUpdateAssignment}
+            loading={this.state.loading}
           />}
         {(this.state.show === "view" && !this.props.isProfessor) &&
           <AssignmentView

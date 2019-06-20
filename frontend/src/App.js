@@ -12,16 +12,15 @@ export default class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      user: null, // { gid, name, photo, email }
+      user: null, // { gid, name, photo, email, id_token }
     };
   }
 
   handleUserUpdate = (user) => {
-    if (!user) {
-      return
-    }
     this.setState({ user })
-    Api.setAuthorizationToken(user.gid, user.id_token)
+    if (user) {
+      Api.setAuthorizationToken(user.gid, user.id_token)
+    }
   }
 
   handleOpenSidebar = () => {
