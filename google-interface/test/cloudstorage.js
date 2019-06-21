@@ -60,19 +60,15 @@ describe('Cloud Storage', function () {
   it('should upload/download/delete teacher credential file', async () => {
     await GCS.uploadTeacherCredential(
       testCourseId,
-      path.resolve(__dirname, 'sample-files', 'file1')
-    )
-    await GCS.downloadTeacherCredential(
-      testCourseId,
-      path.resolve(__dirname, 'sample-files', 'file1.download')
+      path.resolve(__dirname, 'sample-files', 'fake-cred.json')
     )
 
-    assert.equal(
-      fs.readFileSync(path.resolve(__dirname, 'sample-files', 'file1.download'), 'utf8'),
-      fs.readFileSync(path.resolve(__dirname, 'sample-files', 'file1'), 'utf8')
-    )
+    const cred = await GCS.downloadTeacherCredentialToMemory(testCourseId)
 
-    fs.unlinkSync(path.resolve(__dirname, 'sample-files', 'file1.download'))
+    assert.deepEqual(
+      cred,
+      JSON.parse(fs.readFileSync(path.resolve(__dirname, 'sample-files', 'fake-cred.json'), 'utf8'))
+    )
 
     await GCS.deleteTeacherCredential(testCourseId)
 

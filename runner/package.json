@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "babel-node src/server.js --plugins transform-es2015-modules-commonjs",
     "prod": "babel-node src/server.js --plugins transform-es2015-modules-commonjs",
-    "test": "mocha"
+    "test": "./node_modules/mocha/bin/mocha --exit"
   },
   "author": "",
   "license": "ISC",

@@ -72,13 +72,9 @@ const codeCorrectionLock = {
   }
 }
 
-process.on('unhandledRejection', error => {
-  // Will print "unhandledRejection err is not defined"
-  console.log('unhandledRejection', error);
-});
 /**
  * TODO: There are really lots of functionalities inside here: 
- * - Understading the submission format (.zip ? .tar ? etc.)
+ * - Understanding the submission format (.zip ? .tar ? etc.)
  * - Locking mechanism to avoid processing things more-than-once etc.
  * - Calculating grade based on test results
  * - Communicating any status (midway-failure or complete success) to the student who wubmitted

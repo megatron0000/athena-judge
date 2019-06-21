@@ -224,13 +224,13 @@ function deleteTeacherCredential(courseId) {
 /**
  *
  * @param {string} courseId
- * @param {string} localDestinationPath
+ * @returns {Promise<{access_token: string, refresh_token: string}>}
  */
-function downloadTeacherCredential(courseId, localDestinationPath) {
+function downloadTeacherCredentialToMemory(courseId) {
   return GCS.downloadFile({
     srcFilename: path.posix.join(courseId, 'teacherCredential.json'),
-    destFilename: localDestinationPath
-  })
+    downloadToMemory: true
+  }).then(buffer => buffer.toString()).then(JSON.parse)
 }
 
 /**
@@ -351,7 +351,7 @@ module.exports = {
   deleteCourseWorkTestFile,
   deleteCourseWorkTestFiles,
   deleteTeacherCredential,
-  downloadTeacherCredential,
+  downloadTeacherCredentialToMemory,
   downloadCourseWorkSubmissionFiles,
   downloadCourseWorkTestFiles,
   downloadCourseWorkTestFilesMetadata,

@@ -52,14 +52,9 @@ exports.getOAuth2ClientFromLocalCredentials = async function getOAuth2ClientFrom
  *
  */
 exports.getOAuth2ClientFromCloudStorage = async function getOAuth2ClientFromCloudStorage(courseId) {
-  const tokenPath = path.resolve('/tmp', 'athena-judge', 'coursecred', courseId.toString())
-
   const [token, clientCred] = await Promise.all([
-    gcs.downloadTeacherCredential(courseId, tokenPath)
-      .then(() => fs.readFile(tokenPath))
-      .then(JSON.parse),
-    fs.readFile(process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'])
-      .then(JSON.parse)
+    gcs.downloadTeacherCredentialToMemory(courseId),
+    fs.readFile(process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE']).then(JSON.parse)
   ])
 
   let {
