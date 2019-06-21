@@ -72,6 +72,10 @@ const codeCorrectionLock = {
   }
 }
 
+process.on('unhandledRejection', error => {
+  // Will print "unhandledRejection err is not defined"
+  console.log('unhandledRejection', error);
+});
 /**
  * TODO: There are really lots of functionalities inside here: 
  * - Understading the submission format (.zip ? .tar ? etc.)

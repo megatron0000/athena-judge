@@ -5,7 +5,7 @@
 
 const { resolve } = require('path')
 const { exec } = require('child_process')
-const { testVMLock } = require('./manage')
+const { testVMLock, releaseVMLock } = require('./manage')
 
 function randomString() {
   return Math.random().toString(36).substring(2, 15)
@@ -119,7 +119,13 @@ function runTestNow(testSpec) {
       'node ' + resolve(__dirname, 'manage/index.js') + ' deploy ' +
       testSpec.commitId + ' test-only 600000 > ' + testSpec.logFile + ' 2>&1',
       { cwd: process.cwd() },
-      (err, stdout, stderr) => promiseResolve(err ? false : true)
+      async (err, stdout, stderr) => {
+        // should a problem happen with the tests, release the lock here by force
+        if (await testVMLock()) {
+          await releaseVMLock()
+        }
+        promiseResolve(err ? false : true)
+      }
     )
 
   })

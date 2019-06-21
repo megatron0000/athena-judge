@@ -90,7 +90,7 @@ async function uploadCourseWorkTestFiles(courseId, courseWorkId, files) {
       destinationPath: path.posix.join(uploadDir, 'output')
     }))
     uploads.push(GCS.uploadFile({
-      content: JSON.stringify({ isPrivate: f.isPrivate || false, weight: f.weight || 1 }),
+      content: JSON.stringify({ isPrivate: f.isPrivate || false, weight: (f.weight === undefined) ? 1 : f.weight }),
       destinationPath: path.posix.join(uploadDir, 'metadata')
     }))
   })

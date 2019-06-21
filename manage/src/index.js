@@ -180,6 +180,7 @@ const INTERNAL = {
       // use shell to allow substitutions and other preprocessing facilities
       const child = spawn(command, args, { shell: withShell && '/bin/bash', cwd, detached: true })
       let timeoutHandle = null
+      let killed = false
 
       child.stdout.on('data', data => {
         completeStdout += data.toString()
@@ -205,7 +206,7 @@ const INTERNAL = {
         }
 
         child.unref()
-        if (code) {
+        if (code || killed) {
           return reject(completeStderr)
         }
         resolve(completeStdout)
@@ -213,6 +214,7 @@ const INTERNAL = {
 
       if (timeout) {
         timeoutHandle = setTimeout(() => {
+          killed = true
           // kill the range (-PID) of the subprocess's group processes
           log.red('Child process killed because of user-supplied timeout (' + timeout + ' ms)')
           process.kill(-child.pid, 'SIGKILL')
@@ -1315,5 +1317,6 @@ module.exports = {
   deployToVM,
   deployContinuousIntegrationServer,
   testVMLock,
+  releaseVMLock: INTERNAL.releaseVMLock,
   stopVMProcesses
 }
