@@ -6,6 +6,7 @@ const { resolve, join } = require('path')
 const { unlink, readdir, stat } = require('promise-fs')
 const decompress = require('decompress')
 const { uploadCourseWorkSubmissionFiles } = require('./google-interface/cloudstorage')
+const { sendCorrectionResultEmail, sendSubmissionAcknowledgeEmail } = require('./google-interface/gmail')
 const { createServer } = require('net')
 
 /**
@@ -117,6 +118,8 @@ AttachPubSubListener(async (notification, ack) => {
   }
   codeCorrectionLock.set({ courseId, courseWorkId, submissionId, state: codeCorrectionLock.STATE.CORRECTED })
 
+  await sendSubmissionAcknowledgeEmail(courseId, courseWorkId, submissionId)
+
   const driveFileIds = await getSubmissionDriveFileIds(courseId, courseWorkId, submissionId)
 
   const driveFileNames = await Promise.all(driveFileIds.map(fileId => getFileName(courseId, fileId)))
@@ -126,15 +129,17 @@ AttachPubSubListener(async (notification, ack) => {
     .filter(name_index => isCompressed(name_index.name))
 
   if (compressedFileNames.length === 0) {
-    return await respondToStudent({
-      error: 'Could not find compressed file in submission (no recognized compression format, at least)'
-    })
+    return await respondToStudent(courseId, courseWorkId, submissionId, {
+      ok: false,
+      message: 'Could not find compressed file in submission (no recognized compression format, at least)'
+    }, [])
   }
 
   if (compressedFileNames.length > 1) {
-    return await respondToStudent({
-      error: 'Found more than one compressed file in submission'
-    })
+    return await respondToStudent(courseId, courseWorkId, submissionId, {
+      ok: false,
+      message: 'Found more than one compressed file in submission'
+    }, [])
   }
 
   const compressedFileId = driveFileIds[compressedFileNames[0].index]
@@ -149,9 +154,10 @@ AttachPubSubListener(async (notification, ack) => {
     await unlink(localCompressedFilePath)
   } catch (err) {
     console.error(err)
-    return respondToStudent({
-      error: 'While decompressing submission: ' + (err.message || 'unknown error')
-    })
+    return respondToStudent(courseId, courseWorkId, submissionId, {
+      ok: false,
+      message: 'While decompressing submission: ' + (err.message || 'unknown error')
+    }, [])
   }
 
   await uploadCourseWorkSubmissionFiles(
@@ -172,22 +178,7 @@ AttachPubSubListener(async (notification, ack) => {
     }
   }
 
-  /**
-   * @typedef {object} TestResult
-   * @property {boolean} pass
-   * @property {string} input
-   * @property {string} expectedOutput
-   * @property {string} output
-   * @property {string} error
-   * @property {boolean} isPrivate
-   * @property {number} weight
-   */
-  /**
-   * @typedef {object} Status
-   * @property {boolean} ok
-   * @property {string} message
-   * @property {string=} additionalInfo
-   */
+
   /**
    * @type {{status: Status, testResults: TestResult[]}}
    */
@@ -205,6 +196,8 @@ AttachPubSubListener(async (notification, ack) => {
   console.log(status)
   console.log(testResults)
 
+  await respondToStudent(courseId, courseWorkId, submissionId, status, testResults)
+
   await assignGradeToSubmission(courseId, courseWorkId, submissionId, grade)
 
 })
@@ -213,14 +206,29 @@ StartPubSub().then(() => console.log('Listening on Pub/Sub...'))
 
 /**
  * 
- * @param {object} arg
- * @param {string} arg.error Optional. Error message (should be false-ish if no error)
- * @param {string=} arg.message Optional. Success message
+ * @param {string} courseId
+ * @param {string} courseWorkId
+ * @param {string} submissionId
+ * @param {Status} status 
+ * @param {TestResult[]} testResults 
  */
-async function respondToStudent({ error, message }) {
-  if (error) {
-    console.error('listener found an error: ', error)
-  } else {
-    console.log('listener resulted: ', message)
-  }
+function respondToStudent(courseId, courseWorkId, submissionId, status, testResults) {
+  return sendCorrectionResultEmail(courseId, courseWorkId, submissionId, { status, testResults })
 }
+
+/**
+   * @typedef {object} TestResult
+   * @property {boolean} pass
+   * @property {string} input
+   * @property {string} expectedOutput
+   * @property {string} output
+   * @property {string} error
+   * @property {boolean} isPrivate
+   * @property {number} weight
+   */
+/**
+ * @typedef {object} Status
+ * @property {boolean} ok
+ * @property {string} message
+ * @property {string=} additionalInfo
+ */
