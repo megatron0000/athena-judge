@@ -1,6 +1,6 @@
 
 /**
- * TODO: Use promise-fs to avoid synchronous IO code
+ * TODO: Use only promise-fs to avoid synchronous IO code
  */
 
 require('./google-interface/credentials/config')
@@ -764,6 +764,8 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
 
   await deployContinuousIntegrationServer()
 
+  prompt.close()
+
 }
 
 /**
@@ -1224,92 +1226,110 @@ async function authorizeProjectAsAdmin() {
 
 // @ts-ignore
 if (require.main === module) {
-  const args = {}
-
-  args.command = process.argv[2]
-  if (!args.command) {
-    log.red('Need a command argument')
-    process.exit(1)
+  const catchall = err => {
+    log.red('Error during run of the command (may be an Athena bug, may not be...):')
+    log.red(err)
   }
+  const program = new require('commander')
 
-  switch (args.command) {
-    case 'instance-ip':
-      getVMIpAddress().then(IP => log.green(IP))
-      break
+  program
+    .command('instance-ip')
+    .description('Print the IP of the google virtual machine instance used by Athena')
+    .action(() => getVMIpAddress().then(IP => log.green(IP)).catch(catchall))
 
-    case 'setup-first-time':
-      setupProjectFirstTime().then(() => log.green('\nProject setup complete. Exiting...'))
-      break
+  program
+    .command('setup-first-time [gitBranchNameOrCommitId]')
+    .description('Run project setup. See README for guidance')
+    .action(gitBranchNameOrCommitId => {
+      log.green('Running project setup based on git commit/branch', gitBranchNameOrCommitId)
+      setupProjectFirstTime(gitBranchNameOrCommitId)
+        .then(() => log.green('\nProject setup complete. Exiting...'))
+        .catch(catchall)
+    })
 
-    case 'deploy':
-      args.branchNameOrCommitId = process.argv[3] || 'master'
-      args.deploy = process.argv[4] === 'test-only' ? false : true
-      args.timeout = process.argv[5] ? parseInt(process.argv[5]) : undefined
-      deployToVM(args.branchNameOrCommitId, args.deploy, args.timeout)
+
+  program
+    .command('deploy [gitBranchNameOrCommitId]')
+    .description('Deploy code from a git branch/commit to production')
+    .option('-o, --test-only', 'Avoids deploying the code to production. Only tests it')
+    .option('-t, --timeout [timeoutInMilliseconds]', 'Enforces a timeout for each individual test-run in the virtual machine', parseInt)
+    .action((gitBranchNameOrCommitId, options) => {
+      gitBranchNameOrCommitId = gitBranchNameOrCommitId || 'master'
+      if (isNaN(options.timeout)) options.timeout = undefined
+
+      log.green(
+        'Deploying to VM from git branch/commit',
+        gitBranchNameOrCommitId,
+        options.timeout ? ('with timeout ' + options.timeout) : 'without timeout',
+        'and ' + (options.testOnly ? 'in' : 'NOT in') + ' test-only mode'
+      )
+      deployToVM(gitBranchNameOrCommitId, !options.testOnly, options.timeout)
         .then(passed => {
-          if (passed) {
-            return
-          }
+          if (passed) return
           throw new Error()
         })
         .catch(() => process.exit(1))
-      break
+    })
 
-    case 'upload-credentials':
-      uploadCredentials('athena-latest/google-interface/src/credentials').then(() => log.green('Done. Exiting...'))
-      break
+  program
+    .command('upload-credentials')
+    .description('Uploads local credential files (.json) to virtual machine instance only')
+    .action(() =>
+      uploadCredentials('athena-latest/google-interface/src/credentials')
+        .then(() => log.green('Done. Exiting...'))
+        .catch(catchall)
+    )
 
-    case 'create-vm':
-      args.branchName = process.argv[3] || 'master'
-      createAndSetupVM(args.branchName).then(() => log.green('Done. Exiting...'))
-      break
+  program
+    .command('update-ciwebserver')
+    .description(
+      'Deploys a new version of the continuous integration server. Its new code ' +
+      'is taken from the LOCAL workspace (not any git branch/commit)'
+    )
+    .action(() => deployContinuousIntegrationServer().then(() => log.green('Done. Exiting...')).catch(catchall))
 
-    case 'create-pubsub-test-registration':
-      createTestCourseRegistration().then(() => log.green('Done. Exiting...'))
-      break
+  program
+    .command('authorize-testcourse-as-teacher')
+    .description(
+      'Grants credentials to Athena, from a Google Account (should be a teacher ' +
+      'at the test course)'
+    )
+    .action(() => authorizeTestCourseAsTeacher().then(() => log.green('Done. Exiting...')).catch(catchall))
 
-    case 'update-ciwebserver':
-      deployContinuousIntegrationServer().then(() => log.green('Done. Exiting...'))
-      break
+  program
+    .command('authorize-testcourse-as-student')
+    .description(
+      'Grants credentials to Athena, from a Google Account (should be a student ' +
+      'at the test course)'
+    )
+    .action(() => authorizeTestCourseAsStudent().then(() => log.green('Done. Exiting...')).catch(catchall))
 
-    case 'authorize-testcourse-as-teacher':
-      authorizeTestCourseAsTeacher().then(() => log.green('Done. Exiting...'))
-      break
+  program
+    .command('authorize-project-as-admin')
+    .description(
+      'Grants credentials to Athena, so that it can access Google Cloud Platform resources (' +
+      'Compute Engine, App Engine, Pub/Sub, Cloud Storage,...). The user account used to give the credentials ' +
+      'must be an owner (admin) of the Google Platform Project'
+    )
+    .action(() => authorizeProjectAsAdmin().then(() => log.green('Done. Exiting...')).catch(catchall))
 
-    case 'authorize-testcourse-as-student':
-      authorizeTestCourseAsStudent().then(() => log.green('Done. Exiting...'))
-      break
+  program
+    .command('download-gcloud')
+    .description(
+      'Downloads gcloud command line tool and installs it ' +
+      'inside a folder at the project\'s top level directory'
+    )
+    .action(() =>
+      INTERNAL.downloadUncompressInstallGCloud()
+        .then(() => log.green('Done. Exiting...'))
+        .catch(catchall)
+    )
 
-    case 'authorize-project-as-admin':
-      authorizeProjectAsAdmin().then(() => log.green('Done. Exiting...'))
-      break
 
-    case 'debug-oauth-creds-grant':
-      const outputPath = '/tmp/athena-debug-cred.json'
-      INTERNAL.getOAuth2ClientInteractive(
-        process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'],
-        SCOPES,
-        outputPath
-      )
-        .then(oauth2Client => oauth2Client.credentials)
-        .then(credentials => {
-          log.green('Credentials are:')
-          log.green(credentials)
-          log.green('If you want to take a closer look, it was saved at ' + outputPath)
-        })
-      break
-
-    case 'download-gcloud':
-      INTERNAL.downloadUncompressInstallGCloud().then(() => log.green('Done. Exiting...'))
-      break
-
-    default:
-      log.red('Unrecognized command')
-      process.exit(1)
-
-  }
+  program.parse(process.argv)
 
 }
+
 
 module.exports = {
   setupProjectFirstTime,

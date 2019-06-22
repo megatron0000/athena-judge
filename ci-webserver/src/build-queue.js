@@ -117,7 +117,7 @@ function runTestNow(testSpec) {
     // timeout of 10 minutes for the inner tests
     exec(
       'node ' + resolve(__dirname, 'manage/index.js') + ' deploy ' +
-      testSpec.commitId + ' test-only 600000 > ' + testSpec.logFile + ' 2>&1',
+      testSpec.commitId + ' --test-only --timeout 600000 > ' + testSpec.logFile + ' 2>&1',
       { cwd: process.cwd() },
       async (err, stdout, stderr) => {
         // should a problem happen with the tests, release the lock here by force
