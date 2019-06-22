@@ -2,6 +2,7 @@ require('../credentials/config')
 const { google } = require('googleapis')
 const { getOAuth2ClientFromCloudStorage } = require('../credentials/auth')
 const { getProjectId } = require('../credentials/config')
+const { } = require('../')
 
 
 /**
@@ -156,15 +157,21 @@ exports.getCourseName = async function getCourseName(courseId) {
 
 
 /**
+ * Gets the info from the teacher whose credentials are currently granted to Athena
  * @param {string} courseId
  * @returns {Promise<{name: string, email: string}>}
  */
-exports.getTeacherInfo = async function getTeacherInfo(courseId) {
+exports.getCredentialedTeacherInfo = async function getCredentialedTeacherInfo(courseId) {
   const classroomObj = await classroom(courseId)
 
-  const { data: courseObj } = await classroomObj.courses.get({ id: courseId })
+  const auth = await getOAuth2ClientFromCloudStorage(courseId)
+  const { credentials } = await auth.refreshAccessToken()
 
-  const { data: profile } = await classroomObj.userProfiles.get({ userId: courseObj.ownerId })
+  // Yikes ! Code-completion does not match what Google really returns at runtime !
+  // @ts-ignore
+  const { sub: teacherId, email: teacherEmail } = await auth.getTokenInfo(credentials.access_token)
 
-  return { name: profile.name.fullName, email: profile.emailAddress }
+  const { data: profile } = await classroomObj.userProfiles.get({ userId: teacherId })
+
+  return { name: profile.name.fullName, email: teacherEmail }
 }

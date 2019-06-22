@@ -1,12 +1,12 @@
 const { getOAuth2ClientFromCloudStorage } = require('../credentials/auth')
-const { getTeacherInfo, getStudentInfoFromSubmission, getCourseName } = require('../classroom')
+const { getCredentialedTeacherInfo, getStudentInfoFromSubmission, getCourseName } = require('../classroom')
 
 const nodemailer = require("nodemailer");
 const diff = require("diff");
 
 async function sendSubmissionAcknowledgeEmail(courseId, courseWorkId, submissionId) {
   const [teacherInfo, studentInfo, courseName] = await Promise.all([
-    getTeacherInfo(courseId),
+    getCredentialedTeacherInfo(courseId),
     getStudentInfoFromSubmission(courseId, courseWorkId, submissionId),
     getCourseName(courseId)
   ])
@@ -62,7 +62,7 @@ async function sendSubmissionAcknowledgeEmail(courseId, courseWorkId, submission
  */
 async function sendCorrectionResultEmail(courseId, courseWorkId, submissionId, testInfo) {
   const [teacherInfo, studentInfo, courseName] = await Promise.all([
-    getTeacherInfo(courseId),
+    getCredentialedTeacherInfo(courseId),
     getStudentInfoFromSubmission(courseId, courseWorkId, submissionId),
     getCourseName(courseId)
   ])
@@ -87,8 +87,8 @@ async function sendCorrectionResultEmail(courseId, courseWorkId, submissionId, t
 async function sendEmailToStudentFromSubmission(courseId, courseWorkId, submissionId, emailSubject, emailHtmlContent) {
   const [auth, teacherInfo, studentInfo] = await Promise.all([
     getOAuth2ClientFromCloudStorage(courseId),
-    getTeacherInfo(courseId),
-    getStudentInfoFromSubmission(courseId, courseWorkId, submissionId)
+    getCredentialedTeacherInfo(courseId),
+    {}/* getStudentInfoFromSubmission(courseId, courseWorkId, submissionId) */
   ])
 
   const transporter = nodemailer.createTransport({
@@ -112,6 +112,7 @@ async function sendEmailToStudentFromSubmission(courseId, courseWorkId, submissi
     html: emailHtmlContent
   })
 }
+
 
 
 const sendAckResponseEmail = async (teacherAuth, student) => {
@@ -215,5 +216,6 @@ const sendEmail = async (oauth, emailContent, destList) => {
 
 module.exports = {
   sendSubmissionAcknowledgeEmail,
-  sendCorrectionResultEmail
+  sendCorrectionResultEmail,
+  sendEmailToStudentFromSubmission
 }

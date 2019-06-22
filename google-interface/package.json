@@ -14,6 +14,7 @@
     "googleapis": "^39.2.0",
     "googleapis-common": "^2.0.2",
     "mkdir-recursive": "^0.4.0",
+    "nodemailer": "^6.2.1",
     "promise-fs": "^2.1.0"
   },
   "devDependencies": {

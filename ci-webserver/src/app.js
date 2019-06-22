@@ -56,9 +56,10 @@ app.post(
             testSpec.logFile
           )
         }
-      })
+      }),
+      new Promise(resolve => setTimeout(resolve, 200)) // rate-limit
     ]))
-    
+
   }
 )
 
