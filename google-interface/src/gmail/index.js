@@ -66,21 +66,100 @@ async function sendCorrectionResultEmail(courseId, courseWorkId, submissionId, t
     getStudentInfoFromSubmission(courseId, courseWorkId, submissionId),
     getCourseName(courseId)
   ])
+
+  const privateTestCount = testInfo.testResults.filter(x => x.isPrivate).length
+  const privatePassingTestCount = testInfo.testResults.filter(x => x.isPrivate && x.pass).length
+  const publicTests = testInfo.testResults.filter(x => !x.isPrivate)
+
+  const template = testInfo.status.ok
+    ? `
+    <html>
+      <head>
+        <style>
+          table {
+            border-collapse: collapse;
+          }
+
+          td,
+          th {
+            border: 1px solid;
+            padding: 5px;
+          }
+
+          tr:nth-child(even) {
+            background-color: #eee;
+          }
+          
+          tr:nth-child(odd) {
+            background-color: #fff;
+          }
+        </style>
+      </head>
+      <body>
+        <h2>Status</h2>
+        <p>O Athena não encontrou nenhum erro fatal. Os casos de teste foram executados.</p>
+
+        <h3>Mensagem de status</h3>
+        <pre>${testInfo.status.message || 'Nenhuma mensagem'}</pre>
+
+        <h3>Informação adicional</h3>
+        <pre>${testInfo.status.additionalInfo || 'Nenhuma informação adicional'}</pre>
+
+        <h2>Resultados dos casos de teste</h2>
+        
+        <h3>Testes privados</h3>
+        <p>Você acertou ${privatePassingTestCount} de ${privateTestCount} teste(s) privado(s)</p>
+
+        <h3>Testes públicos</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Passou ?</th>
+              <th>Erros</th>
+              <th>Saída</th>
+              <th>Saída esperada</th>
+              <th>Entrada</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${publicTests.map(test => `
+            <tr>
+              <td>${test.pass ? 'Sim' : 'Não'}</td>
+              <td><pre>${test.error || 'Nenhum erro'}</pre></td>
+              <td><pre>${test.output}</pre></td>
+              <td><pre>${test.expectedOutput}</pre></td>
+              <td><pre>${test.input}</pre></td>
+            </tr>`).join('\n')}
+          </tbody>
+        </table>
+      </body>
+    </html>
+    `
+    : `
+    <html>
+      <head></head>
+      <body>
+        <h2>Status</h2>
+        <p>O Athena encontrou um erro fatal (não foi possível executar os casos de teste)</p>
+
+        <h3>Mensagem do erro</h3>
+        <pre>${testInfo.status.message}</pre>
+
+        <h3>Informação adicional</h3>
+        <pre>${testInfo.status.additionalInfo || 'Nenhuma informação adicional'}</pre>
+
+        <h2>Resultados dos casos de teste</h2>
+        <p>Os testes não foram executados, por causa do erro acima</p>
+      </body>
+    </html>
+    `
+
   return sendEmailToStudentFromSubmission(
     courseId,
     courseWorkId,
     submissionId,
     `${courseName}: Resultados da correção`,
-    `<html>
-      <head></head>
-      <body>
-        <h2>Status</h2>
-        <pre>${testInfo.status}</pre>
-
-        <h2>Resultados</h2>
-        ${testInfo.testResults.map(x => '<pre>' + x + '</pre>').join('<br/><br/>')}
-      </body>
-    </html>`
+    template
   )
 }
 
@@ -111,32 +190,6 @@ async function sendEmailToStudentFromSubmission(courseId, courseWorkId, submissi
     subject: emailSubject,
     html: emailHtmlContent
   })
-}
-
-
-
-const sendAckResponseEmail = async (teacherAuth, student) => {
-  sendEmail(teacherAuth, {
-    subject: "Sua submissão foi recebida com sucesso",
-    text:
-      `
-            <html>
-                <head></head>
-                <body>
-                    <p>Olá, aluno(a) ${student.name}! <br /><br /> Sua submissão foi recebida com sucesso e em breve será
-                    corrigida automaticamente pelo <b>Athena Judge.</b></p>
-
-                    <p>Você receberá um e-mail com o resultado de sua submissão em breve.
-                    Caso isso não ocorra, entre em contato comigo.</p>
-
-                    <p>Se você não tiver submetido uma atividade porém estiver recebendo esse e-mail,
-                    entre em contato comigo imediatamente!</p>
-
-                    <p>Atenciosamente, <br /> Professor(a). </p>
-                </body>
-            </html>
-        `
-  }, [student.email])
 }
 
 const sendErrorEmail = async (teacherAuth, student, error) => {
@@ -185,33 +238,6 @@ const sendDiffMail = async (teacherAuth, student, txt1, txt2) => {
             </html>
         `
   })
-}
-
-const sendEmail = async (oauth, emailContent, destList) => {
-  console.log("Oauth", JSON.stringify(oauth, undefined, 1))
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    host: "smtp.gmail.com",
-    auth: {
-      type: 'OAuth2',
-      user: 'vitor.arruda@ga.ita.br',
-      clientId: oauth._clientId,
-      clientSecret: oauth._clientSecret,
-      refreshToken: oauth.credentials.refresh_token,
-      accessToken: oauth.credentials.access_token,
-      expires: oauth.credentials.expiry_date
-    }
-  });
-
-  let info = await transporter.sendMail({
-    from: '"Vitor Arruda" <vitor.arruda@ga.ita.br>',
-    to: destList.join(", "),
-    subject: emailContent.subject,
-    html: emailContent.text
-  });
-
-  console.log(`Message sent: ${info.messageId}`);
-  console.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
 }
 
 module.exports = {
