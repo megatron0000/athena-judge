@@ -1,0 +1,30 @@
+{
+  "name": "listener",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/server.js",
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha --exit",
+    "start": "NODE_ENV=prod node src/index.js",
+    "prod": "NODE_ENV=prod node src/index.js",
+    "dev": "NODE_ENV=test node src/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/pubsub": "^0.28.1",
+    "@google-cloud/storage": "^2.5.0",
+    "crypto-random-string": "^3.0.0",
+    "decompress": "^4.2.0",
+    "google-auth-library": "^4.0.0",
+    "googleapis": "^39.2.0",
+    "mkdir-recursive": "^0.4.0",
+    "promise-fs": "^2.1.0",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.7"
+  },
+  "devDependencies": {
+    "@types/mocha": "^5.2.6",
+    "mocha": "^6.1.4"
+  }
+}

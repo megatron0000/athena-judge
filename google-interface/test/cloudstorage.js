@@ -20,8 +20,14 @@ describe('Cloud Storage', function () {
 
   it('should upload files', async () => {
     await Promise.all([
-      storage.uploadFile(path.resolve(__dirname, 'sample-files', 'file1'), 'root/dir/file1'),
-      storage.uploadFile(path.resolve(__dirname, 'sample-files', 'file2'), 'root/dir/file2')
+      storage.uploadFile({
+        localFilename: path.resolve(__dirname, 'sample-files', 'file1'),
+        destinationPath: 'root/dir/file1'
+      }),
+      storage.uploadFile({
+        localFilename: path.resolve(__dirname, 'sample-files', 'file2'),
+        destinationPath: 'root/dir/file2'
+      })
     ])
   })
 
@@ -30,7 +36,10 @@ describe('Cloud Storage', function () {
     assert.deepEqual(await storage.listFilesByPrefix('dir'), [])
     assert.deepEqual((await storage.listFilesByPrefix('root')).length, 2)
 
-    await storage.downloadFile('root/dir/file1', path.resolve(__dirname, 'sample-files', 'file1.download'))
+    await storage.downloadFile({
+      srcFilename: 'root/dir/file1',
+      destFilename: path.resolve(__dirname, 'sample-files', 'file1.download')
+    })
 
     assert.equal(
       fs.readFileSync(path.resolve(__dirname, 'sample-files', 'file1.download'), 'utf8'),
@@ -51,19 +60,15 @@ describe('Cloud Storage', function () {
   it('should upload/download/delete teacher credential file', async () => {
     await GCS.uploadTeacherCredential(
       testCourseId,
-      path.resolve(__dirname, 'sample-files', 'file1')
-    )
-    await GCS.downloadTeacherCredential(
-      testCourseId,
-      path.resolve(__dirname, 'sample-files', 'file1.download')
+      path.resolve(__dirname, 'sample-files', 'fake-cred.json')
     )
 
-    assert.equal(
-      fs.readFileSync(path.resolve(__dirname, 'sample-files', 'file1.download'), 'utf8'),
-      fs.readFileSync(path.resolve(__dirname, 'sample-files', 'file1'), 'utf8')
-    )
+    const cred = await GCS.downloadTeacherCredentialToMemory(testCourseId)
 
-    fs.unlinkSync(path.resolve(__dirname, 'sample-files', 'file1.download'))
+    assert.deepEqual(
+      cred,
+      JSON.parse(fs.readFileSync(path.resolve(__dirname, 'sample-files', 'fake-cred.json'), 'utf8'))
+    )
 
     await GCS.deleteTeacherCredential(testCourseId)
 
@@ -141,7 +146,6 @@ describe('Cloud Storage', function () {
     await GCS.downloadCourseWorkTestFiles(
       testCourseId,
       testCourseWorkIds[0],
-      testSubmissionIds[0],
       path.resolve(__dirname, 'sample-files', '.testdownload')
     )
 
@@ -167,6 +171,34 @@ describe('Cloud Storage', function () {
         'testFiles'
       ))).length,
       0
+    )
+
+  })
+
+  it('should keep only the last student submission', async () => {
+    await GCS.uploadCourseWorkSubmissionFiles(
+      testCourseId,
+      testCourseWorkIds[0],
+      testSubmissionIds[0],
+      path.resolve(__dirname, 'sample-files')
+    )
+
+    await GCS.uploadCourseWorkSubmissionFiles(
+      testCourseId,
+      testCourseWorkIds[0],
+      testSubmissionIds[0],
+      path.resolve(__dirname, 'more-sample-files')
+    )
+
+    assert.equal(
+      (await storage.listFilesByPrefix(path.posix.join(
+        testCourseId,
+        'courseWorks',
+        testCourseWorkIds[0],
+        'submissions',
+        testSubmissionIds[0]
+      ))).length,
+      1
     )
 
   })

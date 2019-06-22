@@ -1,7 +1,10 @@
 #!/bin/bash
-unlink src/google-interface
-mkdir -v src/google-interface
-cp -v -r ../../google-interface/src/* src/google-interface/
-docker build -t runner .
-rm -v -r -f src/google-interface
-ln -v -s ../../../google-interface/src src/google-interface
+
+# Copying to temporary building directory. Necessary for copying symlinks as normal folders
+# https://superuser.com/questions/216919/how-to-copy-symlinks-to-target-as-normal-folders#216920
+TMP_DEST=/tmp/docker-build
+rm -r $TMP_DEST > /dev/null 2>&1
+mkdir $TMP_DEST
+cp * -rL $TMP_DEST
+docker build -t runner $TMP_DEST
+rm -r $TMP_DEST

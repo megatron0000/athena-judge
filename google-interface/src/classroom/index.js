@@ -1,6 +1,6 @@
 require('../credentials/config')
 const { google } = require('googleapis')
-const { getOAuth2Client } = require('../credentials/auth')
+const { getOAuth2ClientFromCloudStorage } = require('../credentials/auth')
 const { getProjectId } = require('../credentials/config')
 
 
@@ -12,8 +12,7 @@ const { getProjectId } = require('../credentials/config')
 async function classroom(courseId) {
   return google.classroom({
     version: 'v1',
-    // @ts-ignore
-    auth: await getOAuth2Client(courseId)
+    auth: await getOAuth2ClientFromCloudStorage(courseId)
   })
 }
 

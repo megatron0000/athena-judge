@@ -1,4 +1,5 @@
 import React from "react";
+import TestTable from "../Components/TestTable";
 
 import TextField from "@material-ui/core/TextField";
 import Button from "@material-ui/core/Button";
@@ -10,6 +11,8 @@ import DateTimePicker from "./DateTimePicker";
 import MultipleTextFileUploadArea from "../Components/MultipleTextFileUploadArea";
 import ConfirmDialog from "../Components/ConfirmDialog";
 
+import Api from "../Api";
+
 /*
 @vb: We are disabling file attachment per now. Only plain text uploads are allowed,
 and they are stored in the database.
@@ -20,13 +23,26 @@ export default class AssignmentForm extends React.Component {
     super(props);
     this.state = {
       id: this.props.assignmentId,
+      courseId: this.props.courseId,
       title: this.props.title,
       description: this.props.description,
       dueDate: this.props.dueDate,
-      publicTestsInput: [],
-      publicTestsOutput: [],
+      publicTests: [],
+      privateTests: [],
       dialogCreateAssignmentOpen: false,
+      tests: [],
+      fetched: false
     }
+  }
+
+  componentDidMount() {
+    this.getTests()
+  }
+
+  getTests() {
+    Api.get('/assignments/test-files/' + this.state.courseId + '/' + this.state.id)
+      .then(res => res.data)
+      .then(tests => this.setState({ tests, fetched: true }))
   }
 
   handleTitleChange = (e) => {
@@ -41,23 +57,16 @@ export default class AssignmentForm extends React.Component {
     this.setState({ dueDate: e.target.value });
   }
 
-  handlePublicTestsInputChange = (files) => {
-    this.setState({ publicTestsInput: files });
-  }
-
-  handlePublicTestsOutputChange = (files) => {
-    this.setState({ publicTestsOutput: files });
-  }
-
   handleOpenDialogCreateAssign = () => {
     this.setState({ dialogCreateAssignmentOpen: true });
-  };
+  }
 
   handleCloseDialogCreateAssignment = () => {
     this.setState({ dialogCreateAssignmentOpen: false });
-  };
+  }
 
   render() {
+
     return (
       <div style={{ padding: 20 }}>
         <TextField
@@ -82,22 +91,9 @@ export default class AssignmentForm extends React.Component {
           onChange={this.handleDueDateChange}
         />
 
-        <div style={{ height: 20 }}></div>
-        <Typography variant="caption">
-          Entradas dos testes públicos
-        </Typography>
-        <MultipleTextFileUploadArea
-          onChange={this.handlePublicTestsInputChange}
-          style={{ paddingTop: 10 }}
-        />
-
-        <div style={{ height: 20 }}></div>
-        <Typography variant="caption">
-          Saída dos testes públicos
-        </Typography>
-        <MultipleTextFileUploadArea
-          onChange={this.handlePublicTestsOutputChange}
-          style={{ paddingTop: 10 }}
+        <TestTable
+          data={this.state.tests}
+          style={{ marginTop: 20 }}
         />
 
         <div style={{ textAlign: "center", marginTop: 10 }}>
@@ -106,7 +102,7 @@ export default class AssignmentForm extends React.Component {
             style={{ marginRight: 10 }}
             onClick={this.props.onBack}
           >
-          <ArrowBackIcon style={{ marginRight: 14 }} />
+            <ArrowBackIcon style={{ marginRight: 14 }} />
             Voltar
           </Button>
 
@@ -114,18 +110,20 @@ export default class AssignmentForm extends React.Component {
             variant="raised"
             color="primary"
             onClick={() => { this.handleOpenDialogCreateAssign() }}
+            disabled={this.props.loading || !this.state.fetched}
           >
             <SendIcon style={{ marginRight: 14 }} />
-            { (this.props.assignmentId == null) ? "Criar Atividade" : "Editar Atividade" }
+            {(this.props.assignmentId == null) ? "Criar Atividade" : "Editar Atividade"}
           </Button>
 
           <ConfirmDialog
             open={this.state.dialogCreateAssignmentOpen}
-            text={`Tem certeza que deseja ${ (this.props.assignmentId == null) ? "criar" : "editar" } esta atividade?`}
+            text={`Tem certeza que deseja ${(this.props.assignmentId == null) ? "criar" : "editar"} esta atividade?`}
             onConfirm={() => this.props.onSubmit(this.state)}
             onClose={this.handleCloseDialogCreateAssignment}
           />
         </div>
+
       </div>
     );
   }

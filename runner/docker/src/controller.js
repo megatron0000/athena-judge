@@ -6,7 +6,7 @@ const { cloudstorage } = require('./google-interface')
 
 const PORT = 3002
 
-const server = SocketIO(3002, { serveClient: false })
+const server = SocketIO(PORT, { serveClient: false })
 
 function randomString() {
   return Math.random().toString(36).substring(2, 15)
@@ -31,7 +31,6 @@ server.on('connection', client => {
         cloudstorage.downloadCourseWorkTestFiles(
           ctx.courseId,
           ctx.courseWorkId,
-          ctx.submissionId,
           ctx.localTestDir
         ),
         cloudstorage.downloadCourseWorkSubmissionFiles(
@@ -59,35 +58,37 @@ server.on('connection', client => {
   })
 
   client.on('compileSource', async callback => {
-    /**
-     * @type {string[]}
-     */
-    const sourceList = await FS.readdir(ctx.localSrcDir)
-    const mainFile = sourceList.find(source => source === 'main.cpp')
 
-    if (!mainFile) {
-      ctx.status = {
-        ok: false,
-        message: 'File main.cpp not present at root directory'
-      }
-      return callback(ctx.status)
-    }
-
-    ChildProcess.exec(`g++ ${ctx.localSrcDir}/main.cpp -o ${ctx.localSrcDir}/main.o`, (err, stdout, stderr) => {
-      if (err) {
-        ctx.status = {
-          ok: false,
-          message: 'Compilation Error: ' + stderr
+    ChildProcess.exec(
+      `
+      (set -e ;
+      set -x ;
+      INCLUDES=$(find . -type d | sed 's/\\(.*\\)$/-I\\1/') ;
+      SOURCE_FILES=$(find . -type f -name "*.cpp" | sed 's/\\(.*\\)$/-c \\1/') ;
+      g++ $INCLUDES $SOURCE_FILES 2>&1 ;
+      O_FILES=$(find . -type f -name "*.o") ;
+      g++ $O_FILES 2>&1 ;) 2>&1 ;
+      exit $? ;
+    `, {
+        cwd: ctx.localSrcDir
+      }, (err, stdout) => {
+        if (err) {
+          ctx.status = {
+            ok: false,
+            message: 'Compilation Error',
+            additionalInfo: stdout
+          }
+        } else {
+          ctx.status = {
+            ok: true,
+            message: 'Compiled source',
+            additionalInfo: stdout
+          }
         }
-      } else {
-        ctx.status = {
-          ok: true,
-          message: 'Compiled source'
-        }
-      }
 
-      return callback(ctx.status)
-    })
+        return callback(ctx.status)
+      }
+    )
 
   })
 
@@ -98,11 +99,15 @@ server.on('connection', client => {
     for (let i = 0; i < testCount; i++) {
       const inputPath = Path.join(ctx.localTestDir, i.toString(), 'input')
       const outputPath = Path.join(ctx.localTestDir, i.toString(), 'output')
-      const binPath = Path.join(ctx.localSrcDir, 'main.o')
-      const [input, expectedOutput] = await Promise.all([
+      const metadataPath = Path.join(ctx.localTestDir, i.toString(), 'metadata')
+
+      const [input, expectedOutput, metadata] = await Promise.all([
         FS.readFile(inputPath, 'utf8'),
-        FS.readFile(outputPath, 'utf8')
+        FS.readFile(outputPath, 'utf8'),
+        FS.readFile(metadataPath, 'utf8').then(JSON.parse)
       ])
+
+      const binPath = Path.join(ctx.localSrcDir, 'a.out')
 
       await new Promise(resolve => {
         ChildProcess.exec(
@@ -115,7 +120,9 @@ server.on('connection', client => {
               output: stdout,
               // TODO: This timeout identification is not 100% reliable
               error: !err ? '' : stderr || 'Timeout',
-              pass: !err && stdout === expectedOutput
+              pass: !err && stdout === expectedOutput,
+              isPrivate: metadata.isPrivate,
+              weight: metadata.weight
             }
             client.emit('testResult', testResult)
             resolve()
@@ -125,9 +132,7 @@ server.on('connection', client => {
       })
     }
 
-    ChildProcess.exec(`rm -r -f ${ctx.localSubmissionDir}`, (err, stdout, stderr) => {
-      client.emit('executionEnd')
-    })
+    client.emit('executionEnd')
 
   })
 

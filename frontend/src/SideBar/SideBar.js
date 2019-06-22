@@ -55,6 +55,7 @@ export default class SideBar extends React.Component {
   render() {
     return (
       <Drawer open={this.state.open} onClose={this.handleClose}>
+       
         <List style={{ width: 250 }}>
 
           <ListItem button onClick={this.handleItemClick(this.props.onHomeClick)}>

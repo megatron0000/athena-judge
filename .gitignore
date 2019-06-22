@@ -8,4 +8,6 @@ npm-debug.log
 get-docker.sh
 .vscode/
 **/credcache/**
-manage/backup
+**/backup*.zip
+gcloud.tar.gz
+google-cloud-sdk/

@@ -2,7 +2,21 @@ import Axios from "axios";
 
 import Config from "./Config";
 
-export default class Api {};
+export default class Api { };
+
+Api.authorizationToken = ''
+
+/**
+ * @param {string} gid
+ * @param {string} id_token
+ */
+Api.setAuthorizationToken = (gid, id_token) => Api.authorizationToken = gid + ':' + id_token
+
+// https://stackoverflow.com/questions/43051291/attach-authorization-header-for-all-axios-requests
+Axios.interceptors.request.use(config => {
+  config.headers.Authorization = Api.authorizationToken
+  return config
+})
 
 // This is a wrapper around the Axios library so we can log all Api calls and responses.
 
@@ -44,13 +58,13 @@ if (Config.ENABLE_API_LOGS) {
     });
   }
 
-  Api.delete = (route, params) => {
+  Api.delete = route => {
     return new Promise((resolve, reject) => {
-      Axios.delete(Config.API + route, params).then((res) => {
-        console.log("API DELETE", route, params, res.data);
+      Axios.delete(Config.API + route).then((res) => {
+        console.log("API DELETE", route, res.data);
         resolve(res);
       }).catch((err) => {
-        console.log("ERROR: API DELETE", route, params, err);
+        console.log("ERROR: API DELETE", route, err);
         reject(err);
       });
     });
@@ -82,8 +96,8 @@ if (Config.ENABLE_API_LOGS) {
     return Axios.put(Config.API + route, params);
   }
 
-  Api.delete = (route, params) => {
-    return Axios.delete(Config.API + route, params);
+  Api.delete = route => {
+    return Axios.delete(Config.API + route);
   }
 
   Api.run = (source, input) => {

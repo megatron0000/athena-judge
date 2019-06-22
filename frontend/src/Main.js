@@ -37,6 +37,7 @@ export default class Main extends React.Component {
 
   handleCreateCourse = (form) => {
     this.setState({ loading: true });
+
     Api.post("/courses", {
       name: form.name,
       description: form.description,

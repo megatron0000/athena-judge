@@ -20,16 +20,16 @@ function configEnvironment() {
     if (envLine[0] === '#') {
       return
     }
-    
+
     // if is appropriately written (i.e. name=value)
     const match = envLine.match(/(.+?)=(.+)/)
     if (!match) {
       return
     }
-    
+
     let name = match[1]
     let value = match[2]
-    
+
 
     // if is relative directory
     if (value.substr(0, 2) === './') {
@@ -48,16 +48,82 @@ const SCOPES = [
   'https://www.googleapis.com/auth/classroom.rosters',
   'https://www.googleapis.com/auth/classroom.coursework.students',
   'https://www.googleapis.com/auth/drive',
-  'https://www.googleapis.com/auth/classroom.coursework.me'
+  'https://www.googleapis.com/auth/classroom.coursework.me',
+  'https://mail.google.com/',
+  'https://www.googleapis.com/auth/gmail.modify',
+  'https://www.googleapis.com/auth/gmail.compose',
+  'https://www.googleapis.com/auth/gmail.send'
 ];
-exports.SCOPES = SCOPES
+
+/**
+ * Must not be accessed directly
+ */
+let _credCache
+
+async function populateCredCache() {
+  if (!_credCache) {
+    const credContent = JSON.parse(
+      await fs.readFile(process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'])
+    )
+    _credCache = credContent.web
+  }
+  return _credCache
+}
 
 /**
  * @returns {Promise<string>}
  */
-exports.getProjectId = async function getProjectId() {
-  const credContent = JSON.parse(
-    await fs.readFile(process.env['OAUTH_CLIENT_PROJECT_CREDENTIALS_FILE'])
-  )
-  return credContent.installed.project_id
+async function getProjectId() {
+  return (await populateCredCache()).project_id
+}
+
+async function getProjectOAuthClientId() {
+  return (await populateCredCache()).client_id
+}
+
+async function getProjectOAuthClientSecret() {
+  return (await populateCredCache()).client_secret
+}
+
+async function getProjectLocalhostRedirectUri() {
+  return (await populateCredCache()).redirect_uris[0]
+}
+
+/**
+ * Must be accessed via getGithubAccessToken()
+ * @type {{token: string, user: string, repo: string}}
+ */
+let _githubAccessTokenCache
+
+async function getGithubAccessToken() {
+  if (!_githubAccessTokenCache) {
+    _githubAccessTokenCache = JSON.parse(await fs.readFile(process.env['GITHUB_ACCESS_TOKEN']))
+  }
+
+  return _githubAccessTokenCache
+}
+
+async function getGithubRepoHref() {
+  const token = await getGithubAccessToken()
+  return 'https://github.com/' + token.user + '/' + token.repo
+}
+
+/**
+ * The prefix is followed by the project id, because the bucket name
+ * must be unique, even across different projects !!!
+ */
+async function getCloudstorageBucketName() {
+  return process.env['CLOUDSTORAGE_BUCKET_PREFIX'] + '-' + (await getProjectId())
+}
+
+
+module.exports = {
+  SCOPES,
+  getProjectId,
+  getProjectOAuthClientId,
+  getProjectOAuthClientSecret,
+  getProjectLocalhostRedirectUri,
+  getGithubAccessToken,
+  getGithubRepoHref,
+  getCloudstorageBucketName
 }

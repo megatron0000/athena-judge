@@ -29,7 +29,7 @@ const listeners = []
 
 /**
 *
-* @param {(notification: any) => any} cb
+* @param {(notification: any, ack: () => any) => any} cb
 */
 exports.AttachPubSubListener = function AttachPubSubListener(cb) {
   listeners.push(cb)
@@ -37,8 +37,7 @@ exports.AttachPubSubListener = function AttachPubSubListener(cb) {
 
 exports.StartPubSub = async function StartPubSub() {
   (await getSubscription()).on('message', async message => {
-    message.ack()
-    await Promise.all(listeners.map(listener => listener(message)))
+    await Promise.all(listeners.map(listener => listener(message, () => message.ack())))
   })
 }
 
