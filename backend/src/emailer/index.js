@@ -2,10 +2,10 @@ const nodemailer = require("nodemailer");
 const diff = require("diff");
 
 export const sendAckResponseEmail = async (teacherAuth, student) => {
-    sendEmail(teacherAuth, { 
-        subject: "Sua submissão foi recebida com sucesso",
-        text: 
-        `
+  sendEmail(teacherAuth, {
+    subject: "Sua submissão foi recebida com sucesso",
+    text:
+      `
             <html>
                 <head></head>
                 <body>
@@ -22,14 +22,14 @@ export const sendAckResponseEmail = async (teacherAuth, student) => {
                 </body>
             </html>
         `
-    }, [ student.email ])
+  }, [student.email])
 }
 
 export const sendErrorEmail = async (teacherAuth, student, error) => {
-    sendEmail(teacherAuth, {
-        subject: "Ocorreu um erro ao compilar sua submissão!",
-        text: 
-        `
+  sendEmail(teacherAuth, {
+    subject: "Ocorreu um erro ao compilar sua submissão!",
+    text:
+      `
             <html>
                 <head></head>
                 <body>
@@ -40,20 +40,20 @@ export const sendErrorEmail = async (teacherAuth, student, error) => {
                 </body>
             </html>
         `
-    })
+  })
 }
 
 export const sendDiffMail = async (teacherAuth, student, txt1, txt2) => {
-    wrongCasesList = diff.diffLines(txt1, txt2)
-    wrongCasesStr = "";
+  wrongCasesList = diff.diffLines(txt1, txt2)
+  wrongCasesStr = "";
 
-    for(i=0; i<wrongCasesList.length(); i++)
-        wrongCasesStr += "Linha i: " + wrongCasesList[i] + "\n";
-    
-    sendEmail(teacherAuth, {
-        subject: "Resultado da submissão da atividade",
-        text: 
-        `
+  for (i = 0; i < wrongCasesList.length(); i++)
+    wrongCasesStr += "Linha i: " + wrongCasesList[i] + "\n";
+
+  sendEmail(teacherAuth, {
+    subject: "Resultado da submissão da atividade",
+    text:
+      `
             <html>
                 <head></head>
                 <body>
@@ -70,32 +70,32 @@ export const sendDiffMail = async (teacherAuth, student, txt1, txt2) => {
                 </body>
             </html>
         `
-    })
+  })
 }
 
 const sendEmail = async (oauth, emailContent, destList) => {
-    console.log("Oauth", JSON.stringify(oauth, undefined, 1))
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        host: "smtp.gmail.com",
-        auth: {
-            type: 'OAuth2',
-            user: 'vitor.arruda@ga.ita.br',
-            clientId: oauth._clientId,
-            clientSecret: oauth._clientSecret,
-            refreshToken: oauth.credentials.refresh_token,
-            accessToken: oauth.credentials.access_token,
-            expires: oauth.credentials.expiry_date
-        }
-    });
+  console.log("Oauth", JSON.stringify(oauth, undefined, 1))
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    host: "smtp.gmail.com",
+    auth: {
+      type: 'OAuth2',
+      user: 'vitor.arruda@ga.ita.br',
+      clientId: oauth._clientId,
+      clientSecret: oauth._clientSecret,
+      refreshToken: oauth.credentials.refresh_token,
+      accessToken: oauth.credentials.access_token,
+      expires: oauth.credentials.expiry_date
+    }
+  });
 
-    let info = await transporter.sendMail({
-        from: '"Vitor Arruda" <vitor.arruda@ga.ita.br>',
-        to: destList.join(", "),
-        subject: emailContent.subject,
-        html: emailContent.text
-    });
+  let info = await transporter.sendMail({
+    from: '"Vitor Arruda" <vitor.arruda@ga.ita.br>',
+    to: destList.join(", "),
+    subject: emailContent.subject,
+    html: emailContent.text
+  });
 
-    console.log(`Message sent: ${info.messageId}`);
-    console.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+  console.log(`Message sent: ${info.messageId}`);
+  console.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
 }

@@ -1,16 +1,18 @@
 require('../credentials/config')
 const { google } = require('googleapis')
 const { getOAuth2Client } = require('../credentials/auth')
-const {getProjectId} = require('../credentials/config')
+const { getProjectId } = require('../credentials/config')
 
 
 /**
  * 
  * @param {string} courseId 
+ * @returns {Promise<import('googleapis').classroom_v1.Classroom>}
  */
 async function classroom(courseId) {
   return google.classroom({
     version: 'v1',
+    // @ts-ignore
     auth: await getOAuth2Client(courseId)
   })
 }
@@ -45,7 +47,9 @@ exports.createRegistration = async function createRegistration(courseId) {
  * @param {number} grade
  */
 exports.assignGradeToSubmission = async function assignGradeToSubmission(courseId, courseWorkId, submissionId, grade) {
-  await (await classroom(courseId)).courses.courseWork.studentSubmissions.patch({
+  const classroomObj = await classroom(courseId)
+  await classroomObj.courses.courseWork.studentSubmissions.patch({
+    // @ts-ignore
     courseId,
     courseWorkId,
     id: submissionId,
@@ -55,7 +59,7 @@ exports.assignGradeToSubmission = async function assignGradeToSubmission(courseI
       draftGrade: grade
     }
   })
-  await (await classroom(courseId)).courses.courseWork.studentSubmissions.return({
+  await classroomObj.courses.courseWork.studentSubmissions.return({
     courseId,
     courseWorkId,
     id: submissionId
@@ -66,18 +70,22 @@ exports.assignGradeToSubmission = async function assignGradeToSubmission(courseI
  * @param {string} courseId
  * @param {string} courseWorkId
  * @param {string} submissionId
+ * @returns {Promise<{name: string, email: string}>}
  */
-exports.getStudentMailFromSubmission = async function getStudentMailFromSubmission(courseId, courseWorkId, submissionId) {
-  const { data: submission } = await (await classroom(courseId)).courses.courseWork.studentSubmissions.get({
+exports.getStudentInfoFromSubmission = async function getStudentMailFromSubmission(courseId, courseWorkId, submissionId) {
+  const classroomObj = await classroom(courseId)
+
+  const { data: submission } = await classroomObj.courses.courseWork.studentSubmissions.get({
     courseId,
     courseWorkId,
     id: submissionId
   })
-  const { userId } = submission
-  const { data: studentObj } = await (await classroom(courseId)).students.get({ courseId, userId })
-  const { emailAddress } = studentObj.profile
 
-  return emailAddress
+  const { userId } = submission
+  const { data: studentObj } = await classroomObj.courses.students.get({ courseId, userId })
+  const { emailAddress, name } = studentObj.profile
+
+  return { name: name.fullName, email: emailAddress }
 }
 
 exports.submissionIsTurnedIn = async function submissionIsTurnedIn(courseId, courseWorkId, submissionId) {
@@ -112,4 +120,52 @@ exports.getSubmissionDriveFileIds = async function getSubmissionDriveFileIds(cou
     .attachments
     .filter(attachment => attachment.driveFile && true)
     .map(attachment => attachment.driveFile.id)
+}
+
+/**
+ * @returns {Promise<string[]>}
+ */
+exports.getTeacherGids = async function getTeacherGids(courseId) {
+  const classroomObj = await classroom(courseId)
+  /**
+   * @type {string[]}
+   */
+  let teacherGids = []
+  let pageToken = ''
+
+  do {
+    const { data: teachersObj } = await classroomObj.courses.teachers.list({ courseId })
+
+    teacherGids = teacherGids.concat(teachersObj.teachers.map(x => x.userId))
+    pageToken = teachersObj.nextPageToken
+
+  } while (pageToken)
+
+  return teacherGids
+
+}
+
+exports.getCourseName = async function getCourseName(courseId) {
+  const classroomObj = await classroom(courseId)
+
+  const { data: courseObj } = await classroomObj.courses.get({
+    id: courseId
+  })
+
+  return courseObj.name
+}
+
+
+/**
+ * @param {string} courseId
+ * @returns {Promise<{name: string, email: string}>}
+ */
+exports.getTeacherInfo = async function getTeacherInfo(courseId) {
+  const classroomObj = await classroom(courseId)
+
+  const { data: courseObj } = await classroomObj.courses.get({ id: courseId })
+
+  const { data: profile } = await classroomObj.userProfiles.get({ userId: courseObj.ownerId })
+
+  return { name: profile.name.fullName, email: profile.emailAddress }
 }
