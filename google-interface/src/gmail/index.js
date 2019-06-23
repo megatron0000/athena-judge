@@ -1,8 +1,7 @@
 const { getOAuth2ClientFromCloudStorage } = require('../credentials/auth')
 const { getCredentialedTeacherInfo, getStudentInfoFromSubmission, getCourseName } = require('../classroom')
 
-const nodemailer = require("nodemailer");
-const diff = require("diff");
+const nodemailer = require('nodemailer')
 
 async function sendSubmissionAcknowledgeEmail(courseId, courseWorkId, submissionId) {
   const [teacherInfo, studentInfo, courseName] = await Promise.all([
@@ -167,7 +166,7 @@ async function sendEmailToStudentFromSubmission(courseId, courseWorkId, submissi
   const [auth, teacherInfo, studentInfo] = await Promise.all([
     getOAuth2ClientFromCloudStorage(courseId),
     getCredentialedTeacherInfo(courseId),
-    {}/* getStudentInfoFromSubmission(courseId, courseWorkId, submissionId) */
+    getStudentInfoFromSubmission(courseId, courseWorkId, submissionId)
   ])
 
   const transporter = nodemailer.createTransport({
@@ -186,57 +185,9 @@ async function sendEmailToStudentFromSubmission(courseId, courseWorkId, submissi
 
   return await transporter.sendMail({
     from: '"' + teacherInfo.name + '" <' + teacherInfo.email + '>',
-    to: /* studentInfo.email */ 'vitor.pimenta.arruda@gmail.com',
+    to: studentInfo.email,
     subject: emailSubject,
     html: emailHtmlContent
-  })
-}
-
-const sendErrorEmail = async (teacherAuth, student, error) => {
-  sendEmail(teacherAuth, {
-    subject: "Ocorreu um erro ao compilar sua submissão!",
-    text:
-      `
-            <html>
-                <head></head>
-                <body>
-                    <p>Olá, aluno(a) ${student.name}! <br /><br /> Sua submissão foi recebida, porém o seguinte erro ocorreu
-                    ao tentar executar seu código: ${error}.</b></p>
-
-                    <p>Atenciosamente, <br /> Professor(a). </p>
-                </body>
-            </html>
-        `
-  })
-}
-
-const sendDiffMail = async (teacherAuth, student, txt1, txt2) => {
-  wrongCasesList = diff.diffLines(txt1, txt2)
-  wrongCasesStr = "";
-
-  for (i = 0; i < wrongCasesList.length(); i++)
-    wrongCasesStr += "Linha i: " + wrongCasesList[i] + "\n";
-
-  sendEmail(teacherAuth, {
-    subject: "Resultado da submissão da atividade",
-    text:
-      `
-            <html>
-                <head></head>
-                <body>
-                    <p>Olá, aluno(a) ${student.name}! <br /><br /> Segue o resultado da submissão de sua atividade.</b></p>
-
-                    <p>Os casos que resultaram em erro foram: </p>
-
-                    <p>${wrongCasesStr} </p>
-
-                    <p>Se você tem alguma dúvida sobre os casos teste,
-                    entre em contato comigo imediatamente!</p>
-
-                    <p>Atenciosamente, <br /> Professor(a). </p>
-                </body>
-            </html>
-        `
   })
 }
 

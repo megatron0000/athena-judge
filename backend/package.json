@@ -5,9 +5,8 @@
   "main": "src/server.js",
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha --exit",
-    "start": "node src/server.js",
-    "dev": "ENV=dev node src/server.js",
-    "prod": "ENV=prod node src/server.js"
+    "dev": "NODE_ENV=dev node src/server.js",
+    "prod": "NODE_ENV=prod node src/server.js"
   },
   "author": "",
   "license": "ISC",
