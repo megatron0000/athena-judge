@@ -38,15 +38,15 @@ const default_options = {
   uri: run_endpoint,
   body: {},
   json: true,
-  timeout: 60000
+  timeout: 60000 * 60 // 1 hour (semi-infinite) timeout
 }
 
 
 const codeCorrectionLock = {
   STATE: {
+    CORRECTING: 'correcting',
     CORRECTED: 'corrected',
-    DEFAULT: 'default',
-    RETURNED: 'returned'
+    DEFAULT: 'default'
   },
   _map: {},
   _populate({ courseId, courseWorkId, submissionId }) {
@@ -68,6 +68,7 @@ const codeCorrectionLock = {
     return this._map[courseId][courseWorkId][submissionId]
   },
   set({ courseId, courseWorkId, submissionId, state }) {
+    console.log('submission ' + submissionId + ' set to state ' + state)
     this._populate({ courseId, courseWorkId, submissionId })
     this._map[courseId][courseWorkId][submissionId] = state
   }
@@ -104,19 +105,29 @@ AttachPubSubListener(async (notification, ack) => {
 
   ack()
 
-  if (await submissionIsReturned(courseId, courseWorkId, submissionId)) {
-    codeCorrectionLock.set({ courseId, courseWorkId, submissionId, state: codeCorrectionLock.STATE.RETURNED })
-  }
+  const turnedIn = await submissionIsTurnedIn(courseId, courseWorkId, submissionId)
+  const isCorrected = codeCorrectionLock.get({ courseId, courseWorkId, submissionId }) === codeCorrectionLock.STATE.CORRECTED
+  const isCorrecting = codeCorrectionLock.get({ courseId, courseWorkId, submissionId }) === codeCorrectionLock.STATE.CORRECTING
 
-  if (!await submissionIsTurnedIn(courseId, courseWorkId, submissionId)) {
-    console.log('submission is not turned in')
+  if (turnedIn && isCorrected) {
+    console.log('already corrected (but did not return yet) turned-in submission ' + submissionId)
+    return
+  } else if (!turnedIn && isCorrected) {
+    console.log('seems like we returned submission ' + submissionId)
+    codeCorrectionLock.set({ courseId, courseWorkId, submissionId, state: codeCorrectionLock.STATE.DEFAULT })
     return
   }
-
-  if (codeCorrectionLock.get({ courseId, courseWorkId, submissionId }) === codeCorrectionLock.STATE.CORRECTED) {
+  // here we are sure it is either in CORRECTING or DEFAULT
+  if (isCorrecting) {
+    console.log('still correcting ' + submissionId)
     return
   }
-  codeCorrectionLock.set({ courseId, courseWorkId, submissionId, state: codeCorrectionLock.STATE.CORRECTED })
+  // here we are sure it is DEFAULT
+  if (!turnedIn) {
+    console.log('Will not correct because is not turned in: ' + submissionId)
+    return
+  }
+  codeCorrectionLock.set({ courseId, courseWorkId, submissionId, state: codeCorrectionLock.STATE.CORRECTING })
 
   await sendSubmissionAcknowledgeEmail(courseId, courseWorkId, submissionId)
 
@@ -129,17 +140,23 @@ AttachPubSubListener(async (notification, ack) => {
     .filter(name_index => isCompressed(name_index.name))
 
   if (compressedFileNames.length === 0) {
-    return await respondToStudent(courseId, courseWorkId, submissionId, {
+    codeCorrectionLock.set({ courseId, courseWorkId, submissionId, state: codeCorrectionLock.STATE.CORRECTED })
+    await respondToStudent(courseId, courseWorkId, submissionId, {
       ok: false,
       message: 'Could not find compressed file in submission (no recognized compression format, at least)'
     }, [])
+    await assignGradeToSubmission(courseId, courseWorkId, submissionId, 0)
+    return
   }
 
   if (compressedFileNames.length > 1) {
-    return await respondToStudent(courseId, courseWorkId, submissionId, {
+    codeCorrectionLock.set({ courseId, courseWorkId, submissionId, state: codeCorrectionLock.STATE.CORRECTED })
+    await respondToStudent(courseId, courseWorkId, submissionId, {
       ok: false,
       message: 'Found more than one compressed file in submission'
     }, [])
+    await assignGradeToSubmission(courseId, courseWorkId, submissionId, 0)
+    return
   }
 
   const compressedFileId = driveFileIds[compressedFileNames[0].index]
@@ -154,10 +171,13 @@ AttachPubSubListener(async (notification, ack) => {
     await unlink(localCompressedFilePath)
   } catch (err) {
     console.error(err)
-    return respondToStudent(courseId, courseWorkId, submissionId, {
+    codeCorrectionLock.set({ courseId, courseWorkId, submissionId, state: codeCorrectionLock.STATE.CORRECTED })
+    await respondToStudent(courseId, courseWorkId, submissionId, {
       ok: false,
       message: 'While decompressing submission: ' + (err.message || 'unknown error')
     }, [])
+    await assignGradeToSubmission(courseId, courseWorkId, submissionId, 0)
+    return
   }
 
   await uploadCourseWorkSubmissionFiles(
@@ -182,7 +202,13 @@ AttachPubSubListener(async (notification, ack) => {
   /**
    * @type {{status: Status, testResults: TestResult[]}}
    */
-  const { status, testResults } = await request(requestOptions)
+  const { status, testResults } = await request(requestOptions).catch(() => ({
+    status: {
+      ok: false,
+      message: 'Athena crashed. This was not a problem with your submission, but with Athena itself'
+    },
+    testResults: []
+  }))
 
   const grade = !status.ok
     ? 0.0
@@ -196,8 +222,8 @@ AttachPubSubListener(async (notification, ack) => {
   console.log(status)
   console.log(testResults)
 
+  codeCorrectionLock.set({ courseId, courseWorkId, submissionId, state: codeCorrectionLock.STATE.CORRECTED })
   await respondToStudent(courseId, courseWorkId, submissionId, status, testResults)
-
   await assignGradeToSubmission(courseId, courseWorkId, submissionId, grade)
 
 })
