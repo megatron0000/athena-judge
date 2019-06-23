@@ -1,6 +1,6 @@
 const express = require('express')
 const bodyParser = require('body-parser')
-const { scheduleTestRun, getMostRecentIssueDate } = require('./build-queue')
+const { scheduleTestRun, getMostRecentIssueDate, triggerTestRun } = require('./build-queue')
 const { assignCommitStatus } = require('./github-status')
 
 const app = express()
@@ -44,8 +44,10 @@ app.post(
 
     console.log('Received test-run request for commit ids ' + commitIds.join(', '))
 
-    commitIds.forEach(commitId => Promise.all([
-      assignCommitStatus(commitId, 'pending', 'CI server test results pending', undefined),
+    for (let i = 0; i < commitIds.length; i++) {
+      const commitId = commitIds[i]
+
+      console.log('Scheduled commit ' + commitId)
       scheduleTestRun(commitId).then(testSpec => {
         console.log('Executed commit ' + testSpec.commitId + ' tests')
         if (testSpec.issuedAt.valueOf() >= getMostRecentIssueDate(commitId).valueOf()) {
@@ -56,9 +58,12 @@ app.post(
             testSpec.logFile
           )
         }
-      }),
-      new Promise(resolve => setTimeout(resolve, 200)) // rate-limit
-    ]))
+      })
+
+      await assignCommitStatus(commitId, 'pending', 'CI server test results pending', undefined)
+    }
+
+    triggerTestRun()
 
   }
 )

@@ -68,6 +68,9 @@ async function assignCommitStatus(commitId, status, description, logFile) {
       json: true
     }
   )
+
+  // rate-limit to avoid Github flagging frequent requests as abuse
+  await new Promise(resolve => setTimeout(resolve, 200))
 }
 
 exports.assignCommitStatus = assignCommitStatus

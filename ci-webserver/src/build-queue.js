@@ -36,10 +36,6 @@ const buildQueue = {
    */
   push(item) {
     this._queue.push(item)
-
-    if (!this._executing) {
-      this._triggerTestRun()
-    }
   },
 
   /**
@@ -50,21 +46,25 @@ const buildQueue = {
   onCompletion(item, callback) {
     this._completionHooks.set(item, callback)
   },
-  _triggerTestRun() {
+  triggerTestRun() {
 
+    if (this._executing || this._queue.length === 0) {
+      return
+    }
     this._executing = true
-    const newSpec = this._queue.shift()
+
+    const newSpec = this._queue.pop()
     runTestNow(newSpec).then(passed => {
       if (this._completionHooks.has(newSpec)) {
         this._completionHooks.get(newSpec)(passed)
         this._completionHooks.delete(newSpec)
       }
 
+      this._executing = false
       if (this._queue.length) {
-        this._triggerTestRun()
-      } else {
-        this._executing = false
+        this.triggerTestRun()
       }
+
     })
 
   }
@@ -76,19 +76,23 @@ const buildQueue = {
 const commit2Date = new Map()
 
 /**
- * Returns a Promise that resolves when the scheduled test-run completes its execution.
+ * Synchronously schedules, but returns a Promise that resolves when the scheduled 
+ * test-run completes its execution.
  * 
  * Also synchronously updates the latest issue date of the commitId's test requests
  * 
+ * The priority belongs to the last scheduled test-run. This means that, when adding 
+ * multiple commits, the last to be added will be the first whose tests will be run.
+ * 
  * @param {string} commitId
- * @returns {Promise<TestSpec>} Information the test-run, once it is completed
+ * @returns {Promise<TestSpec>} Information on the test-run, once it is completed
  */
 function scheduleTestRun(commitId) {
   const newTestSpec = {
     commitId,
     passed: false,
     issuedAt: new Date(),
-    logFile: resolve('/tmp', randomString())
+    logFile: resolve('/tmp', commitId + '-' + randomString())
   }
 
   buildQueue.push(newTestSpec)
@@ -141,5 +145,17 @@ function getMostRecentIssueDate(commitId) {
   return commit2Date.get(commitId)
 }
 
+/**
+ * If any commit is already executing, this does nothing.
+ * Else, this triggers a test-run. 
+ * 
+ * When a trigger is done, all commits on the queue will be run
+ * until the queue is empty.
+ */
+function triggerTestRun() {
+  buildQueue.triggerTestRun()
+}
+
 exports.scheduleTestRun = scheduleTestRun
 exports.getMostRecentIssueDate = getMostRecentIssueDate
+exports.triggerTestRun = triggerTestRun
