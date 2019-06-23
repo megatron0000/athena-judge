@@ -166,7 +166,7 @@ async function sendEmailToStudentFromSubmission(courseId, courseWorkId, submissi
   const [auth, teacherInfo, studentInfo] = await Promise.all([
     getOAuth2ClientFromCloudStorage(courseId),
     getCredentialedTeacherInfo(courseId),
-    getStudentInfoFromSubmission(courseId, courseWorkId, submissionId)
+    /**getStudentInfoFromSubmission(courseId, courseWorkId, submissionId)*/{}
   ])
 
   const transporter = nodemailer.createTransport({
@@ -185,7 +185,7 @@ async function sendEmailToStudentFromSubmission(courseId, courseWorkId, submissi
 
   return await transporter.sendMail({
     from: '"' + teacherInfo.name + '" <' + teacherInfo.email + '>',
-    to: studentInfo.email,
+    to: /** studentInfo.email*/ 'vitor.pimenta.arruda@gmail.com',
     subject: emailSubject,
     html: emailHtmlContent
   })

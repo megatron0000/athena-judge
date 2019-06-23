@@ -56,6 +56,10 @@ const validators = {
       return ''
     }
     return value
+  },
+
+  isPrivate(value) {
+    return value || false
   }
 }
 
@@ -128,6 +132,7 @@ export default class TestTable extends React.Component {
                     newData.weight = validators.weight(newData.weight)
                     newData.input = validators.input_output(newData.input)
                     newData.output = validators.input_output(newData.output)
+                    newData.isPrivate = validators.isPrivate(newData.isPrivate)
                     const data = this.props.data;
                     data.push(newData);
                     this.setState({ data }, () => resolve());
@@ -142,6 +147,7 @@ export default class TestTable extends React.Component {
                     newData.weight = validators.weight(newData.weight)
                     newData.input = validators.input_output(newData.input)
                     newData.output = validators.input_output(newData.output)
+                    newData.isPrivate = validators.isPrivate(newData.isPrivate)
                     const data = this.props.data;
                     const index = data.indexOf(oldData);
                     data[index] = newData;

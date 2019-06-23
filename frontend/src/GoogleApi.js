@@ -28,7 +28,7 @@ export default class GoogleApi {
         .then(res => res.body)
         .then(JSON.parse)
         .then(obj => {
-          courses = courses.concat(obj.courses)
+          courses = courses.concat(obj.courses || [])
 
           if (!obj.nextPageToken) {
             return courses
