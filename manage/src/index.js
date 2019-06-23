@@ -1252,9 +1252,21 @@ if (require.main === module) {
 
   program
     .command('deploy [gitBranchNameOrCommitId]')
-    .description('Deploy code from a git branch/commit to production')
+    .description(
+      'Deploy code from a git branch/commit to production. If not specified,' +
+      'the default branch `master` will be used. ' +
+      'Concretely, this executes a "git clone" on Athena\'s virtual machine and runs both ' +
+      '`listener` and `runner` components there. ' +
+      'Before deploying the new version of them, though, a full test suite is ' +
+      'run, which blocks the deploy if it fails.'
+    )
     .option('-o, --test-only', 'Avoids deploying the code to production. Only tests it')
-    .option('-t, --timeout [timeoutInMilliseconds]', 'Enforces a timeout for each individual test-run in the virtual machine', parseInt)
+    .option(
+      '-t, --timeout [timeoutInMilliseconds]',
+      'Enforces a timeout for each individual test-run in ' +
+      'the virtual machine',
+      parseInt
+    )
     .action((gitBranchNameOrCommitId, options) => {
       gitBranchNameOrCommitId = gitBranchNameOrCommitId || 'master'
       if (isNaN(options.timeout)) options.timeout = undefined
