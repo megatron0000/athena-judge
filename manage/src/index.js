@@ -269,7 +269,7 @@ const INTERNAL = {
   async releaseVMLock() {
     try {
       await runCommandOnVM('rmdir /tmp/athena-judge-lockdir', true)
-      log.green('Release VM lock')
+      log.green('Released VM lock')
     } catch (err) {
       log.red('Failed to release VM lock')
     }
@@ -589,7 +589,8 @@ async function setupProjectFirstTime(gitBranchName = 'master') {
         'storage-api.googleapis.com',
         'iam.googleapis.com',
         'cloudresourcemanager.googleapis.com',
-        'appengine.googleapis.com'
+        'appengine.googleapis.com',
+        'cloudresourcemanager.googleapis.com'
       ]
     }
   })
@@ -1230,7 +1231,8 @@ if (require.main === module) {
     log.red('Error during run of the command (may be an Athena bug, may not be...):')
     log.red(err)
   }
-  const program = new require('commander')
+
+  const program = require('commander')
 
   program
     .command('instance-ip')
@@ -1324,6 +1326,26 @@ if (require.main === module) {
         .then(() => log.green('Done. Exiting...'))
         .catch(catchall)
     )
+
+  program
+    .command('acquire-vm-lock')
+    .description(
+      'Acquires the lockdir created on the VM (' +
+      'this acquisition is automatically done by Athena\'s ' +
+      'processes that need it). However, if you want to ' +
+      'acquire it yourself, then so be it...'
+    )
+    .action(() => INTERNAL.acquireVMLock().catch(catchall))
+
+  program
+    .command('release-vm-lock')
+    .description(
+      'Releases the lockdir created on the VM (' +
+      'which is used by processes to avoid using the same ' +
+      'resource simultaneously, but has led to deadlock ' +
+      'all too frequently...)'
+    )
+    .action(() => INTERNAL.releaseVMLock().catch(catchall))
 
 
   program.parse(process.argv)
