@@ -7,7 +7,7 @@
   - [Github fork and access token](#Github-fork-and-access-token)
   - [Manual Google Platform Project creation](#Manual-Google-Platform-Project-creation)
   - [Google Platform Project configuration](#Google-Platform-Project-configuration)
-- [Github Webhook creation](#Github-Webhook-creation)
+  - [Github Webhook creation](#Github-Webhook-creation)
 - [Project setup for all other developers (**except the admin**)](#Project-setup-for-all-other-developers-except-the-admin)
 - [Overall usage (developer's point of view)](#Overall-usage-developers-point-of-view)
   - [Components](#Components)
@@ -146,7 +146,7 @@ There is a step for "authorizing the Classroom test course". This exists because
 
 Also, you will be prompted to type (or paste, for that matter) the Github access token, the name of the repository fork and your github username.
 
-# Github Webhook creation
+## Github Webhook creation
 
 A Webhook is the mechanism by which Github will notify Athena's `ci-webserver` when commits are pushed to the repo.
 
