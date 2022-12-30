@@ -28,7 +28,7 @@
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
-    "mocha": "6.1.4",
+    "mocha": "10.2.0",
     "nodemon": "^1.17.5"
   }
 }
